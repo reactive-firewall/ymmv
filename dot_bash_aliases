@@ -1,0 +1,4 @@
+alias lessPEM='openssl x509 -inform PEM -noout -text -in'
+alias lessDER='openssl x509 -inform DER -noout -text -in'
+alias search='find / -type f -print0 2>/dev/null | xargs -0 -L1 fgrep -H'
+alias curl-quick='curl -fsSL --tlsv1.2 -H "DNT: 1" --url'

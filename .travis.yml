@@ -1,0 +1,67 @@
+language: generic
+sudo: false
+
+branches:
+  only:
+    - stable
+    - master
+
+addons:
+  apt:
+    packages:
+      - libcurl4-openssl-dev
+      - libelf-dev
+      - libdw-dev
+      - cmake
+
+matrix:
+  include:
+  - os: linux
+    sudo: true
+    addons:
+      apt:
+        packages:
+          - libcurl4-openssl-dev
+          - libelf-dev
+          - libdw-dev
+          - cmake
+    language: generic
+    dist: trusty
+  - os: linux
+    sudo: false
+    language: generic
+    dist: trusty
+  - os: linux
+    language: generic
+    dist: precice
+  - os: osx
+    osx_image: xcode6.4
+    language: generic
+  - os: osx
+    osx_image: xcode7.2
+    language: generic
+  - os: osx
+    osx_image: xcode7.3
+    language: generic
+  - os: osx
+    osx_image: xcode8
+    language: generic
+  - os: osx
+    osx_image: xcode8.3
+    language: generic
+  allowed failure:
+    - os: linux
+      sudo: true
+
+install:
+  - make clean || true
+  - make install 2>/dev/null || true
+
+script:
+  - make clean || true
+  - make test
+
+after_success:
+  - ./tests/travis_prep_kcov.sh || true
+  - echo "Done."
+
