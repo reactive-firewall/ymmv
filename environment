@@ -88,3 +88,11 @@ GIT_ASKPASS =${GIT_ASKPASS:-${SSH_ASKPASS:-less}}
 
 #opt out of homebrew tracking
 export HOMEBREW_NO_ANALYTICS=1
+
+
+# libvirt ENV vars
+#disable impulsive scaling and auto-starting
+LIBVIRT_AUTOSTART=0
+
+# default LIBVIRT connection URI
+#LIBVIRT_DEFAULT_URI=qemu:///system
