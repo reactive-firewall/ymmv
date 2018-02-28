@@ -1,0 +1,64 @@
+# Root DNS servers
+# b.root-servers.net.(circa 2014)
+#192.228.79.201  b.root-servers.net.
+# b.root-servers.net. (circa 2018)
+199.9.14.201	b.root-servers.net.
+192.33.4.12     c.root-servers.net.
+199.7.91.13	d.root-servers.net
+192.203.230.10  e.root-servers.net.
+192.5.5.241     f.root-servers.net.
+#198.41.0.4      a.root-servers.net.
+
+2001:500:2f::f          f.root-servers.net.
+2001:503:ba3e::2:30     a.root-servers.net.
+2001:500:200::b		b.root-servers.net.
+2001:500:2::c		c.root-servers.net.
+#2001:500:2d::d         d.root-servers.net.
+#2001:500:a8::e		e.root-servers.net.
+
+192.112.36.4            g.root-servers.net.
+# 2001:500:12::d0d	g.root-servers.net.
+# for mil and gov
+128.63.2.53             h.root-servers.net.
+# h.root-servers.net. (circa 2014)
+#2001:500:1::803f:235    h.root-servers.net.
+# h.root-servers.net. (circa 2018)
+2001:500:1::53		h.root-servers.net.
+
+192.36.148.17           i.root-servers.net.
+192.58.128.30           j.root-servers.net.
+
+2001:7fe::53            i.root-servers.net.
+2001:503:c27::2:30      j.root-servers.net.
+
+193.0.14.129            k.root-servers.net.
+199.7.83.42             l.root-servers.net.
+202.12.27.33            m.root-servers.net.
+
+2001:7fd::1             k.root-servers.net.
+2001:500:3::42          l.root-servers.net.
+2001:dc3::35            m.root-servers.net.
+
+### PUBLIC DNS SERVERS
+
+# GOOGLE PUBLIC DNS
+8.8.8.8 google-public-dns-a.google.com.
+8.8.4.4 google-public-dns-a.google.com.
+2001:4860:4860::8888 google-public-dns-a.google.com.
+2001:4860:4860::8844 google-public-dns-b.google.com.
+
+# OPENDNS PUBLIC RESOLVER
+208.67.222.222 resolver1.opendns.com.
+208.67.220.220 resolver2.opendns.com.
+
+# LEVEL 3COM (HANDY)
+4.2.2.1		a.resolvers.Level3.net.
+4.2.2.2 	b.resolvers.Level3.net.
+4.2.2.3 	c.resolvers.Level3.net.
+4.2.2.4		d.resolvers.Level3.net.
+4.2.2.5 	e.resolvers.Level3.net.
+4.2.2.6		f.resolvers.Level3.net.
+# not sure if these are static (circa 2017)
+#209.244.0.3	g.resolvers.Level3.net.
+#209.244.0.4	h.resolvers.Level3.net.
+#216.136.95.2	i.resolvers.Level3.net.

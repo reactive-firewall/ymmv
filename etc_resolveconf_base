@@ -1,0 +1,6 @@
+search .
+options ndots:1
+options timeout:5
+options attempts:3
+options single-request
+options edns0
