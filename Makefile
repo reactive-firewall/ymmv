@@ -33,13 +33,30 @@ ifeq "$(WAIT)" ""
 	WAIT=wait
 endif
 
+ifeq "$(RM)" ""
+	RM=rm -f
+endif
+
+ifeq "$(RMDIR)" ""
+	RMDIR=$(RM)R
+endif
+
 ifeq "$(INSTALL)" ""
-	INSTALL=install
+	INSTALL=`which install`
 	ifeq "$(INST_OWN)" ""
-		INST_OWN=-o root -g staff
+		INST_OWN=-C -o root -g staff
+	endif
+	ifeq "$(INST_USER_OWN)" ""
+		INST_USER_OWN=-C -o ${USER:-${LOGNAME}} -g staff
 	endif
 	ifeq "$(INST_OPTS)" ""
-		INST_OPTS=-m 755
+		INST_OPTS=-m 751
+	endif
+	ifeq "$(INST_FILE_OPTS)" ""
+		INST_FILE_OPS=-m 640
+	endif
+	ifeq "$(INST_DIR_OPTS)" ""
+		INST_DIR_OPTS=-m 751 -d
 	endif
 endif
 
@@ -51,9 +68,7 @@ ifeq "$(LOG)" "no"
 	QUIET=@
 endif
 
-ifeq "$(DO_FAIL)" ""
-	DO_FAIL=$(ECHO) "ok"
-endif
+.SUFFIXES: .zip .php .css .html .bash .sh .py .pyc .txt .js
 
 PHONY: must_be_root cleanup
 
@@ -63,10 +78,30 @@ build:
 init:
 	$(QUIET)$(ECHO) "$@: Done."
 
-install: must_be_root ./dot_gitconfig ./dot_bash_aliases /etc/
+install: must_be_root ./dot_gitconfig ~/.bashrc ~/.bash_aliases /etc/
 	$(QUIET)$(INSTALL) ./dot_gitconfig /etc/gitconfig
 	$(QUITE)$(WAIT)
-	$(QUIET)$(INSTALL) ./dot_bash_aliases ~/.bash_aliases 2>/dev/null || true
+	$(QUIET)$(ECHO) "$@: Done."
+
+~/.%: ./dot_%
+	$(QUITE)$(WAIT)
+	$(QUIET)$(INSTALL) $(INST_USER_OWN) $(INST_FILE_OPTS) $< $@ 2>/dev/null || true
+	$(QUITE)$(WAIT)
+	$(QUIET)$(ECHO) "$@: installed."
+
+/usr/local/bin/%: ./tools/% must_be_root /usr/local/bin/
+	$(QUITE)$(WAIT)
+	$(QUIET)$(INSTALL) $(INST_OWN) $(INST_FILE_OPTS) $< $@
+	$(QUITE)$(WAIT)
+	$(QUIET)$(ECHO) "$@: installed."
+
+/usr/local/bin/: must_be_root
+	$(QUIET)$(INSTALL) $(INST_OWN) $(INST_DIR_OPTS) /usr/local/bin/
+
+# uninstalls
+
+uninstall-tools:
+	$(QUITE)$(QUIET)rm -vf /etc/gitconfig 2>/dev/null || true
 	$(QUITE)$(WAIT)
 	$(QUIET)$(ECHO) "$@: Done."
 
