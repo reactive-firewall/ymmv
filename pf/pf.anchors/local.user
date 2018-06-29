@@ -1,0 +1,119 @@
+#! /sbin/pfctl -R
+
+# the pf firewall
+
+# set the macros
+ext_if = "{ en* }"
+rare_if = "{ p2p*, utun* }"
+int_if = "lo0"
+all_if = "{ vlan*, fw*, " $ext_if ", " $int_if "}"
+
+# dns servers
+google_dns_srv = "{ 8.8.4.4, 8.8.8.8, 2001:4860:4860::8888, 2001:4860:4860::8844 }"
+lvl3_dns_srv = "{ 4.2.2.0/29 }"
+# add your dns here or use a localhost resolver
+dns_srv = "{ 2001:503:ba3e::2:30, 2001:500:200::b, 2001:500:2::c, 2001:500:2d::d, 2001:500:a8::e, 192.112.36.4, 2001:500:12::d0d, 128.63.2.53, 2001:500:1::53, 192.36.148.17, 192.58.128.30, 2001:7fe::53, 2001:503:c27::2:30, 193.0.14.129, 199.7.83.42, 202.12.27.33, 2001:7fd::1, 2001:500:3::42, 2001:dc3::35, " $google_dns_srv "," $lvl3_dns_srv ", 127.0.0.0/8, 10.0.0.0/8 }"
+
+# private nets
+private_network = "{ 10/8, 192.168/16, 172.16/12 }"
+
+# see https://support.apple.com/kb/HT6175?viewlocale=en_US for more info
+tcp_pts = "{ 22, 25, 53, 43, 80, 123, osu-nms, 389, 427, 443, 500, 515, 548, 554, 587, 631, 636, 985, 993, 995, 1723, nfsd, 3689, svn, ipsec-msft, 4613, 5556, 5557, winfs, sip, jabber-client, vnc-server, irdmi, 8008, radan-http, 8443, 8843, git, 42000:42999 }"
+tcp_push_pts = "{ 2195, 2196, appleugcontrol, 3004 3031, sip, 5190, 8005, http-alt, 8085:8087, 8088}"
+udp_pts = "{ 22, 25, 53, 43, 80, 443, 427, 514, 554, kerberos-adm, pop3s, l2f, ssdp, nfsd, 3283, 3478, 3497, apple-sasl, svn, 4398, 5190, 5298, 5350, 5351, 5556, 5557, mdns, rrac, 6970:9999, 9418, 16384:16403, connected, 16384:16387, 16393:16402, 49152:65535 }"
+#udp for game center and push
+udp_push_pts = "{ 16403:16472, 49152:65535 }"
+extra_tcp_pts = "{ 20, 21, 22, 25, 53, 43, 80, kerberos, 111, ident, 119, 123, 137, 138, 139, imap, snmp, 192, asip-webadmin, vslmp, ldap, 427, 443, 445, kpasswd, netnews, afpovertcp, ipp, ldaps, kerberos-adm, 600:1023, 660, 687, 993, 995, webobjects, rmiregistry, 1220, cert-responder, kermit, net-assistant, mysql, distcc, apple-sasl, daap, svn, xgrid, sip, jabber-client, jabber-server, 5297, 5298, vnc-server, wbem-http, arcp, 7777, irdmi, http-alt, pcsync-https, 8843, 8821, 8826, 8891, 9006, 9100, 11211, 16080, 24000:24999, 49152:65535 }"
+# check awacs-ice
+dyn_pts = "{ 600:1023, 24000:24999, 49152:65535 }"
+ipv6_protos = "{ 41, 43, 44, 58, 59, 60 }"
+
+# uncommon protocals alter as needed
+rare_proto = "{ 10, 11, 12, 13, 14, 15, 16, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 3, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 4, 40, 42, 45, 46, 47, 48, 49, 5, 52, 53, 54, 55, 56, 57, 61, 62, 63, 64, 65, 66, 67, 68, 69, 7, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 8, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 9, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209 }"
+
+#needed for airplay
+udp_itunes_airplay_pts = "{ 6001:6010, 6011 }"
+
+
+# settings
+# set optimization normal
+# default is set optimization normal
+# set block-policy drop
+# set state-policy if-bound
+# set debug misc
+
+
+# anchor "100.preroute/*"
+
+# normalization
+#scrub fragment reassemble
+#scrub in on $ext_if all fragment reassemble
+
+#scrub in on $ext_if all fragment drop-ovl
+
+# block and log everything by default
+block return log on $ext_if all
+block return on $rare_if all
+
+# block anything coming from source we have no back routes for
+block in from no-route to any
+
+# block packets whose ingress interface does not match the one in
+# the route back to their source address
+block in from urpf-failed to any
+
+antispoof for $int_if
+
+anchor "100.preroute/*"
+
+block in inet proto icmp probability 20% icmp-type 8 code 0
+pass out inet proto icmp from any to any icmp-type 8 code 0
+pass out inet6 proto 58 from any to any icmp6-type 129 code 0
+block in quick inet proto icmp from any to any icmp-type 8 code 0
+block in quick inet6 proto 58 from any to any icmp6-type 129 code 0
+
+block log quick on $ext_if proto $rare_proto all
+block log quick on $rare_if proto $rare_proto all
+
+block return in quick on $ext_if proto tcp from any port 10011 to any
+pass out proto tcp from any to any port $extra_tcp_pts modulate state
+pass out proto tcp from any to any port $tcp_pts keep state
+# network limited
+pass out on $ext_if proto tcp from any to $private_network port $tcp_push_pts keep state
+pass out on $ext_if proto tcp from $private_network port $tcp_push_pts to $private_network keep state
+
+block return in quick proto tcp from any port 23 to any flags S/SFRA
+block in proto tcp from any port 25 to any flags S/SFRA
+block in proto tcp from any port 53 to any flags S/SFRA no state
+
+block in quick proto tcp from any port $tcp_pts to any flags S/SFRAPU no state
+block return in proto tcp from any port $tcp_pts to any flags S/SFRAP
+block in proto tcp from any port $tcp_pts to any flags S/SA
+
+pass in proto tcp from any port $tcp_pts to any port $dyn_pts flags FA/SFRAP
+pass in proto tcp from any port $tcp_pts to any port $dyn_pts flags RA/SFRAP
+
+# allow DHCP
+pass out proto udp from any port 68 to any port 67
+pass in proto udp from any port 67 to any port 68
+
+pass out inet6 proto tcp from any port 547 to any port 547
+pass in inet6 proto tcp from any port 547 to any port 547
+
+
+#Allow ntp
+pass out proto udp from any port 123 to any port $dyn_pts
+
+#Allow dns
+block drop in quick log proto udp from $dns_srv port 53 to any port <1024
+pass out proto udp from any to $dns_srv port 53
+pass out log proto udp from any to any port 53
+pass out log on $ext_if proto udp from $private_network to $private_network port 5353
+
+
+# allow almost everything
+pass out on $ext_if proto udp from any port $udp_pts to any port $dyn_pts
+pass in on $ext_if proto udp from any to any port $udp_itunes_airplay_pts
+
+pass out on $all_if proto icmp all keep state
+pass out on $all_if inet6 proto $ipv6_protos all keep state
