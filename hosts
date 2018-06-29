@@ -62,3 +62,5 @@
 #209.244.0.3	g.resolvers.Level3.net.
 #209.244.0.4	h.resolvers.Level3.net.
 #216.136.95.2	i.resolvers.Level3.net.
+
+#224.0.1.1 ntp-probe.multicast
