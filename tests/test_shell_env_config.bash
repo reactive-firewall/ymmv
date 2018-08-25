@@ -62,7 +62,7 @@
 
 EXIT_CODE=0
 
-ulimit -t 600
+ulimit -t 60
 PATH="/bin:/sbin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin"
 umask 137
 
@@ -83,10 +83,10 @@ touch ${LOCK_FILE} 2>/dev/null || exit 0 ;
 EXIT_CODE=0
 
 # THIS IS THE ACTUAL TEST
-if [[ -f ../environment ]] ; then
-	env -i bash --posix --norc -c 'source ../environment' || EXIT_CODE=1
-elif [[ -f ./environment ]] ; then
-	env -i bash --posix --norc -c 'source ./environment' || EXIT_CODE=1
+if [[ -f ../payload/etc/environment ]] ; then
+	env -i bash --posix --norc -c 'source ../payload/etc/environment' || EXIT_CODE=1
+elif [[ -f ./payload/etc/environment ]] ; then
+	env -i bash --posix --norc -c 'source ./payload/etc/environment' || EXIT_CODE=1
 else
 	echo "FAIL: missing bash environment template file"
 	EXIT_CODE=1
