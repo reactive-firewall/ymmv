@@ -61,6 +61,13 @@ FSTAB_FILE=/etc/fstab
 #NMAPDATADIR
 #NMAP_DEFAULT_SCRIPTS=address-info,afp-ls,afp-serverinfo,afpshowmount,backorifice-info,banner,asn-query,bjnp-discover,broadcast-bjnp-discover,broadcast-dhcp-discover,broadcast-dhcp6-discover,broadcast-dns-service-discovery,broadcast-dropbox-listener,broadcast-eigrp-discovery,broadcast-igmp-discovery,broadcast-listener,broadcast-*-discovery,broadcast-ping,broadcast-rip-discover,broadcast-ripng-discover,broadcast-upnp-info,broadcast-versant-locate,broadcast-wake-on-lan,citrix-enum-*,
 
+# DOCKER TOOLBOX
+# used with old style VirtualBox setup
+#DOCKER_HOST=tcp://192.168.123.100:2376
+#DOCKER_MACHINE_NAME=default
+#DOCKER_TLS_VERIFY=1
+#DOCKER_CERT_PATH=/Users/${USER:-${LOGNAME}}/.docker/machine/machines/default
+
 # locals
 
 LANG='en_US'
