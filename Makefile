@@ -89,7 +89,7 @@ install: must_be_root ./dot_gitconfig ~/.bashrc ~/.bash_aliases /etc/
 	$(QUITE)$(WAIT)
 	$(QUIET)$(ECHO) "$@: installed."
 
-/usr/local/bin/%: ./tools/% must_be_root /usr/local/bin/
+/usr/local/bin/%: ./payload/bin/% must_be_root /usr/local/bin/
 	$(QUITE)$(WAIT)
 	$(QUIET)$(INSTALL) $(INST_OWN) $(INST_FILE_OPTS) $< $@
 	$(QUITE)$(WAIT)
@@ -114,7 +114,7 @@ purge: clean uninstall
 	$(QUIET)$(ECHO) "$@: Done."
 
 test: cleanup
-	$(QUIET)bash ./tests/test_*sh
+	$(QUIET)bash -c ./tests/test_*sh
 	$(QUIET)$(ECHO) "$@: Done."
 
 test-tox: cleanup
