@@ -1,0 +1,71 @@
+#! /sbin/pfctl -R
+
+# the pf firewall
+
+# private nets
+private_network = "{ 10/8, 192.168/16, 172.16/12 }"
+
+# see https://support.apple.com/kb/HT6175?viewlocale=en_US for more info
+tcp_pts = "{ 22, 25, 53, 43, 80, 123, osu-nms, 389, 427, 443, 500, 515, 548, 554, 587, 631, 636, 985, 993, 995, 1723, nfsd, 3689, svn, ipsec-msft, 461
+3, 5556, 5557, winfs, sip, jabber-client, vnc-server, irdmi, 8008, radan-http, 8443, 8843, git, 42000:42999 }"
+tcp_push_pts = "{ 2195, 2196, appleugcontrol, 3004 3031, sip, 5190, 8005, http-alt, 8085:8087, 8088}"
+#mac_rcp_pts = "600:1023"
+udp_pts = "{ 22, 25, 53, 43, 80, 443, 427, 514, 554, kerberos-adm, pop3s, l2f, ssdp, nfsd, 3283, 3478, 3497, apple-sasl, svn, 4398, 5190, 5298, 5350, 
+5351, 5556, 5557, mdns, rrac, 6970:9999, 9418, 16384:16403, connected, 16384:16387, 16393:16402, 49152:65535 }"
+#udp for game center and push
+udp_push_pts = "{ 16403:16472, 49152:65535 }"
+extra_tcp_pts = "{ 20, 21, 22, 25, 53, 43, 80, kerberos, 111, ident, 119, 123, 137, 138, 139, imap, snmp, 192, asip-webadmin, vslmp, ldap, 427, 443, 4
+45, kpasswd, netnews, afpovertcp, ipp, ldaps, kerberos-adm, 600:1023, 660, 687, 993, 995, webobjects, rmiregistry, 1220, cert-responder, kermit, net-a
+ssistant, mysql, distcc, apple-sasl, daap, svn, xgrid, sip, 4613, jabber-client, jabber-server, 5297, 5298, vnc-server, wbem-http, arcp, 7777, irdmi, 
+http-alt, pcsync-https, 8843, 8821, 8826, 8891, 9006, 9100, 11211, 16080, 24000:24999, 49152:65535 }"
+# check awacs-ice
+dyn_pts = "{ 600:1023, 24000:24999, 49152:65535 }"
+ipv6_protos = "{ 41, 43, 44, 58, 59, 60 }"
+
+# needed for airplay
+udp_itunes_airplay_pts = "{ 6001:6010, 6011 }"
+
+
+antispoof for lo0
+
+table <blocklist> persist
+set skip on lo0
+block in log
+block in log quick from no-route to any
+
+anchor "100.preroute/*"
+
+block in inet proto icmp probability 20% icmp-type 8 code 0
+pass out inet proto icmp from any to any icmp-type 8 code 0
+pass out inet6 proto 58 from any to any icmp6-type 129 code 0
+block in quick inet proto icmp from any to any icmp-type 8 code 0
+block in quick inet6 proto 58 from any to any icmp6-type 129 code 0
+
+
+# allow DHCP
+pass out proto udp from any port 68 to any port 67
+pass in proto udp from any port 67 to any port 68
+# DHCPv6
+pass out inet6 proto tcp from any port 547 to any port 547
+pass in inet6 proto tcp from any port 547 to any port 547
+
+
+#Allow ntp
+pass out proto udp from any port 123 to any port $dyn_pts
+
+#Allow dns
+block drop in quick log proto udp from any port 53 to any port <1024
+# pass out proto udp from $private_network to $private_network port 53
+# pass out log proto udp from any to any port 53
+pass out proto udp from any to any port 53
+pass out proto udp from $private_network to $private_network port 5353
+
+
+pass out proto tcp from any to any keep state
+pass out proto udp from any to any keep state
+pass out proto icmp all keep state
+pass out inet6 proto $ipv6_protos all keep state
+
+block log on en0 from {<blocklist>} to any
+block log on en0 from any to {<blocklist>}
+
