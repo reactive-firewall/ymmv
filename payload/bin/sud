@@ -64,16 +64,8 @@ THE_URL="${1}"
 
 umask 137
 
-TEMP_FILE_CACHE="/var/tmp/safe_web_path_site"
+TEMP_FILE_CACHE="/var/tmp/safe_web_path_site_${GID:-x}_${RANDOM}.data"
 DEST_FILE_PATH="${2}"
-
-#if [[ ( $(echo "${SITE_NAME}" | grep -ocE "[[:punct:]]{1}$" | grep -oE -m 1 "[0-9]+" ) -ge 1 ) ]] ; then
-#                declare -i SOME_SITE_LENGTH=$(echo -n "${1}" | wc -c | grep -oE -m 1 "[0-9]+")
-#                wait ;
-#                SOME_SITE_LENGTH=$((${SOME_SITE_LENGTH}-1))
-#                wait ;
-#                SITE_NAME=${1:0:$SOME_SITE_LENGTH}
-#fi
 
 function cleanup() {
 if [[ ( -e ${TEMP_FILE_CACHE} ) ]] ; then rm -f ${TEMP_FILE_CACHE} 2>/dev/null ; wait ; fi ;
@@ -89,7 +81,7 @@ trap 'cleanup ; wait ; exit 1 ;' SIGTERM ;
 
 HEADER_HOST=$(echo "${THE_URL}" | grepdns -m 1 )
 
-HEADER_TYPE=$(\curl --user-agent "SUD/1.1" --url ${THE_URL} --retry 1 --show-error --max-redirs 0 --header "Host: ${THE_URL}" --header "Dnt: 1" --header "Connection: close" -j -L --ipv4 -s -S -I | grep -oE "[T]{1}[y]{1}[p]{1}[e]{1}[:]{1}[[:space:]]+[[:print:]]+")
+HEADER_TYPE=$(\curl --user-agent "SUD/1.1" --url ${THE_URL} --retry 1 --show-error --max-redirs 0 --header "Host: ${HEADER_HOST}" --header "Dnt: 1" --header "Connection: close" -j -L --ipv4 -s -S -I | grep -oE "[T]{1}[y]{1}[p]{1}[e]{1}[:]{1}[[:space:]]+[[:print:]]+")
 HEADER_TYPE="${HEADER_TYPE:6}"
 echo "Host: ${HEADER_HOST}"
 echo "Accept: ${HEADER_TYPE}"
@@ -101,10 +93,10 @@ echo "# FAILED" ;
 exit 0;
 else
 clamscan --no-summary -i -r --detect-pua=no --remove=yes --tempdir=/var/tmp "${TEMP_FILE_CACHE}"
-if [[ ( $? -gt 1 ) ]] ; then exit 1 ; fi ;
+if [[ ( $? -gt 1 ) ]] ; then echo "### UNSAFE ###" && cleanup ; wait ; exit 1 ; fi ;
 clamscan --no-summary -r --detect-pua=yes --remove=no --tempdir=/var/tmp "${TEMP_FILE_CACHE}"
 fi ;
 
-mv -f "${TEMP_FILE_CACHE}" "${DEST_FILE_PATH}"
+mv -f "${TEMP_FILE_CACHE}" "${DEST_FILE_PATH}" ; sync ; wait ;
 
 exit 0;

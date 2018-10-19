@@ -60,17 +60,10 @@
 #    even if the above stated remedy fails of its essential purpose.
 ################################################################################
 
-# version 20160617
+umask 177
 
-# grepCIDR
-
-umask 137
-
-while [[ ($# -gt 1) && (${1:1:1} = '-') ]] ; do
-GREP_ARGS="${GREP_ARGS} ${1}"
-shift
-done
-
-/bin/grep ${GREP_ARGS} -oE "([12]?[0-9]?[0-9]{1}[\.]{1}){3}([12]?[0-9]?[0-9]{1}([/]{1}[1-3]?[0-9]+)?){1}" $@
+/bin/echo "${@}" > /tmp/${LOGNAME}_tmp_message ; wait ;
+sudo wall -n /tmp/${LOGNAME}_tmp_message ; wait ;
+rm -f /tmp/${LOGNAME}_tmp_message 2>/dev/null || true ; wait ;
 
 exit 0 ;
