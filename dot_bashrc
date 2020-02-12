@@ -6,11 +6,14 @@ if [[ ( `umask` -le 27 ) ]] ; then umask 022 ; fi ;
 # If not running interactively, don't do anything
 [ -z "$PS1" ] && return
 umask 027
-# enable this to force color
+# enable this to force color use
 #export CAN_USE_COLOR_IN_ENVIORMENT=1 ;
 
 if [[ ( -r /etc/environment ) ]] ; then
-	. /etc/environment ;
+	if [[ ( ${FORCE_RELOAD_BASH_ENV:-2} -ge 1 ) ]] ; then
+		source /etc/environment ;
+		export FORCE_RELOAD_BASH_ENV=0;
+	fi
 fi
 
 #--------------------------------------------------------------
