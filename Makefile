@@ -2,7 +2,7 @@
 
 # reactive-firewall/YMMV Repo Template
 # ..................................
-# Copyright (c) 2017-2018, Kendrick Walls
+# Copyright (c) 2017-2020, Kendrick Walls
 # ..................................
 # Licensed under MIT (the "License");
 # you may not use this file except in compliance with the License.
@@ -78,14 +78,19 @@ build:
 init:
 	$(QUIET)$(ECHO) "$@: Done."
 
-install: must_be_root ./dot_gitconfig ~/.bashrc ~/.bash_aliases /etc/
-	$(QUIET)$(INSTALL) ./dot_gitconfig /etc/gitconfig
+install: must_be_root /etc/ /etc/gitconfig ~/.bashrc ~/.bash_aliases
 	$(QUITE)$(WAIT)
 	$(QUIET)$(ECHO) "$@: Done."
 
 ~/.%: ./dot_%
 	$(QUITE)$(WAIT)
 	$(QUIET)$(INSTALL) $(INST_USER_OWN) $(INST_FILE_OPTS) $< $@ 2>/dev/null || true
+	$(QUITE)$(WAIT)
+	$(QUIET)$(ECHO) "$@: installed."
+
+/etc/%: ./payload/etc/% must_be_root /etc/
+	$(QUITE)$(WAIT)
+	$(QUIET)$(INSTALL) $(INST_OWN) $(INST_FILE_OPTS) $< $@ 2>/dev/null || true
 	$(QUITE)$(WAIT)
 	$(QUIET)$(ECHO) "$@: installed."
 
