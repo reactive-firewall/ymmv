@@ -2,18 +2,30 @@
 # bash shell
 SHELL=/bin/bash
 
+# Keep bash over zsh for Mac OS X
+# BASH_SILENCE_DEPRECATION_WARNING=1
+
+
 # paths to cd into
 CDPATH=".:/sandbox"
 
 # suffix to ignore when doing file completion
-# FIGNORE=".DS_Store:~"
-
+#FIGNORE=".DS_Store:~"
 
 # force history
 #unset HISTCONTROL
 
 # force default hist file
 HISTFILE="~/.bash_history"
+# be aware of SHELL_SESSION_DID_HISTORY_CHECK on apple systems
+
+# LibreSSL for Mac OS
+#LIBRESSL_ROOT_DIR=/usr/bin/
+
+# Use custom colors for ncurses:
+NCURSES_ASSUMED_COLORS="-1,-1"
+
+# NCURSES_NO_UTF8_ACS=1
 
 # some prefer VIM here
 EDITOR=${EDITOR:-"nano -L"}
@@ -33,7 +45,7 @@ REPLYTO="noreply@localhost"
 # set preferred pager
 PAGER="/usr/bin/less"
 MORE="less"
-#VISUAL=`which gedit`
+#VISUAL=`command -v gedit`
 TMPDIR="${TMPDIR:=/tmp}"
 
 # setup fsck env
@@ -53,7 +65,7 @@ FSTAB_FILE=/etc/fstab
 #TAR_LONGLINK_100
 #PRISTINE_TAR_COMPAT
 #SIMPLE_BACKUP_SUFFIX='.old'
-#TAR_OPTIONS=''
+#TAR_OPTIONS='-E /etc/noglob'
 #TAPE
 
 #nmap
@@ -75,7 +87,7 @@ LANG='en_US'
 #LC_SSH_USER
 
 # git
-EMAIL=${EMAIL:-${REPLYTO}}
+EMAIL=${EMAIL:-${REPLYTO:-"noreply@localhost"}}
 GIT_AUTHOR_NAME=${GIT_AUTHOR_NAME:-${LOGNAME}}
 GIT_AUTHOR_EMAIL=${GIT_AUTHOR_EMAIL:-${EMAIL}}
 GIT_COMMITTER_NAME=${GIT_COMMITTER_NAME:-${GIT_AUTHOR_NAME:-${LOGNAME}}}
@@ -94,8 +106,12 @@ GIT_ASKPASS=${GIT_ASKPASS:-${SSH_ASKPASS}}
 # GIT_REF_PARANOIA=1
 
 #opt out of homebrew tracking
-export HOMEBREW_NO_ANALYTICS=1
+HOMEBREW_NO_ANALYTICS=1
+#default for brew installed readline:
+PKG_CONFIG_PATH=/usr/local/opt/readline/lib/pkgconfig
 
+#link options 
+LDFLAGS=-L/usr/local/opt/readline/lib
 
 # libvirt ENV vars
 #disable impulsive scaling and auto-starting
@@ -103,3 +119,4 @@ LIBVIRT_AUTOSTART=0
 
 # default LIBVIRT connection URI
 #LIBVIRT_DEFAULT_URI=qemu:///system
+
