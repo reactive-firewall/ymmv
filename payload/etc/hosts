@@ -1,4 +1,5 @@
 # Root DNS servers
+# Circa 2020
 # b.root-servers.net.(circa 2014)
 #192.228.79.201  b.root-servers.net.
 # b.root-servers.net. (circa 2018)
@@ -13,13 +14,17 @@
 2001:503:ba3e::2:30     a.root-servers.net.
 2001:500:200::b		b.root-servers.net.
 2001:500:2::c		c.root-servers.net.
+# valid but disabled
 #2001:500:2d::d         d.root-servers.net.
 #2001:500:a8::e		e.root-servers.net.
 
 192.112.36.4            g.root-servers.net.
 # 2001:500:12::d0d	g.root-servers.net.
 # for mil and gov
-128.63.2.53             h.root-servers.net.
+# h.root-servers.net. (circa 2020)
+198.97.190.53           h.root-servers.net.
+# h.root-servers.net. (circa 2018)
+#128.63.2.53             h.root-servers.net.
 # h.root-servers.net. (circa 2014)
 #2001:500:1::803f:235    h.root-servers.net.
 # h.root-servers.net. (circa 2018)
@@ -36,7 +41,10 @@
 202.12.27.33            m.root-servers.net.
 
 2001:7fd::1             k.root-servers.net.
-2001:500:3::42          l.root-servers.net.
+# l.root-servers.net. (circa 2020)
+2001:500:9f::42         l.root-servers.net.
+# l.root-servers.net. (circa 2018)
+#2001:500:3::42         l.root-servers.net.
 2001:dc3::35            m.root-servers.net.
 
 ### PUBLIC DNS SERVERS
