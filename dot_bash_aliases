@@ -9,6 +9,7 @@ alias source-aliases='source ~/.bash_aliases'
 alias edit-aliases='nano -L ~/.bash_aliases'
 alias list-aliases='alias'
 alias unsudo='sudo -k'
+alias docker-version='docker --version; docker-compose --version ; docker-machine --version; wait ;'
 # debian stubs
 # alias service-status='sudo service --status-all'
 # alias go-dark='sudo rfkill block wifi ; wait ; sudo rfkill block bluetooth ; wait ; sudo rfkill block gps ; sudo rfkill list ;'
