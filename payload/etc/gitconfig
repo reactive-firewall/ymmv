@@ -2,7 +2,6 @@
 	sslVerify = true
 	sslVersion = tlsv1.2
 	extraHeader = DNT: 1
-	cookieFile = ~/.git_http_cookies
 
 [core]
 	protectNTFS = true
@@ -10,7 +9,7 @@
 	trustctime = false
 	logAllRefUpdates = true
 	warnAmbiguousRefs = true
-	editor = open
+	editor = nano
 	safecrlf = true
 	compression = 9
 

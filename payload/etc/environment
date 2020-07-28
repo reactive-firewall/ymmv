@@ -3,7 +3,7 @@
 SHELL=/bin/bash
 
 # Keep bash over zsh for Mac OS X
-# BASH_SILENCE_DEPRECATION_WARNING=1
+BASH_SILENCE_DEPRECATION_WARNING=1
 
 
 # paths to cd into

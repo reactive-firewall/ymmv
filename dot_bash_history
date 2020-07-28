@@ -1,0 +1,5 @@
+# Start of history file
+# git tasks
+git status
+# auto-add modified files
+git add $(git status | grep -F "modified" | tr -s '\t ' '  ' | cut -d: -f 2- )

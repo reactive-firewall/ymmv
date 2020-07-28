@@ -1,0 +1,2 @@
+if [ ! -n "$BASH" ] ;then echo Please run this script $0 with bash; exit 1; fi
+source ~/.bashrc ;
