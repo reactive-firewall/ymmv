@@ -1,0 +1,111 @@
+[user]
+	name = reactive-firewall
+	email = reactive-firewall@users.noreply.github.com
+
+[core]
+	protectNTFS = true
+	protectHFS = true
+	fsyncObjectFiles = true
+	trustctime = false
+	logAllRefUpdates = true
+	warnAmbiguousRefs = true
+	editor = nano
+	safecrlf = true
+	compression = 9
+	loosecompression = 9
+	whitespace = space-before-tab,blank-at-eol,cr-at-eol
+	filemode = true
+        precomposeunicode = true
+	excludesfile = ~/.gitignore_global
+
+[checkout]
+	defaultRemote = origin
+
+[commit]
+	status = true
+
+[status]
+	branch = true
+	showStash = true
+	submoduleSummary = true
+
+[diff]
+	context = 6
+	renames = copies
+	renameLimit = 127
+	algorithm = histogram
+        indentHeuristic = true
+	
+
+[fetch]
+	recurseSubmodules = true
+	output = full
+	prune = true
+
+[pull]
+	recurseSubmodules = true
+
+[transfer]
+	fsckObjects = true
+
+[gui]
+	encoding = utf8
+	diffContext = 6
+	matchTrackingBranch = true
+	pruneDuringFetch = true
+
+[merge]
+	log = 50
+	renormalize = true
+	branchdesc = true
+	verbosity = 3
+	renames = true
+	directoryRenames = true
+
+[notes]
+	mergeStrategy = cat_sort_uniq
+	rewriteMode = cat_sort_uniq
+
+[rebase]
+	stat = true
+
+[advice]
+	ignoredHook = true
+
+[rerere]
+	enabled = true
+
+[gpg]
+	program = gpg2
+
+[i18n]
+	logOutputEncoding = utf-8
+
+[filter "strings"]
+	clean = strings -- %f
+	smudge = strings -- %f
+	process = strings filter-process
+	required = true
+
+[diff "config"]
+	xfunction = "^(([[:alnum:][:punct:]]*){1}\\s*?[:=]{1}\\s*?){1}\\s*"
+
+[diff "makefile"]
+	xfunction = "^(([[:alnum:][:punct:]]+){1}:{1}){1}\\s*?"
+	wordRegex = "([\\"\\']+[^\\'\\"]*?[\\'\\"]+)+|([$]?[(]+[^\\(\\)]*?[\\)]+)|(([[:alnum:]]|[^\\$\\"\\'\\(\\)[:space:][:cntrl:]])+)*|[[:space:]]+"
+
+[diff "python"]
+	xfunction = python
+	wordRegex = python
+
+[diff "php"]
+	xfunction = php
+	wordRegex = php
+
+[diff "css"]
+	xfunction = css
+	wordRegex = css
+
+[diff "html"]
+	xfunction = html
+	wordRegex = html
