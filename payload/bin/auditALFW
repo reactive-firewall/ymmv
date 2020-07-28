@@ -1,0 +1,15 @@
+#! /bin/bash
+
+if [[ ( $( /usr/libexec/ApplicationFirewall/socketfilterfw --getappblocked "${1}" | grep -coF "is not part of the firewall" ) -gt 0 ) ]] ; then
+# need to check codesigned
+if [[ ( $( codesign -vvvv -R="anchor apple" "${1}" 2>&1 | grep -coF "failed" ) -gt 0 ) ]] ; then
+echo "Adding new path ${1} (block by default)" ;
+/usr/libexec/ApplicationFirewall/socketfilterfw --add "${1}" || echo "The application is STILL not part of the firewall. (Would block if run as admin)" ; wait ;
+/usr/libexec/ApplicationFirewall/socketfilterfw --blockapp "${1}" 2>/dev/null >/dev/null || true ;
+else
+echo "${1} seems to be codesigned." ;
+fi ;
+else
+echo "Skipping path ${1}: " $( /usr/libexec/ApplicationFirewall/socketfilterfw --getappblocked "${1}" ) ; wait ;
+fi
+exit 0 ;

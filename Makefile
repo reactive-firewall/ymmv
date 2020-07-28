@@ -2,7 +2,7 @@
 
 # reactive-firewall/YMMV Repo Template
 # ..................................
-# Copyright (c) 2017-2018, Kendrick Walls
+# Copyright (c) 2017-2020, Kendrick Walls
 # ..................................
 # Licensed under MIT (the "License");
 # you may not use this file except in compliance with the License.
@@ -56,7 +56,7 @@ ifeq "$(INSTALL)" ""
 		INST_FILE_OPS=-m 640
 	endif
 	ifeq "$(INST_DIR_OPTS)" ""
-		INST_DIR_OPTS=-m 751 -d
+		INST_DIR_OPTS=-m 755 -d
 	endif
 endif
 
@@ -70,7 +70,7 @@ endif
 
 .SUFFIXES: .zip .php .css .html .bash .sh .py .pyc .txt .js
 
-PHONY: must_be_root cleanup
+PHONY: must_be_root install-tools-mac cleanup
 
 build:
 	$(QUIET)$(ECHO) "No need to build. Try make -f Makefile install"
@@ -78,10 +78,34 @@ build:
 init:
 	$(QUIET)$(ECHO) "$@: Done."
 
-install: must_be_root ./dot_gitconfig ~/.bashrc ~/.bash_aliases /etc/
+install: must_be_root install-etc install-tools install-home
 	$(QUIET)$(INSTALL) ./dot_gitconfig /etc/gitconfig
 	$(QUITE)$(WAIT)
 	$(QUIET)$(ECHO) "$@: Done."
+
+install-etc: must_be_root /etc/ /etc/gitconfig /etc/environment
+	$(QUITE)$(WAIT)
+	$(QUITE)source /etc/environment ;
+	$(QUIET)$(ECHO) "$@: Done."
+
+install-pf: must_be_root /etc/ /etc/pf.conf /etc/pf.anchors/local.user
+	$(QUITE)/usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate on
+	$(QUITE)/usr/libexec/ApplicationFirewall/socketfilterfw --setloggingmode on
+	$(QUITE)/usr/libexec/ApplicationFirewall/socketfilterfw --setstealthmode on
+	$(QUITE)/usr/libexec/ApplicationFirewall/socketfilterfw --setallowsigned on
+	$(QUITE)/usr/libexec/ApplicationFirewall/socketfilterfw --setallowsignedapp off
+	$(QUITE)pkill -HUP socketfilterfw || true ;
+	$(QUITE)$(WAIT)
+	$(QUIET)$(ECHO) "$@: Restart Required."
+
+install-tools: must_be_root /usr/local/bin/ /usr/local/bin/grepip /usr/local/bin/grepCIDR /usr/local/bin/grepdns
+	$(QUIET)$(ECHO) "$@: Done."
+
+install-tools-mac: must_be_root /usr/local/bin/ /usr/local/bin/auditALFW install-pf
+	$(QUIET)$(ECHO) "$@: Done."
+
+install-home: ~/.gitconfig ~/.bashrc ~/.profile ~/.bash_aliases ~/.bash_history
+	$(QUIET)$(ECHO) "$@: Configured."
 
 ~/.%: ./dot_%
 	$(QUITE)$(WAIT)
@@ -90,6 +114,12 @@ install: must_be_root ./dot_gitconfig ~/.bashrc ~/.bash_aliases /etc/
 	$(QUIET)$(ECHO) "$@: installed."
 
 /usr/local/bin/%: ./payload/bin/% must_be_root /usr/local/bin/
+	$(QUITE)$(WAIT)
+	$(QUIET)$(INSTALL) $(INST_OWN) $(INST_OPTS) $< $@
+	$(QUITE)$(WAIT)
+	$(QUIET)$(ECHO) "$@: installed."
+
+/etc/%: ./payload/etc/% must_be_root /etc/
 	$(QUITE)$(WAIT)
 	$(QUIET)$(INSTALL) $(INST_OWN) $(INST_FILE_OPTS) $< $@
 	$(QUITE)$(WAIT)
