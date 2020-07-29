@@ -79,7 +79,6 @@ init:
 	$(QUIET)$(ECHO) "$@: Done."
 
 install: must_be_root install-etc install-tools install-home
-	$(QUIET)$(INSTALL) ./dot_gitconfig /etc/gitconfig
 	$(QUITE)$(WAIT)
 	$(QUIET)$(ECHO) "$@: Done."
 
@@ -104,12 +103,18 @@ install-tools: must_be_root /usr/local/bin/ /usr/local/bin/grepip /usr/local/bin
 install-tools-mac: must_be_root /usr/local/bin/ /usr/local/bin/auditALFW install-pf
 	$(QUIET)$(ECHO) "$@: Done."
 
-install-home: ~/.gitconfig ~/.bashrc ~/.profile ~/.bash_aliases ~/.bash_history
+install-home: ~/.bashrc ~/.profile ~/.bash_aliases ~/.bash_history
 	$(QUIET)$(ECHO) "$@: Configured."
 
 ~/.%: ./dot_%
 	$(QUITE)$(WAIT)
 	$(QUIET)$(INSTALL) $(INST_USER_OWN) $(INST_FILE_OPTS) $< $@ 2>/dev/null || true
+	$(QUITE)$(WAIT)
+	$(QUIET)$(ECHO) "$@: installed."
+
+/etc/%: ./payload/etc/% must_be_root /etc/
+	$(QUITE)$(WAIT)
+	$(QUIET)$(INSTALL) $(INST_OWN) $(INST_FILE_OPTS) $< $@ 2>/dev/null || true
 	$(QUITE)$(WAIT)
 	$(QUIET)$(ECHO) "$@: installed."
 

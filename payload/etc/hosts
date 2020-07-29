@@ -67,10 +67,10 @@
 
 # LEVEL 3COM (HANDY)
 4.2.2.1		a.resolvers.Level3.net.
-4.2.2.2 	b.resolvers.Level3.net.
-4.2.2.3 	c.resolvers.Level3.net.
+4.2.2.2		b.resolvers.Level3.net.
+4.2.2.3		c.resolvers.Level3.net.
 4.2.2.4		d.resolvers.Level3.net.
-4.2.2.5 	e.resolvers.Level3.net.
+4.2.2.5		e.resolvers.Level3.net.
 4.2.2.6		f.resolvers.Level3.net.
 # not sure if these are static (circa 2017)
 #209.244.0.3	g.resolvers.Level3.net.
