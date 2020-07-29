@@ -3,6 +3,22 @@
 # To enable the settings / commands in this file for login shells as well,
 # this file has to be sourced in /etc/profile.
 if [[ ( `umask` -le 27 ) ]] ; then umask 022 ; fi ;
+
+# configure paths
+function pathappend() {
+  for ARG in "$@" ; do
+    if [[ -d "$ARG" ]] && [[ ":$PATH:" != *":$ARG:"* ]] ; then
+        PATH="${PATH:+"$PATH:"}$ARG" ;
+	export PATH ;
+    fi
+  done
+}
+
+pathappend ${HOME}/homebrew/sbin
+pathappend ${HOME}/homebrew/bin
+pathappend ${HOME}/bin
+pathappend /Applications/Docker.app/Contents/Resources/bin/
+
 # If not running interactively, don't do anything
 [ -z "$PS1" ] && return
 umask 027
@@ -12,6 +28,11 @@ umask 027
 if [[ ( -r /etc/environment ) ]] ; then
 	. /etc/environment ;
 fi
+
+# harden homebrew
+export HOMEBREW_NO_ANALYTICS=1 ;
+export HOMEBREW_NO_INSECURE_REDIRECT=1 ;
+export HOMEBREW_CASK_OPTS=--require-sha ;
 
 #--------------------------------------------------------------
 #  Automatic setting of $DISPLAY (if not set already).
@@ -233,9 +254,9 @@ NCPU=4
 else
 NCPU=$(grep -c 'processor' /proc/cpuinfo 2>/dev/null)    # Number of CPUs
 fi
-SLOAD=$(( 100*${NCPU} ))        # Small load
-MLOAD=$(( 200*${NCPU} ))        # Medium load
-XLOAD=$(( 400*${NCPU} ))        # Xlarge load
+SLOAD=$(( 100*${NCPU:-1} ))        # Small load
+MLOAD=$(( 200*${NCPU:-1} ))        # Medium load
+XLOAD=$(( 400*${NCPU:-1} ))        # Xlarge load
 
 # Returns system load as percentage, i.e., '40' rather than '0.40)'.
 function load()
@@ -309,13 +330,13 @@ case ${TERM} in
   *term | *term-*color | rxvt | linux)
         PS1="\["$(load_color)"\][\A\[${NC}\] "
         # Time of day (with load info):
-        PS1="\["$(load_color)"][\A\[${NC}\] "
+        PS1="\["$(load_color)"\][\A\[${NC}\] "
         # User@Host (with connection type info):
         PS1=${PS1}"\[${SU}\]\u\[${NC}\]@\[${CNX}\]\h\[${NC}\] "
         # PWD (with 'disk space' info):
         PS1=${PS1}"\["$(disk_color)"\]\W]\[${NC}\] "
         # Prompt (with 'job' info):
-        PS1=${PS1}"\["$(job_color)"]>\[${NC}\] "
+        PS1=${PS1}"\["$(job_color)"\]>\[${NC}\] "
         # Set title of current xterm:
         PS1=${PS1}'\[\e]0;[\u@\h] \w\a\]' ;
         ;;
@@ -325,7 +346,7 @@ case ${TERM} in
         ;;
 esac
 
-	export HISTTIMEFORMAT="[%y/%m/%d %H:%M:%S] " ;
+	export HISTTIMEFORMAT="[%y/%m/%d %H:%M:%S] ";
 
 #-------------------------------------------------------------
 # Tailoring 'less'
@@ -338,13 +359,13 @@ export LESSOPEN='|/usr/bin/lesspipe.sh %s 2>&-' ;
                 # Use this if lesspipe.sh exists.
 export LESS="-i -w  -z-4 -g -h30 -M -X -F -R -P%t?f%f " ;
 # LESS man page colors (makes Man pages more readable).
-export LESS_TERMCAP_mb=$'\E[01;31m'
-export LESS_TERMCAP_md=$'\E[01;31m'
-export LESS_TERMCAP_me=$'\E[0m'
-export LESS_TERMCAP_se=$'\E[0m'
-export LESS_TERMCAP_so=$'\E[01;44;33m'
-export LESS_TERMCAP_ue=$'\E[0m'
-export LESS_TERMCAP_us=$'\E[01;32m'
+export LESS_TERMCAP_mb=$'\e[01;31m'
+export LESS_TERMCAP_md=$'\e[01;31m'
+export LESS_TERMCAP_me=$'\e[0m'
+export LESS_TERMCAP_se=$'\e[0m'
+export LESS_TERMCAP_so=$'\e[01;44;33m'
+export LESS_TERMCAP_ue=$'\e[0m'
+export LESS_TERMCAP_us=$'\e[01;32m'
 
 else
 	alias more='less'

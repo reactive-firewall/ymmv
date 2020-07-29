@@ -77,7 +77,7 @@ defaults write com.apple.LaunchServices LSQuarantine -bool true
 #defaults write NSGlobalDomain NSTextShowsControlCharacters -bool true
 
 # Disable Resume system-wide
-#defaults write com.apple.systempreferences NSQuitAlwaysKeepsWindows -bool false
+defaults write com.apple.systempreferences NSQuitAlwaysKeepsWindows -bool false
 
 # Disable automatic termination of inactive apps
 #defaults write NSGlobalDomain NSDisableAutomaticTermination -bool true
@@ -94,10 +94,12 @@ defaults write com.apple.helpviewer DevMode -bool true
 # see setting in .bashrc instead
 #echo "0x08000100:0" > ~/.CFUserTextEncoding
 
+# Shows battery life percentage.
+defaults write com.apple.menuextra.battery ShowPercent -string "YES"
 
 # Reveal IP address, hostname, OS version, etc. when clicking the clock
 # in the login window
-#sudo defaults write /Library/Preferences/com.apple.loginwindow AdminHostInfo HostName
+sudo defaults write /Library/Preferences/com.apple.loginwindow AdminHostInfo HostName
 
 # Restart automatically if the computer freezes
 #sudo systemsetup -setrestartfreeze on
@@ -106,16 +108,19 @@ defaults write com.apple.helpviewer DevMode -bool true
 #sudo systemsetup -setcomputersleep Off > /dev/null
 
 # Disable Notification Center and remove the menu bar icon
-#launchctl unload -w /System/Library/LaunchAgents/com.apple.notificationcenterui.plist 2> /dev/null
+#launchctl unload -w /System/Library/LaunchAgents/com.apple.notificationcenterui.plist 2>/dev/null
+
+#disable 32 bit mode quicklook
+sudo launchctl unload -w /System/Library/LaunchAgents/com.apple.quicklook.32bit.plist 2>/dev/null
 
 # Disable automatic capitalization as it’s annoying when typing code
 defaults write NSGlobalDomain NSAutomaticCapitalizationEnabled -bool false
 
 # Disable smart dashes as they’re annoying when typing code
-defaults write NSGlobalDomain NSAutomaticDashSubstitutionEnabled -bool false
+#defaults write NSGlobalDomain NSAutomaticDashSubstitutionEnabled -bool false
 
 # Disable automatic period substitution as it’s annoying when typing code
-defaults write NSGlobalDomain NSAutomaticPeriodSubstitutionEnabled -bool false
+#defaults write NSGlobalDomain NSAutomaticPeriodSubstitutionEnabled -bool false
 
 # Disable smart quotes as they’re annoying when typing code
 defaults write NSGlobalDomain NSAutomaticQuoteSubstitutionEnabled -bool false
@@ -134,13 +139,28 @@ defaults write NSGlobalDomain NSAutomaticSpellingCorrectionEnabled -bool false
 ###############################################################################
 
 # Seeds /dev/random and enables FileVault
-#if [[ $(sudo fdesetup status | head -1) == "FileVault is Off." ]]; then
-#openssl rand "$(($RANDOM * $RANDOM * $RANDOM * $RANDOM))" > /dev/random
-#sudo fdesetup enable -user $(whoami)
-#fi
+if [[ $(sudo fdesetup status | head -1) == "FileVault is Off." ]]; then
+openssl rand "$(($RANDOM * $RANDOM * $RANDOM * $RANDOM))" > /dev/random
+sudo fdesetup enable -user $(whoami)
+fi
 
 # Enables auto updates
-#sudo softwareupdate --schedule on &> /dev/null
+sudo softwareupdate --schedule on &> /dev/null
+
+# Enable the automatic update check
+defaults write com.apple.SoftwareUpdate AutomaticCheckEnabled -bool true
+
+# Check for software updates daily, not just once per week
+defaults write com.apple.SoftwareUpdate ScheduleFrequency -int 1
+
+# Download newly available updates in background
+defaults write com.apple.SoftwareUpdate AutomaticDownload -int 1
+
+# Installs System data files & security updates
+defaults write com.apple.SoftwareUpdate CriticalUpdateInstall -int 1
+
+# Install updates to applications loaded via Mac App Store
+defaults write com.apple.commerce AutoUpdate -bool true
 
 # Disables AirDrop
 defaults write com.apple.NetworkBrowser DisableAirDrop -bool true
@@ -155,70 +175,74 @@ defaults write ~/Library/Preferences/ByHost/com.apple.SubmitDiagInfo.$HW_UUID Au
 defaults write com.apple.screensaver askForPasswordDelay -int 0
 
 # Disables remote Apple Events
-#sudo systemsetup -setremoteappleevents off &> /dev/null
+sudo systemsetup -setremoteappleevents off &> /dev/null
 
 # Don’t open Bluetooth setup assistant if nothing's been detected
-#sudo defaults write /Library/Preferences/com.apple.Bluetooth BluetoothAutoSeekKeyboard -bool false
-#sudo defaults write /Library/Preferences/com.apple.Bluetooth BluetoothAutoSeekPointingDevice -bool false
+sudo defaults write /Library/Preferences/com.apple.Bluetooth BluetoothAutoSeekKeyboard -bool false
+sudo defaults write /Library/Preferences/com.apple.Bluetooth BluetoothAutoSeekPointingDevice -bool false
 
 # Forbid Bluetooth devices to wake the computer
 defaults write ~/Library/Preferences/ByHost/com.apple.Bluetooth.$HW_UUID RemoteWakeEnabled -bool false
 
 # Disables Bonjour Advertising
-#sudo defaults write /System/Library/LaunchDaemons/com.apple.mDNSResponder ProgramArguments -array-add "-NoMulticastAdvertisements"
+sudo defaults write /System/Library/LaunchDaemons/com.apple.mDNSResponder ProgramArguments -array-add "-NoMulticastAdvertisements"
 
 # Disables remote login
-#sudo systemsetup -f -setremotelogin off &> /dev/null
+sudo systemsetup -f -setremotelogin off &> /dev/null
 
 # Disables Wake on Network Access
-#sudo systemsetup -setwakeonnetworkaccess off &> /dev/null
+sudo systemsetup -setwakeonnetworkaccess off &> /dev/null
 
 # Disables Remote Management
-#sudo /System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart -deactivate -stop &> /dev/null
+sudo /System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart -deactivate -stop &> /dev/null
 
 ###############################################################################
 # Users & Groups                                                              #
 ###############################################################################
 
 # Display login window as: Name and password
-#sudo defaults write /Library/Preferences/com.apple.loginwindow "SHOWFULLNAME" -bool true
+sudo defaults write /Library/Preferences/com.apple.loginwindow "SHOWFULLNAME" -bool true
+
+# display warning:
+sudo defaults write /Library/Preferences/com.apple.loginwindow LoginwindowText -string "Please provide valid authentication credentials"
 
 # Disable automatic login
-#sudo defaults delete /Library/Preferences/com.apple.loginwindow autoLoginUser 2>/dev/null
+sudo defaults delete /Library/Preferences/com.apple.loginwindow autoLoginUser 2>/dev/null
 
 # Forbids guest access to this computer
-#sudo defaults write /Library/Preferences/com.apple.loginwindow GuestEnabled -bool false
+sudo defaults write /Library/Preferences/com.apple.loginwindow GuestEnabled -bool false
+sudo defaults write /Library/Preferences/com.apple.loginwindow UseVoiceOverLegacyMigrated -bool false
 
 # Disable guest access to shared folders
-#sudo defaults write /Library/Preferences/com.apple.AppleFileServer guestAccess -bool false
-#sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.server AllowGuestAccess -bool false
+sudo defaults write /Library/Preferences/com.apple.AppleFileServer guestAccess -bool false
+sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.server AllowGuestAccess -bool false
 
 # Disable password hints
 defaults write NSGlobalDomain RetriesUntilHint -int 0
 
 # Show sleep, restart, and shut down buttons in login window
-#sudo defaults write /Library/Preferences/com.apple.loginwindow PowerOffDisabled -bool true
+sudo defaults write /Library/Preferences/com.apple.loginwindow PowerOffDisabled -bool true
 
 # Disable input menu in login window
-#sudo defaults write /Library/Preferences/com.apple.loginwindow showInputMenu -bool false
+sudo defaults write /Library/Preferences/com.apple.loginwindow showInputMenu -bool false
 
 # Disable console login - may make it near imposible to recover encrypted drive
 #sudo defaults write /Library/Preferences/com.apple.loginwindow DisableConsoleAccess -bool true
 
 # Disable external accounts
-#sudo defaults write /Library/Preferences/com.apple.loginwindow EnableExternalAccounts -bool false
+sudo defaults write /Library/Preferences/com.apple.loginwindow EnableExternalAccounts -bool false
 
 # Hide non-local users on login window user list
-#sudo defaults write /Library/Preferences/com.apple.loginwindow SHOWOTHERUSERS_MANAGED -bool false
+sudo defaults write /Library/Preferences/com.apple.loginwindow SHOWOTHERUSERS_MANAGED -bool false
 
 # Hide mobile users on login window
-#sudo defaults write /Library/Preferences/com.apple.loginwindow HideMobileAccounts -bool true
+sudo defaults write /Library/Preferences/com.apple.loginwindow HideMobileAccounts -bool true
 
 # Hide network users on login window
-#sudo defaults write /Library/Preferences/com.apple.loginwindow IncludeNetworkUser -bool false
+sudo defaults write /Library/Preferences/com.apple.loginwindow IncludeNetworkUser -bool false
 
 # Disable fast user switching
-#sudo defaults write /Library/Preferences/.GlobalPreferences MultipleSessionEnabled -bool false
+sudo defaults write /Library/Preferences/.GlobalPreferences MultipleSessionEnabled -bool false
 
 
 ###############################################################################
@@ -227,7 +251,7 @@ defaults write NSGlobalDomain RetriesUntilHint -int 0
 
 # Disable Apple Push Notification Service daemon
 # https://apple.stackexchange.com/questions/92214/how-to-disable-apple-push-notification-service-apsd-on-os-x-10-8
-#sudo launchctl unload -w /System/Library/LaunchDaemons/com.apple.apsd.plist
+sudo launchctl unload -w /System/Library/LaunchDaemons/com.apple.apsd.plist
 
 # Disable CalendarAgent
 #launchctl unload -w /System/Library/LaunchAgents/com.apple.CalendarAgent.plist
@@ -236,7 +260,7 @@ defaults write NSGlobalDomain RetriesUntilHint -int 0
 #sudo launchctl unload -w /System/Library/LaunchDaemons/com.apple.netbiosd.plist
 
 # Disable Location Services (locationd)
-#sudo launchctl unload -w /System/Library/LaunchDaemons/com.apple.locationd.plist
+sudo launchctl unload -w /System/Library/LaunchDaemons/com.apple.locationd.plist
 
 # Disable Notification Center
 # https://apple.stackexchange.com/questions/106149/how-do-i-permanently-disable-notification-center-in-mavericks
@@ -252,10 +276,10 @@ defaults write NSGlobalDomain RetriesUntilHint -int 0
 
 # Disabling Maverick's Unicast ARP Cache Validation Script (thanks, MMV!)
 # workaround for RFC 2211 § 2.3 bug in arp logic
-#bash <(curl -Ls https://raw.githubusercontent.com/MacMiniVault/Mac-Scripts/master/unicastarp/unicastarp.sh)
+bash <(curl -Ls https://raw.githubusercontent.com/MacMiniVault/Mac-Scripts/master/unicastarp/unicastarp.sh)
 
 # Disable Bonjour Script (thanks MMV!)
-#bash <(curl -Ls https://raw.githubusercontent.com/MacMiniVault/Mac-Scripts/master/disablebonjour/disablebonjour.sh)
+bash <(curl -Ls https://raw.githubusercontent.com/MacMiniVault/Mac-Scripts/master/disablebonjour/disablebonjour.sh)
 
 ###############################################################################
 # SSD-specific tweaks                                                         #
@@ -265,7 +289,6 @@ defaults write NSGlobalDomain RetriesUntilHint -int 0
 #sudo pmset -a hibernatemode 0
 
 # Remove the sleep image file to save disk space
-#
 #sudo rm /private/var/vm/sleepimage
 # Create a zero-byte file instead…
 #sudo touch /private/var/vm/sleepimage
@@ -276,10 +299,10 @@ defaults write NSGlobalDomain RetriesUntilHint -int 0
 # Trackpad, mouse, keyboard, Bluetooth accessories, and input                 #
 ###############################################################################
 
-# Trackpad: disable/enable tap to click for this user and for the login screen
-defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad Clicking -bool false
-defaults -currentHost write NSGlobalDomain com.apple.mouse.tapBehavior -int 0
-defaults write NSGlobalDomain com.apple.mouse.tapBehavior -int 0
+# Trackpad: enable tap to click for this user and for the login screen
+#defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad Clicking -bool true
+defaults -currentHost write NSGlobalDomain com.apple.mouse.tapBehavior -int 1
+defaults write NSGlobalDomain com.apple.mouse.tapBehavior -int 1
 
 # Trackpad: map bottom right corner to right-click
 #defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadCornerSecondaryClick -int 2
@@ -287,11 +310,11 @@ defaults write NSGlobalDomain com.apple.mouse.tapBehavior -int 0
 #defaults -currentHost write NSGlobalDomain com.apple.trackpad.trackpadCornerClickBehavior -int 1
 defaults -currentHost write NSGlobalDomain com.apple.trackpad.enableSecondaryClick -bool true
 
-# Disable “natural” (Lion-style) scrolling
+# Disable "natural" (Lion-style) scrolling
 defaults write NSGlobalDomain com.apple.swipescrolldirection -bool false
 
 # Increase sound quality for Bluetooth headphones/headsets
-defaults write com.apple.BluetoothAudioAgent "Apple Bitpool Min (editable)" -int 40
+#defaults write com.apple.BluetoothAudioAgent "Apple Bitpool Min (editable)" -int 40
 
 # Enable full keyboard access for all controls
 # (e.g. enable Tab in modal dialogs)
@@ -320,7 +343,7 @@ defaults write NSGlobalDomain AppleMetricUnits -bool false
 #sudo defaults write /Library/Preferences/com.apple.loginwindow showInputMenu -bool true
 
 # Set the timezone; see `sudo systemsetup -listtimezones` for other values
-#sudo systemsetup -settimezone "America/Los_Angeles" > /dev/null
+sudo systemsetup -settimezone "America/Los_Angeles" > /dev/null
 
 # Stop iTunes from responding to the keyboard media keys
 #launchctl unload -w /System/Library/LaunchAgents/com.apple.rcd.plist 2> /dev/null
@@ -340,14 +363,14 @@ defaults write com.apple.screencapture location -string "${HOME}/Desktop"
 defaults write com.apple.screencapture type -string "png"
 
 # Disable shadow in screenshots
-defaults write com.apple.screencapture disable-shadow -bool true
+#defaults write com.apple.screencapture disable-shadow -bool true
 
 # Enable subpixel font rendering on non-Apple LCDs
 # Reference: https://github.com/kevinSuttle/macOS-Defaults/issues/17#issuecomment-266633501
 #defaults write NSGlobalDomain AppleFontSmoothing -int 1
 
 # Enable HiDPI display modes (requires restart)
-#sudo defaults write /Library/Preferences/com.apple.windowserver DisplayResolutionEnabled -bool true
+sudo defaults write /Library/Preferences/com.apple.windowserver DisplayResolutionEnabled -bool true
 
 ###############################################################################
 # Finder                                                                      #
@@ -387,7 +410,7 @@ defaults write com.apple.finder ShowPathbar -bool true
 defaults write com.apple.finder _FXShowPosixPathInTitle -bool true
 
 # Keep folders on top when sorting by name
-#defaults write com.apple.finder _FXSortFoldersFirst -bool true
+defaults write com.apple.finder _FXSortFoldersFirst -bool true
 
 # When performing a search, search the current folder by default
 defaults write com.apple.finder FXDefaultSearchScope -string "SCcf"
@@ -396,7 +419,7 @@ defaults write com.apple.finder FXDefaultSearchScope -string "SCcf"
 defaults write com.apple.finder FXEnableExtensionChangeWarning -bool false
 
 # Enable spring loading for directories
-#defaults write NSGlobalDomain com.apple.springing.enabled -bool true
+defaults write NSGlobalDomain com.apple.springing.enabled -bool true
 
 # Remove the spring loading delay for directories
 defaults write NSGlobalDomain com.apple.springing.delay -float 0
@@ -417,33 +440,33 @@ defaults write com.apple.finder OpenWindowForNewRemovableDisk -bool true
 
 # Show item info near icons on the desktop and in other icon views
 /usr/libexec/PlistBuddy -c "Set :DesktopViewSettings:IconViewSettings:showItemInfo true" ~/Library/Preferences/com.apple.finder.plist
-/usr/libexec/PlistBuddy -c "Set :FK_StandardViewSettings:IconViewSettings:showItemInfo true" ~/Library/Preferences/com.apple.finder.plist
-/usr/libexec/PlistBuddy -c "Set :StandardViewSettings:IconViewSettings:showItemInfo true" ~/Library/Preferences/com.apple.finder.plist
+/usr/libexec/PlistBuddy -c "Set :FK_StandardViewSettings:IconViewSettings:showItemInfo true" ~/Library/Preferences/com.apple.finder.plist 2>/dev/null || true
+/usr/libexec/PlistBuddy -c "Set :StandardViewSettings:IconViewSettings:showItemInfo true" ~/Library/Preferences/com.apple.finder.plist 2>/dev/null || true
 
 # Show item info to the right of the icons on the desktop
 /usr/libexec/PlistBuddy -c "Set DesktopViewSettings:IconViewSettings:labelOnBottom false" ~/Library/Preferences/com.apple.finder.plist
 
 # Enable snap-to-grid for icons on the desktop and in other icon views
 /usr/libexec/PlistBuddy -c "Set :DesktopViewSettings:IconViewSettings:arrangeBy kind" ~/Library/Preferences/com.apple.finder.plist
-/usr/libexec/PlistBuddy -c "Set :FK_StandardViewSettings:IconViewSettings:arrangeBy kind" ~/Library/Preferences/com.apple.finder.plist
-/usr/libexec/PlistBuddy -c "Set :StandardViewSettings:IconViewSettings:arrangeBy kind" ~/Library/Preferences/com.apple.finder.plist
+/usr/libexec/PlistBuddy -c "Set :FK_StandardViewSettings:IconViewSettings:arrangeBy kind" ~/Library/Preferences/com.apple.finder.plist 2>/dev/null || true
+/usr/libexec/PlistBuddy -c "Set :StandardViewSettings:IconViewSettings:arrangeBy kind" ~/Library/Preferences/com.apple.finder.plist 2>/dev/null || true
 
 # Increase grid spacing for icons on the desktop and in other icon views
 /usr/libexec/PlistBuddy -c "Set :DesktopViewSettings:IconViewSettings:gridSpacing 80" ~/Library/Preferences/com.apple.finder.plist
-/usr/libexec/PlistBuddy -c "Set :FK_StandardViewSettings:IconViewSettings:gridSpacing 54" ~/Library/Preferences/com.apple.finder.plist
-/usr/libexec/PlistBuddy -c "Set :StandardViewSettings:IconViewSettings:gridSpacing 100" ~/Library/Preferences/com.apple.finder.plist
+/usr/libexec/PlistBuddy -c "Set :FK_StandardViewSettings:IconViewSettings:gridSpacing 54" ~/Library/Preferences/com.apple.finder.plist 2>/dev/null || true
+/usr/libexec/PlistBuddy -c "Set :StandardViewSettings:IconViewSettings:gridSpacing 100" ~/Library/Preferences/com.apple.finder.plist 2>/dev/null || true
 
 # Increase the size of icons on the desktop and in other icon views
 /usr/libexec/PlistBuddy -c "Set :DesktopViewSettings:IconViewSettings:iconSize 128" ~/Library/Preferences/com.apple.finder.plist
-/usr/libexec/PlistBuddy -c "Set :FK_StandardViewSettings:IconViewSettings:iconSize 64" ~/Library/Preferences/com.apple.finder.plist
-/usr/libexec/PlistBuddy -c "Set :StandardViewSettings:IconViewSettings:iconSize 192" ~/Library/Preferences/com.apple.finder.plist
+/usr/libexec/PlistBuddy -c "Set :FK_StandardViewSettings:IconViewSettings:iconSize 64" ~/Library/Preferences/com.apple.finder.plist 2>/dev/null || true
+/usr/libexec/PlistBuddy -c "Set :StandardViewSettings:IconViewSettings:iconSize 192" ~/Library/Preferences/com.apple.finder.plist 2>/dev/null || true
 
 # Use list view in all Finder windows by default
 # Four-letter codes for the other view modes: `icnv`, `clmv`, `Flwv`
 defaults write com.apple.finder FXPreferredViewStyle -string "Nlsv"
 
 # Disable the warning before emptying the Trash
-#defaults write com.apple.finder WarnOnEmptyTrash -bool false
+defaults write com.apple.finder WarnOnEmptyTrash -bool false
 
 # Enable AirDrop over Ethernet and on unsupported Macs running Lion
 defaults write com.apple.NetworkBrowser BrowseAllInterfaces -bool true
@@ -452,7 +475,7 @@ defaults write com.apple.NetworkBrowser BrowseAllInterfaces -bool true
 chflags nohidden ~/Library
 
 # Show the /Volumes folder
-#sudo chflags nohidden /Volumes
+sudo chflags nohidden /Volumes
 
 # Remove Dropbox’s green checkmark icons in Finder
 #file=/Applications/Dropbox.app/Contents/Resources/emblem-dropbox-uptodate.icns
@@ -519,11 +542,11 @@ defaults write com.apple.dock mru-spaces -bool false
 # Remove the animation when hiding/showing the Dock
 # defaults write com.apple.dock autohide-time-modifier -float 0
 
-# Don't Automatically hide and show the Dock
-defaults write com.apple.dock autohide -bool false
+# Automatically hide and show the Dock
+defaults write com.apple.dock autohide -bool true
 
 # Make Dock icons of hidden applications translucent
-#defaults write com.apple.dock showhidden -bool true
+defaults write com.apple.dock showhidden -bool true
 
 # Disable the Launchpad gesture (pinch with thumb and three fingers)
 #defaults write com.apple.dock showLaunchpadGestureEnabled -int 0
@@ -578,13 +601,13 @@ defaults write com.apple.Safari com.apple.Safari.ContentPageGroupIdentifier.WebK
 defaults write com.apple.Safari ShowFullURLInSmartSearchField -bool true
 
 # Set Safari’s home page to `about:blank` for faster loading
-#defaults write com.apple.Safari HomePage -string "about:blank"
+defaults write com.apple.Safari HomePage -string "about:blank"
 
 # Prevent Safari from opening ‘safe’ files automatically after downloading
 defaults write com.apple.Safari AutoOpenSafeDownloads -bool false
 
 # Allow hitting the Backspace key to go to the previous page in history
-#defaults write com.apple.Safari com.apple.Safari.ContentPageGroupIdentifier.WebKit2BackspaceKeyNavigationEnabled -bool true
+defaults write com.apple.Safari com.apple.Safari.ContentPageGroupIdentifier.WebKit2BackspaceKeyNavigationEnabled -bool false
 
 # Hide Safari’s bookmarks bar by default
 defaults write com.apple.Safari ShowFavoritesBar -bool false
@@ -687,7 +710,7 @@ defaults write com.apple.mail SpellCheckingBehavior -string "InlineSpellChecking
 # Disable Spotlight indexing for any volume that gets mounted and has not yet
 # been indexed before.
 # Use `sudo mdutil -i off "/Volumes/foo"` to stop indexing any volume.
-#sudo defaults write /.Spotlight-V100/VolumeConfiguration Exclusions -array "/Volumes"
+sudo defaults write /.Spotlight-V100/VolumeConfiguration Exclusions -array "/Volumes"
 # Change indexing order and disable some search results
 # Yosemite-specific search results (remove them if you are using macOS 10.9 or older):
 # 	MENU_DEFINITION
@@ -733,9 +756,6 @@ defaults write com.apple.spotlight orderedItems -array \
 # Only use UTF-8 in Terminal.app
 defaults write com.apple.terminal StringEncodings -array 4 30
 
-# ensure bash is used (not the zsh junk)
-defaults write com.apple.terminal Shell -String "/bin/bash"
-
 
 
 # Enable “focus follows mouse” for Terminal.app and all X11 apps
@@ -764,7 +784,7 @@ defaults write com.apple.Terminal ShowLineMarks -int 0
 ###############################################################################
 
 # Prevent Time Machine from prompting to use new hard drives as backup volume
-#defaults write com.apple.TimeMachine DoNotOfferNewDisksForBackup -bool true
+defaults write com.apple.TimeMachine DoNotOfferNewDisksForBackup -bool true
 
 # Disable local Time Machine backups
 #hash tmutil &> /dev/null && sudo tmutil disablelocal
@@ -833,7 +853,7 @@ defaults write com.apple.SoftwareUpdate AutomaticCheckEnabled -bool true
 defaults write com.apple.SoftwareUpdate ScheduleFrequency -int 1
 
 # Download newly available updates in background
-#defaults write com.apple.SoftwareUpdate AutomaticDownload -int 1
+defaults write com.apple.SoftwareUpdate AutomaticDownload -int 1
 
 # Install System data files & security updates
 defaults write com.apple.SoftwareUpdate CriticalUpdateInstall -int 1
@@ -911,27 +931,79 @@ defaults -currentHost write com.apple.ImageCapture disableHotPlug -bool true
 #cp -r init/Preferences.sublime-settings ~/Library/Application\ Support/Sublime\ Text*/Packages/User/Preferences.sublime-settings 2> /dev/null || true
 
 ###############################################################################
+# Yamaha Studio Manager                                                       #
+###############################################################################
+
+defaults write /Library/Preferences/com.steinberg.sm2.plist "Load Yamaha Studio Manager" -bool true
+
+###############################################################################
+# Twitter.app                                                                 #
+###############################################################################
+
+# Disable smart quotes as it’s annoying for code tweets
+defaults write com.twitter.twitter-mac AutomaticQuoteSubstitutionEnabled -bool false
+
+# Show the app window when clicking the menu bar icon
+# defaults write com.twitter.twitter-mac MenuItemBehavior -int 1
+
+# Enable the hidden ‘Develop’ menu
+defaults write com.twitter.twitter-mac ShowDevelopMenu -bool true
+
+# DON'T Open links in the background
+defaults write com.twitter.twitter-mac openLinksInBackground -bool false
+
+# Allow closing the ‘new tweet’ window by pressing `Esc`
+defaults write com.twitter.twitter-mac ESCClosesComposeWindow -bool true
+
+# Show full names rather than Twitter handles
+defaults write com.twitter.twitter-mac ShowFullNames -bool true
+
+# DON'T Hide the app in the background if it’s not the front-most window
+defaults write com.twitter.twitter-mac HideInBackground -bool false
+
+###############################################################################
+# Tweetbot.app                                                                #
+###############################################################################
+
+# Bypass the annoyingly slow t.co URL shortener
+defaults write com.tapbots.TweetbotMac OpenURLsDirectly -bool true
+
+###############################################################################
 # Optimize for SecDevOps                                                      #
 ###############################################################################
 
-# lock down gamed "phone home" leak
-#sudo /usr/libexec/ApplicationFirewall/socketfilterfw -add /System/Library/PrivateFrameworks/GameCenterFoundation.framework/Versions/A/gamed
-#sudo /usr/libexec/ApplicationFirewall/socketfilterfw --blockapp /System/Library/PrivateFrameworks/GameCenterFoundation.framework/Versions/A/gamed
-#sudo defaults write /System/Library/LaunchAgents/com.apple.gamed EnableTransactions -bool false
-#sudo defaults write /System/Library/LaunchAgents/com.apple.gamed disabled -bool true
-#sudo launchctl unload -w /System/Library/LaunchAgents/com.apple.gamed*
+# lock down gamed "phone home" leaks
+sudo /usr/libexec/ApplicationFirewall/socketfilterfw -add /System/Library/PrivateFrameworks/GameCenterFoundation.framework/Versions/A/gamed
+sudo /usr/libexec/ApplicationFirewall/socketfilterfw --blockapp /System/Library/PrivateFrameworks/GameCenterFoundation.framework/Versions/A/gamed
+sudo defaults write /System/Library/LaunchAgents/com.apple.gamed EnableTransactions -bool false
+sudo defaults write /System/Library/LaunchAgents/com.apple.gamed disabled -bool true
+sudo launchctl unload -w /System/Library/LaunchAgents/com.apple.gamed*
 
 # lock down yellow pages "phone home" leak
-#sudo /usr/libexec/ApplicationFirewall/socketfilterfw -add /usr/sbin/ypbind
-#sudo /usr/libexec/ApplicationFirewall/socketfilterfw --blockapp /usr/sbin/ypbind
-#sudo defaults write /System/Library/LaunchAgents/com.apple.nis.ypbind disabled -bool true
-#sudo launchctl unload -w /System/Library/LaunchAgents/com.apple.nis.ypbind*
+sudo /usr/libexec/ApplicationFirewall/socketfilterfw -add /usr/sbin/ypbind
+sudo /usr/libexec/ApplicationFirewall/socketfilterfw --blockapp /usr/sbin/ypbind
+sudo defaults write /System/Library/LaunchAgents/com.apple.nis.ypbind disabled -bool true
+sudo launchctl unload -w /System/Library/LaunchAgents/com.apple.nis.ypbind*
 
+# block 32bit quicklook from network usage
+sudo /usr/libexec/ApplicationFirewall/socketfilterfw -add /System/Library/Frameworks/QuickLook.framework/Resources/quicklookd32.app/Contents/MacOS/quicklookd32
+sudo /usr/libexec/ApplicationFirewall/socketfilterfw --blockapp /System/Library/Frameworks/QuickLook.framework/Resources/quicklookd32.app/Contents/MacOS/quicklookd32
+sudo defaults write /System/Library/LaunchAgents/com.apple.quicklook.32bit.plist disabled -bool true
+sudo launchctl unload -w /System/Library/LaunchAgents/com.apple.quicklook.32bit* 2>/dev/null
+
+# block SMB guests:
+sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.server.plist AllowGuestAccess -int 0
 
 #com.apple.security.FDERecoveryAgent ? is this safe?
 
 # prevent mitm attack
-#sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.captive.control Active -bool false
+sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.captive.control Active -bool false
+# sudo rm -qf /Library/Preferences/SystemConfiguration/CaptiveNetworkSupport/Settings.plist
+sudo rm -qf /Library/Preferences/SystemConfiguration/com.apple.captive.probe.plist
+
+
+# clear boot options (can break auto install)
+#sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.Boot.plist "Kernel Flags" -string ""
 
 ###############################################################################
 # Kill affected applications                                                  #
@@ -953,14 +1025,12 @@ for app in "Activity Monitor" \
 	"Safari" \
 	"SizeUp" \
 	"Spectacle" \
-	"SystemUIServer" \
-	"Terminal" \
 	"Transmission" \
 	"Tweetbot" \
 	"Twitter" \
-	"iCal"; do
-	killall "${app}" &> /dev/null || echo "failed to kill ${app:-unknown}"
+	"iCal" \
+	"SystemUIServer" \
+	"Terminal"; do
+	killall "${app}" &> /dev/null
 done
 echo "Done. Note that some of these changes require a logout/restart to take effect."
-
-echo "" ;
