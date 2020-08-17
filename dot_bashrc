@@ -18,6 +18,7 @@ pathappend ${HOME}/homebrew/sbin
 pathappend ${HOME}/homebrew/bin
 pathappend ${HOME}/bin
 pathappend /Applications/Docker.app/Contents/Resources/bin/
+pathappend /usr/local/MacGPG2/bin/
 
 # If not running interactively, don't do anything
 [ -z "$PS1" ] && return
@@ -76,9 +77,9 @@ if [ -z ${DISPLAY:=""} ]; then
     get_xserver
     if [[ -z ${XSERVER}  || ${XSERVER} == $(hostname) ||
        ${XSERVER} == "unix" ]]; then
-          DISPLAY=":0.0"          # Display on local host.
+          DISPLAY="${HOSTNAME:-127.0.0.1}:0.0"          # Display on local host.
     else
-       DISPLAY=${XSERVER}:0.0     # Display on remote host.
+       DISPLAY=${XSERVER:-127.0.0.1}:0.0     # Display on remote host.
     fi
 fi
 
@@ -89,6 +90,46 @@ declare USE_COLOR_IN_ENVIORMENT="${USE_COLOR_IN_ENVIORMENT:-${CAN_USE_COLOR_IN_E
 export DISPLAY ;
 export USE_COLOR_IN_ENVIORMENT ;
 export TZ='America/Los_Angeles'
+
+#-------------------------------------------------------------
+# GPG Setup
+#-------------------------------------------------------------
+
+export GPG_TTY=$(tty)
+# ensure that the gpg agent is working with bash env
+if [[ ( -f "${HOME}/.gpg-agent-info" ) ]]; then
+	# load current GPG/SSH helper agents info
+        source "${HOME}/.gpg-agent-info" ;
+	# setup the GPG/SSH environment to use helper agents (i.e make sub-shells work too)
+        export GPG_AGENT_INFO ;
+        export SSH_AUTH_SOCK ;
+        export SSH_AGENT_PID ;
+	# setup the GPG PID to use the current agent (i.e make sub-shells work too)
+        export GPG_AGENT_PID=$(echo "${GPG_AGENT_INFO}" | cut -d : -f 2 ) ;
+else
+	# close any stale helper agents
+        pkill -9 gpg-agent || true ;
+        pkill -9 ssh-agent 2>/dev/null || true ;
+ 	# Launch new helper agent
+	if [[ $( \uname -s ) == "Darwin" ]] ; then
+		eval $(/usr/local/MacGPG2/bin/gpg-agent --enable-ssh-support --ssh-fingerprint-digest SHA256 --homedir=${HOME}/.gnupg/ --daemon -s )
+		unset SSH_AGENT_PID
+		if [ "${gnupg_SSH_AUTH_SOCK_by:-0}" -ne $$ ]; then
+			export SSH_AUTH_SOCK="$(gpgconf --list-dirs agent-ssh-socket)"
+		fi
+		GPG_AGENT_PID=$(echo "${GPG_AGENT_INFO}" | cut -d : -f 2 ) ;
+		export SSH_AGENT_PID=${GPG_AGENT_PID}
+		export GPG_AGENT_INFO
+	else
+		eval $(gpg-agent -s --enable-ssh-support --daemon --write-env-file )
+	# if your implementation is missing --write-env-file, and does not create the .gpg-agent-info file uncomment the following
+	#       echo "GPG_AGENT_INFO=${GPG_AGENT_INFO} ; export GPG_AGENT_INFO" > "${HOME}/.gpg-agent-info"
+	#       echo "SSH_AUTH_SOCK=${SSH_AUTH_SOCK} ; export SSH_AUTH_SOCK" >> "${HOME}/.gpg-agent-info"
+	#       echo "SSH_AGENT_PID=${SSH_AGENT_PID} ; export SSH_AGENT_PID" >> "${HOME}/.gpg-agent-info"
+	#       echo "GPG_AGENT_PID=$(echo "${GPG_AGENT_INFO}" | cut -d : -f 2 ) ; export GPG_AGENT_PID" >> "${HOME}/.gpg-agent-info"
+	fi
+fi
+
 
 #-------------------------------------------------------------
 # Some settings
@@ -407,16 +448,17 @@ export HISTIGNORE="&:bg:fg:ll:h" ;
 #esac
 
 # enable bash completion in interactive shells
-#if ! shopt -oq posix; then
-#  if [ -f /usr/share/bash-completion/bash_completion ]; then
-#    . /usr/share/bash-completion/bash_completion
-#  elif [ -f /etc/bash_completion ]; then
-#    . /etc/bash_completion
-#  fi
-#fi
+if ! shopt -oq posix; then
+  if [ -f /usr/share/bash-completion/bash_completion ]; then
+    source /usr/share/bash-completion/bash_completion
+  elif [ -f /etc/bash_completion ]; then
+    source /etc/bash_completion
+  fi
+fi
 
 # set up man page search
-declare -x MANPATH="${MANPATH:-/usr/share/man:/usr/local/share/man}:${HOME}/.lib/doc/man"
+declare -x MANPATH="${MANPATH:-/usr/share/man:/usr/local/share/man}:${HOME}/.lib/doc/man:/usr/local/MacGPG2/share/man"
+export MANPATH
 
 # if the command-not-found package is installed, use it
 if [ -x /usr/lib/command-not-found -o -x /usr/share/command-not-found/command-not-found ]; then

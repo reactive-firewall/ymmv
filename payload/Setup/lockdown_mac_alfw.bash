@@ -9,7 +9,7 @@ sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setstealthmode on
 sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setallowsigned on
 sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setallowsignedapp off
 #requires Mac tools installed
-# find /Applications -iname "*.app" -print0 2>/dev/null | xargs -0 -L1 -I{} auditALFW {}
-# find /Applications -iname "*.dylib" -print0 2>/dev/null | xargs -0 -L1 -I{} auditALFW {}
+find /Applications -iname "*.app" -print0 2>/dev/null | sudo xargs -0 -L1 -I{} auditALFW {}
+find /Applications -iname "*.dylib" -print0 2>/dev/null | sudo xargs -0 -L1 -I{} auditALFW {}
 sudo pkill -HUP socketfilterfw
 exit 0 ;
