@@ -2,7 +2,10 @@
 #########################
 # Homebrew Setup
 #########################
-ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+#ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+mkdir homebrew && curl -L https://github.com/Homebrew/brew/tarball/master | tar xz --strip 1 -C homebrew
+chflags 'hidden' homebrew || true ;
+source ~/.bashrc
 brew analytics off
 brew update
 brew upgrade
@@ -21,9 +24,9 @@ rm -rf "$(brew --cache)"
 ##########################
 # Network tools
 ##########################
-brew cask install "dnstracer"
-brew cask install "nmap"
-#brew cask install "openssl"
+brew install "dnstracer"
+brew install "nmap"
+brew cask install "openssl"
 
 #########################
 # Cloud Apps
@@ -52,7 +55,11 @@ brew cask install "nmap"
 #########################
 # Security Apps
 #########################
-brew cask install "gpg-suite-pinentry"
+brew install "libassuan"
+brew install "gnu-pkcs11-scd" || true
+brew install "libgpg-error"
+brew install "pkcs11-helper"
+brew install "gpg-suite-pinentry" || true
 #brew cask install ""
 
 #########################
@@ -98,19 +105,18 @@ brew cleanup
 ##########################
 # Install CLI Tools
 ##########################
+brew install libassuan gnu-pkcs11-scd libgpg-error pkcs11-helper
 brew install "bash"
 brew install "bash-completion"
-brew install "bat"
-brew install "ext4fuse"
-brew install "varenc/ffmpeg/ffmpeg" $(brew options "varenc/ffmpeg/ffmpeg" --compact)
-brew install "fuse-ntfs-3g"
-brew install "fzf"
+#brew install "ext4fuse"
+#brew install "ffmpeg"
+#brew install "fuse-ntfs-3g"
 brew install "nano"
 brew install "openssl"
 brew install "python"
 brew install "python3"
-brew install "wget"
-brew install "youtube-dl"
+#brew install "wget"
+#brew install "youtube-dl"
 
 ##########################
 # Rebuild All Packages

@@ -6,14 +6,14 @@
 ext_if = "{ en* }"
 rare_if = "{ p2p*, utun* }"
 int_if = "lo0"
-all_if = "{ vlan*, fw*, " $ext_if ", " $int_if "}"
+all_if = "{ vlan*, fw*, en*, p2p*, utun*, " $int_if "}"
 
 # dns servers
 google_dns_srv = "{ 8.8.4.4, 8.8.8.8, 2001:4860:4860::8888, 2001:4860:4860::8844 }"
 lvl3_dns_srv = "{ 4.2.2.0/29 }"
 cloudflare_dns_srv = "{ 1.1.1.1, 1.0.0.1, 2606:4700:4700::1111, 2606:4700:4700::1001 }"
 # add your dns here or use a localhost resolver
-dns_srv = "{ 2001:503:ba3e::2:30, 2001:500:200::b, 2001:500:2::c, 2001:500:2d::d, 2001:500:a8::e, 192.112.36.4, 2001:500:12::d0d, 128.63.2.53, 2001:500:1::53, 192.36.148.17, 192.58.128.30, 2001:7fe::53, 2001:503:c27::2:30, 193.0.14.129, 199.7.83.42, 202.12.27.33, 2001:7fd::1, 2001:500:3::42, 2001:dc3::35, " $cloudflare_dns_srv "," $google_dns_srv "," $lvl3_dns_srv ", 127.0.0.0/8, 10.0.0.0/8 }"
+dns_srv = "{ 2001:503:ba3e::2:30, 2001:500:200::b, 2001:500:2::c, 2001:500:2d::d, 2001:500:a8::e, 192.112.36.4, 2001:500:12::d0d, 128.63.2.53, 2001:500:1::53, 192.36.148.17, 192.58.128.30, 2001:7fe::53, 2001:503:c27::2:30, 193.0.14.129, 199.7.83.42, 202.12.27.33, 2001:7fd::1, 2001:500:3::42, 2001:dc3::35, 127.0.0.0/8, 10.0.0.0/8 }"
 
 # private nets
 private_network = "{ 10/8, 192.168/16, 172.16/12 }"
@@ -92,6 +92,8 @@ pass out proto udp from any port 123 to any port $dyn_pts
 block in proto tcp from any port 53 to any flags S/SFRA no state
 block drop in quick log proto udp from any port 53 to any port <1024
 pass out proto udp from any to $dns_srv port 53
+pass out proto udp from any to $cloudflare_dns_srv port 53
+pass out proto udp from any to $google_dns_srv port 53
 pass out log proto udp from any to any port 53
 pass out log on $ext_if proto udp from $private_network to $private_network port 5353
 
