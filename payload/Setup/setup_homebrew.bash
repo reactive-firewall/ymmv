@@ -2,10 +2,12 @@
 #########################
 # Homebrew Setup
 #########################
+umask 002
 #ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 mkdir homebrew && curl -L https://github.com/Homebrew/brew/tarball/master | tar xz --strip 1 -C homebrew
 chflags 'hidden' homebrew || true ;
 source ~/.bashrc
+umask 002
 brew analytics off
 brew update
 brew upgrade
@@ -51,6 +53,7 @@ brew cask install "openssl"
 #brew cask install "max"
 #brew cask install "musicbrainz-picard"
 #brew cask install "vlc"
+brew cask install "gimp"
 
 #########################
 # Security Apps

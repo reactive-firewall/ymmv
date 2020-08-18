@@ -1,0 +1,6 @@
+# OID FILE
+# FORMAT: 1.2.3.4        shortName       A longer Name
+
+1.2.840.113635.100.6.2.6	appleCodeSigning	Apple Code Signing
+
+1.2.840.113635.100.4.1.4	appleResourceSigning	Apple Resource Signing
