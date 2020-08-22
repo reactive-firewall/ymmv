@@ -1,3 +1,9 @@
+[http]
+	sslVerify = true
+	sslVersion = tlsv1.2
+	extraHeader = DNT: 1
+	cookieFile = ~/.git_http_cookies
+
 [user]
 	name = reactive-firewall
 	email = reactive-firewall@users.noreply.github.com
@@ -9,7 +15,7 @@
 	trustctime = false
 	logAllRefUpdates = true
 	warnAmbiguousRefs = true
-	editor = nano
+	editor = nano -L
 	safecrlf = true
 	compression = 9
 	loosecompression = 9
@@ -85,6 +91,11 @@
 	clean = strings -- %f
 	smudge = strings -- %f
 	process = strings filter-process
+	required = true
+
+[filter "archive"]
+	clean = tar -xf %f.bz2 --no-same-owner --posix %f
+	smudge = tar -cf %f.bz2 --no-same-owner --bzip2 --posix %f
 	required = true
 
 [diff "config"]
