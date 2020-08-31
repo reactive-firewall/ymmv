@@ -70,7 +70,7 @@ endif
 
 .SUFFIXES: .zip .php .css .html .bash .sh .py .pyc .txt .js
 
-PHONY: must_be_root install-tools-mac cleanup install-home
+PHONY: must_be_root install-tools-mac cleanup install-home uninstall
 
 build:
 	$(QUIET)$(ECHO) "No need to build. Try make -f Makefile install"
@@ -78,7 +78,7 @@ build:
 init:
 	$(QUIET)$(ECHO) "$@: Done."
 
-install: must_be_root install-etc install-tools install-home
+install: install-etc install-tools install-home
 	$(QUITE)$(WAIT)
 	$(QUIET)$(ECHO) "$@: Done."
 
@@ -92,7 +92,7 @@ install-pf: must_be_root /etc/ /etc/pf.conf /etc/pf.anchors/local.user
 	$(QUITE)/usr/libexec/ApplicationFirewall/socketfilterfw --setloggingmode on
 	$(QUITE)/usr/libexec/ApplicationFirewall/socketfilterfw --setstealthmode on
 	$(QUITE)/usr/libexec/ApplicationFirewall/socketfilterfw --setallowsigned on
-	$(QUITE)/usr/libexec/ApplicationFirewall/socketfilterfw --setallowsignedapp off
+	$(QUITE)/usr/libexec/ApplicationFirewall/socketfilterfw --setallowsignedapp off || true
 	$(QUITE)pkill -HUP socketfilterfw || true ;
 	$(QUITE)$(WAIT)
 	$(QUIET)$(ECHO) "$@: Restart Required."
@@ -118,6 +118,12 @@ install-home: ~/.bashrc ~/.profile ~/.bash_aliases ~/.bash_history
 	$(QUITE)$(WAIT)
 	$(QUIET)$(ECHO) "$@: installed."
 
+/etc/pf.anchors/%: ./payload/etc/pf.anchors/% must_be_root /etc/ /etc/pf.anchors/
+	$(QUITE)$(WAIT)
+	$(QUIET)$(INSTALL) $(INST_OWN) $(INST_FILE_OPTS) $< $@ 2>/dev/null || true
+	$(QUITE)$(WAIT)
+	$(QUIET)$(ECHO) "$@: installed."
+
 /usr/local/bin/%: ./payload/bin/% must_be_root /usr/local/bin/
 	$(QUITE)$(WAIT)
 	$(QUIET)$(INSTALL) $(INST_OWN) $(INST_OPTS) $< $@
@@ -136,21 +142,31 @@ install-home: ~/.bashrc ~/.profile ~/.bash_aliases ~/.bash_history
 # uninstalls
 
 uninstall-etc:
-	$(QUITE)$(QUIET)rm -vf /etc/gitconfig 2>/dev/null || true
+	$(QUITE)$(QUIET)$(RM) /etc/gitconfig 2>/dev/null || true
 	$(QUITE)$(WAIT)
 	$(QUIET)$(ECHO) "$@: Done."
+
+uninstall-home: uninstall-dot-bash_aliases
+	$(QUITE)$(WAIT)
+	$(QUIET)$(ECHO) "$@: Done."
+
 
 uninstall-tools: uninstall-tools-grepip uninstall-tools-grepCIDR uninstall-tools-grepdns
 	$(QUITE)$(WAIT)
 	$(QUIET)$(ECHO) "$@: Done."
 
 uninstall-tools-%: /usr/local/bin/% must_be_root /usr/local/bin/
-	$(QUITE)$(QUIET)rm -vf $< 2>/dev/null || true
+	$(QUITE)$(QUIET)$(RM) $< 2>/dev/null || true
+	$(QUITE)$(WAIT)
+	$(QUIET)$(ECHO) "$<: Removed. ( $@ )"
+
+uninstall-dot-%: ~/.% must_be_root
+	$(QUITE)$(QUIET)$(RM) $< 2>/dev/null || true
 	$(QUITE)$(WAIT)
 	$(QUIET)$(ECHO) "$<: Removed. ( $@ )"
 
 uninstall: uninstall-etc uninstall-tools
-	$(QUITE)$(QUIET)rm -vf /etc/gitconfig 2>/dev/null || true
+	$(QUITE)$(QUIET)$(RM) /etc/gitconfig 2>/dev/null || true
 	$(QUITE)$(WAIT)
 	$(QUIET)$(ECHO) "$@: Done."
 
@@ -168,14 +184,14 @@ test-style: cleanup
 	$(QUIET)$(ECHO) "$@: N/A."
 
 cleanup:
-	$(QUIET)rm -f tests/*~ 2>/dev/null || true
-	$(QUIET)rm -f *.DS_Store 2>/dev/null || true
-	$(QUIET)rm -f ./*/*.DS_Store 2>/dev/null || true
-	$(QUIET)rm -f ./**/*.DS_Store 2>/dev/null || true
-	$(QUIET)rm -f ./*/*~ 2>/dev/null || true
-	$(QUIET)rm -f ./*~ 2>/dev/null || true
-	$(QUIET)rm -f ./.*~ 2>/dev/null || true
-	$(QUIET)rm -Rf ./.tox/ 2>/dev/null || true
+	$(QUIET)$(RM) tests/*~ 2>/dev/null || true
+	$(QUIET)$(RM) *.DS_Store 2>/dev/null || true
+	$(QUIET)$(RM) ./*/*.DS_Store 2>/dev/null || true
+	$(QUIET)$(RM) ./**/*.DS_Store 2>/dev/null || true
+	$(QUIET)$(RM) ./*/*~ 2>/dev/null || true
+	$(QUIET)$(RM) ./*~ 2>/dev/null || true
+	$(QUIET)$(RM) ./.*~ 2>/dev/null || true
+	$(QUIET)$(RMDIR) ./.tox/ 2>/dev/null || true
 
 clean: cleanup
 	$(QUIET)$(ECHO) "$@: Done."

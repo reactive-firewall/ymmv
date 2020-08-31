@@ -60,57 +60,18 @@
 #    even if the above stated remedy fails of its essential purpose.
 ################################################################################
 
-THE_FILE="${1}"
-
-PLIST_HEADER_STUB='<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"><plist version="1.0"><array><string>'
-PLIST_FOOTER_STUB="</string></array></plist>"
-
-umask 137
-
-function tagfile() {
-local AUDIT_FILETAGNAME="${1:-Flagged}"
-local AUDIT_FILEPATH="${2}"
-if [[ ( -e ${AUDIT_FILEPATH} ) ]] ; then xattr -w com.apple.metadata:_kMDItemUserTags "${PLIST_HEADER_STUB}${AUDIT_FILETAGNAME}${PLIST_FOOTER_STUB}" "${AUDIT_FILEPATH}" 2>/dev/null || true ; wait ; fi ;
-}
-
-function cleanup() {
-	return
-}
-
-trap 'cleanup ; wait ; exit 1 ;' SIGKILL ;
-trap 'cleanup ; wait ; exit 1 ;' SIGQUIT ;
-trap 'cleanup ; wait ; exit 1 ;' SIGHUP ;
-trap 'cleanup ; wait ; exit 1 ;' SIGABRT ;
-trap 'cleanup ; wait ; exit 1 ;' SIGINT ;
-trap 'cleanup ; wait ; exit 1 ;' SIGTERM ;
-
-function getAppID() {
+if [[ ( $( codesign -vvvv -R="anchor apple" "${@:1:$#}" 2>&1 | grep -coF "failed" ) -gt 0 ) ]] ; then
+echo "<dict>"
+echo "	<key>BundleID</key>"
 if [[ ( $(head <(mdls -name kMDItemCFBundleIdentifier -raw "${@:1:$#}") 2>/dev/null | grep -Foc "(null)" 2>/dev/null ) -eq 0 ) ]] ; then
+echo -n "	<string>"
 head <(mdls -name kMDItemCFBundleIdentifier -raw "${@:1:$#}")
+echo "</string>"
 else
-tail -n 1 <(grep -A 1 -F "CFBundleIdentifier" "${@:1:$#}/Contents/Info.plist" 2>/dev/null ) | tr -s '><' '>' | cut -d \> -f 2 2>/dev/null ;
+tail -n 1 <(grep -A 1 -F "CFBundleIdentifier" "${@:1:$#}/Contents/Info.plist" 2>/dev/null )  2>/dev/null ;
 fi ;
-}
-
-TEMP_APP_ID_VAR=$(getAppID "${@:1:$#}")
-if [[ ( $( /usr/libexec/ApplicationFirewall/socketfilterfw --getappblocked "${@:1:$#}" | grep -coF "is not part of the firewall" ) -gt 0 ) ]] ; then
-
-# need to check codesigned
-if [[ ( $( codesign -vvvv --deep -R="anchor apple" "${@:1:$#}" 2>&1 | grep -coF "failed" ) -gt 0 ) ]] ; then
-echo "Adding new rule for ${TEMP_APP_ID_VAR:-${@:1:$#}} (block by default)" ;
-/usr/libexec/ApplicationFirewall/socketfilterfw --add "${@:1:$#}" || echo "The application is STILL not part of the firewall. (Would block if run as admin)" ; wait ;
-/usr/libexec/ApplicationFirewall/socketfilterfw --blockapp "${@:1:$#}" 2>/dev/null >/dev/null || true ;
-tagefile Quarantine "${@:1:$#}" 2>/dev/null || true ;
-elif [[ ( $( codesign -vvvv --deep -R="anchor apple" "${@:1:$#}" 2>&1 | grep -coF "explicit requirement satisfied" ) -gt 0 ) ]] ; then
-echo "${TEMP_APP_ID_VAR:-${@:1:$#}} is codesigned by apple." ;
-tagfile Trust "${@:1:$#}" || true ;
-/usr/libexec/ApplicationFirewall/socketfilterfw --unblockapp "${@:1:$#}" 2>/dev/null >/dev/null || true ;
-/usr/libexec/ApplicationFirewall/socketfilterfw --remove "${@:1:$#}" 2>/dev/null >/dev/null || true ;
-elif [[ ( $( codesign -vvvv --deep -R="anchor apple generic" "${@:1:$#}" 2>&1 | grep -coF "explicit requirement satisfied" ) -gt 0 ) ]] ; then
-echo "${TEMP_APP_ID_VAR:-${@:1:$#}} seems to be codesigned." ;
-tagfile Trust "${@:1:$#}" || true ;
+echo "	<key>Allowed</key>"
+echo "	<false/>"
+echo "</dict>"
 fi ;
-else
-echo "Skipping path ${TEMP_APP_ID_VAR:-${@:1:$#}}: " $( /usr/libexec/ApplicationFirewall/socketfilterfw --getappblocked "${@:1:$#}" ) ; wait ;
-fi
 exit 0 ;

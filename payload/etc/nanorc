@@ -1,0 +1,18 @@
+#set backupdir 
+set boldtext
+set casesensitive
+set fill -8
+set historylog
+set matchbrackets «(<[{»)>]}
+set morespace
+set mouse
+set multibuffer
+set nowrap
+set quickblank
+set regexp
+set smarthome
+set smooth
+set tabsize 4
+unset tabstospaces
+set tempfile
+include /etc/nano_syntax
