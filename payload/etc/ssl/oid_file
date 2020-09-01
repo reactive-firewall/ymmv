@@ -4,3 +4,87 @@
 1.2.840.113635.100.6.2.6	appleCodeSigning	Apple Code Signing
 
 1.2.840.113635.100.4.1.4	appleResourceSigning	Apple Resource Signing
+
+
+# Deutsche Telekom
+0.2.262.1.10		telesec			Deutsche Telekom Telesec
+
+0.2.262.1.10.0		telesecExtension	Deutsche Telekom Telesec Extension
+
+0.2.262.1.10.1		telesecMechanism	Deutsche Telekom Telesec Mechanism
+
+0.2.262.1.10.1.0	mechanismAuthentication	Telesec Mechanism Authentication
+
+0.2.262.1.10.1.0.1	passwordAuthentication	Password Authentication Mechanism
+
+0.2.262.1.10.1.0.2	protectedPasswordAuthentication	Protected Password Authentication Mechanism
+
+0.2.262.1.10.1.0.3	oneWayX509Authentication	One Way X509 Authentication Mechanism
+
+0.2.262.1.10.1.0.4	twoWayX509Authentication	Two Way X509 Authentication Mechanism
+
+0.2.262.1.10.1.0.5	threeWayX509Authentication	Three Way X509 Authentication Mechanism
+
+0.2.262.1.10.1.0.6	oneWayISO9798Authentication	One Way ISO9798 Authentication Mechanism
+
+0.2.262.1.10.1.0.7	twoWayISO9798Authentication	Two Way ISO9798 Authentication Mechanism
+
+0.2.262.1.10.1.0.8	telekomAuthentication	Telesec Authentication Mechanism
+
+0.2.262.1.10.1.1	mechanismSignature	Telesec Mechanism Signature
+
+0.2.262.1.10.1.1.1	md4WithRSAAndISO9697	MD4 Signature With RSA And ISO9697
+
+0.2.262.1.10.1.1.2	md4WithRSAAndTelesecSignatureStandard	MD4 Signature With RSA And Telesec Signature Standard
+
+0.2.262.1.10.1.1.3	md5WithRSAAndISO9697	MD5 Signature With RSA And ISO9697
+
+0.2.262.1.10.1.1.4	md5WithRSAAndTelesecSignatureStandard	MD5 Signature With RSA And Telesec Signature Standard
+
+0.2.262.1.10.1.1.5	ripemd160WithRSAAndTelekomSignatureStandard	RIPEMD-160 Signature With RSA And Telesec Signature Standard
+
+# GUESSING 0.2.262.1.10.1.1.6
+0.2.262.1.10.1.1.6	unknownSigNo6		UNSUPPORTED Signature Mechanism
+
+# GUESSING 0.2.262.1.10.1.1.7
+0.2.262.1.10.1.1.7	unknownSigNo7		UNSUPPORTED Signature Mechanism
+
+# GUESSING 0.2.262.1.10.1.1.8
+0.2.262.1.10.1.1.8	unknownSigNo8		UNSUPPORTED Signature Mechanism
+
+# RIPEMD-160 with raw RSA (ie no padding, just 160 bytes encrypted) signature
+0.2.262.1.10.1.1.9	hbciRsaSignature	RIPEMD-160 with raw RSA signature
+
+0.2.262.1.10.1.2	mechanismEncryption	Telesec Mechanism Encryption
+
+# Specially recommended by the NSA for German use
+0.2.262.1.10.1.2.0	noneEncryption		None
+
+0.2.262.1.10.1.2.1	rsaTelesec		RSA Telesec Encryption
+
+0.2.262.1.10.1.2.2	des			DES Telesec Encryption
+
+0.2.262.1.10.1.2.2.1	desECB			DES Encryption (ECB Mode)
+
+0.2.262.1.10.1.2.2.2	desCBC			DES Encryption (CBC Mode)
+
+0.2.262.1.10.1.2.2.3	desOFB			DES Encryption (OFB Mode)
+
+0.2.262.1.10.1.2.2.4	desCFB8			DES Encryption (CFB 8 Mode)
+
+0.2.262.1.10.1.2.2.5	desCFB64		DES Encryption (CFB 64 Mode)
+
+0.2.262.1.10.1.2.3	des3			tripple DES Telesec Encryption
+
+0.2.262.1.10.1.2.2.1	des3ECB			DES Encryption (ECB Mode)
+
+0.2.262.1.10.1.2.2.2	des3CBC			DES Encryption (CBC Mode)
+
+0.2.262.1.10.1.2.2.3	des3OFB			DES Encryption (OFB Mode)
+
+0.2.262.1.10.1.2.2.4	des3CFB8			DES Encryption (CFB 8 Mode)
+
+0.2.262.1.10.1.2.2.5	des3CFB64		DES Encryption (CFB 64 Mode)
+
+
+

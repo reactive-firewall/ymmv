@@ -299,7 +299,7 @@ fi
 
 NCPU=1
 if [[ ( `uname -s` == "Darwin" ) ]] ; then
-NCPU=4
+NCPU=$(sysctl -n hw.ncpu 2>/dev/null)
 else
 NCPU=$(grep -c 'processor' /proc/cpuinfo 2>/dev/null)    # Number of CPUs
 fi
