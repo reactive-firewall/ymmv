@@ -1,0 +1,82 @@
+#! /usr/bin/env bash
+################################################################################
+# Script name: Tar_It                                                          #
+# Purpose: Creates a new TAR by compressing it.                                #
+# By: reactive-firewall                                                        #
+# Date created: 10.07.2008                                                     #
+# Last modified: 15.09.2020                                                    #
+# Build version: 20200915                                                      #
+# Release version: 2.5                                                         #
+# Man page progress: incomplete                                                #
+# usage: Tar_It FILE                                                           #
+################################################################################
+
+################################################################################
+################################################################################
+######################### NO WARRANTY. NO COPYRIGHT. ###########################
+################################################################################
+################################################################################
+
+################################################################################
+############################ PROGRAM STARTS HERE ###############################
+################################################################################
+
+declare -r MINPARAMS=1
+declare LOG_FILE_PATH="${LOG_FILE_PATH:-${TAR_LOG_FILE_PATH:-/var/log/Tar_It.log}}"
+if [[ !( -w "${LOG_FILE_PATH}" ) ]] ; then 
+  LOG_FILE_PATH="/dev/null"
+fi
+#declare -r BIN_PATH_LOCAL=$(dirname $0)
+if [[ $# -lt "$MINPARAMS" ]] ; then
+  echo "usage: ~: ${0} FILE" | tee -a ${LOG_FILE_PATH}" 1>&2 || true
+  exit 1 ;
+fi
+declare -r TARGETFILE=$(basename "${1}")
+declare -r TARGETDIR=$(dirname "${1}")
+declare TARARCH="${TARGETFILE}.bz2"
+
+if [[ ( -e ${TARARCH} ) ]] ; then
+  TARARCH=$(date "+${TARGETFILE}_%C%y%M%d_%H%M%S.bz2") ;
+fi ;
+
+if [[ -d "${TARGETDIR}" ]] ; then
+  if [[ ( "${TARGETDIR}" -ef "${1}" ) ]] ; then
+    cd "${TARGETDIR}/.." ;
+  else
+    cd "${TARGETDIR}" ;
+  fi
+  if [[ -f "${TARGETFILE}" ]] ; then
+    ( echo "Compressing \"${TARGETFILE}\"" 2>&1 | tee -a ${LOG_FILE_PATH} 2>/dev/null >/dev/null ; ) || true
+    if [[ $(uname -s) == "Darwin" ]] ; then
+      tar -c -y -p -f "${TARARCH}" "${TARGETFILE}" >> "${LOG_FILE_PATH}" ; \wait ;
+    else
+      tar --create --totals --verbose --check-links --bzip2 -f "${TARARCH}" "${TARGETFILE}" 2>&1 >> "${LOG_FILE_PATH}" ; wait ;
+    fi
+  elif [[ -d "${TARGETFILE}" ]] ; then
+    ( echo "Compressing \"${TARGETFILE}\"" 2>&1 | tee -a ${LOG_FILE_PATH} 2>/dev/null >/dev/null ; ) || true
+    if [[ $(uname -s) == "Darwin" ]] ; then
+      tar -c -p -y --exclude .DS_Store -f "${TARARCH}" "${TARGETFILE}" 2>&1 >> "${LOG_FILE_PATH}" ; wait ;
+    else
+      tar --create --totals --verbose --check-links --bzip2 -f "${TARARCH}" "${TARGETFILE}" 2>&1 >> "${LOG_FILE_PATH}" ; wait ;
+    fi
+  fi
+  cd "${OLDPWD}" ;
+fi
+unset TARARCH 2>&1 || true ;
+unset TARGETDIR 2>&1 || true ;
+unset TARGETFILE 2>&1 || true ;
+exit 0;
+################################################################################
+
+################################################################################
+# Change Log:                                                                  #
+# created 10.07.2008 -- no other info available                                #
+# modified 02.04.2012 -- added directory handling                              #
+# modified 15.09.2020 -- cleaned up whitespace                                 #
+################################################################################
+
+################################################################################
+################################################################################
+######################### NO WARRANTY. NO COPYRIGHT. ###########################
+################################################################################
+################################################################################
