@@ -28,11 +28,11 @@ if [[ !( -w "${LOG_FILE_PATH}" ) ]] ; then
 fi
 #declare -r BIN_PATH_LOCAL=$(dirname $0)
 if [[ $# -lt "$MINPARAMS" ]] ; then
-  echo "usage: ~: ${0} FILE" | tee -a ${LOG_FILE_PATH}" 1>&2 || true
+  echo "usage: ~: ${0} FILE" | tee -a "${LOG_FILE_PATH}" 1>&2 || true
   exit 1 ;
 fi
-declare -r TARGETFILE=$(basename "${1}")
-declare -r TARGETDIR=$(dirname "${1}")
+declare TARGETFILE=$(basename "${1}")
+declare TARGETDIR=$(dirname "${1}")
 declare TARARCH="${TARGETFILE}.bz2"
 
 if [[ ( -e ${TARARCH} ) ]] ; then
@@ -46,14 +46,14 @@ if [[ -d "${TARGETDIR}" ]] ; then
     cd "${TARGETDIR}" ;
   fi
   if [[ -f "${TARGETFILE}" ]] ; then
-    ( echo "Compressing \"${TARGETFILE}\"" 2>&1 | tee -a ${LOG_FILE_PATH} 2>/dev/null >/dev/null ; ) || true
+    ( echo "Compressing \"${TARGETFILE}\"" 2>&1 | tee -a "${LOG_FILE_PATH}" 2>/dev/null >/dev/null ; ) || true
     if [[ $(uname -s) == "Darwin" ]] ; then
       tar -c -y -p -f "${TARARCH}" "${TARGETFILE}" >> "${LOG_FILE_PATH}" ; \wait ;
     else
       tar --create --totals --verbose --check-links --bzip2 -f "${TARARCH}" "${TARGETFILE}" 2>&1 >> "${LOG_FILE_PATH}" ; wait ;
     fi
   elif [[ -d "${TARGETFILE}" ]] ; then
-    ( echo "Compressing \"${TARGETFILE}\"" 2>&1 | tee -a ${LOG_FILE_PATH} 2>/dev/null >/dev/null ; ) || true
+    ( echo "Compressing \"${TARGETFILE}\"" 2>&1 | tee -a "${LOG_FILE_PATH}" 2>/dev/null >/dev/null ; ) || true
     if [[ $(uname -s) == "Darwin" ]] ; then
       tar -c -p -y --exclude .DS_Store -f "${TARARCH}" "${TARGETFILE}" 2>&1 >> "${LOG_FILE_PATH}" ; wait ;
     else

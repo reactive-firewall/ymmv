@@ -19,17 +19,28 @@ function pathappend() {
   done
 }
 
+function manappend() {
+  for ARG in "$@" ; do
+    if [[ -d "$ARG" ]] && [[ ":$MANPATH:" != *":$ARG:"* ]] ; then
+        MANPATH="${MANPATH:+"$MANPATH:"}$ARG" ;
+	export MANPATH ;
+    fi
+  done
+}
+
+
 pathappend ${HOME}/homebrew/sbin
 pathappend ${HOME}/homebrew/bin
 pathappend ${HOME}/bin
-pathappend /Applications/Docker.app/Contents/Resources/bin/
-pathappend /usr/local/MacGPG2/bin/
+pathappend /Applications/Docker.app/Contents/Resources/bin
+pathappend /usr/local/MacGPG2/bin
 
-# If not running interactively, don't do anything
-[ -z "$PS1" ] && return
-umask 027
 # enable this to force color use
 #export CAN_USE_COLOR_IN_ENVIORMENT=1 ;
+
+if [[ $( \uname -s ) == "Darwin" ]] ; then
+	export BASH_SILENCE_DEPRECATION_WARNING=1
+fi
 
 if [[ ( -r /etc/environment ) ]] ; then
 	if [[ ( ${FORCE_RELOAD_BASH_ENV:-2} -ge 1 ) ]] ; then
@@ -78,10 +89,10 @@ function get_xserver ()
     esac
 }
 
-if [ -z ${DISPLAY:=""} ]; then
+if [ -z ${DISPLAY:-""} ]; then
     get_xserver
     if [[ -z ${XSERVER}  || ${XSERVER} == $(hostname) ||
-       ${XSERVER} == "unix" ]]; then
+	${XSERVER} == "unix" ]]; then
           DISPLAY="${HOSTNAME:-127.0.0.1}:0.0"          # Display on local host.
     else
        DISPLAY=${XSERVER:-127.0.0.1}:0.0     # Display on remote host.
@@ -100,7 +111,6 @@ export TZ='America/Los_Angeles'
 # GPG Setup
 #-------------------------------------------------------------
 
-export GPG_TTY=$(tty)
 # ensure that the gpg agent is working with bash env
 if [[ ( -f "${HOME}/.gpg-agent-info" ) ]]; then
 	# load current GPG/SSH helper agents info
@@ -122,7 +132,7 @@ else
 		if [ "${gnupg_SSH_AUTH_SOCK_by:-0}" -ne $$ ]; then
 			export SSH_AUTH_SOCK="$(gpgconf --list-dirs agent-ssh-socket)"
 		fi
-		GPG_AGENT_PID=$(echo "${GPG_AGENT_INFO}" | cut -d : -f 2 ) ;
+        	export GPG_AGENT_PID=$(pgrep "gpg-agent" | tail -n 1) ;
 		export SSH_AGENT_PID=${GPG_AGENT_PID}
 		export GPG_AGENT_INFO
 	else
@@ -134,6 +144,7 @@ else
 	#       echo "GPG_AGENT_PID=$(echo "${GPG_AGENT_INFO}" | cut -d : -f 2 ) ; export GPG_AGENT_PID" >> "${HOME}/.gpg-agent-info"
 	fi
 fi
+export GPG_TTY=$(tty)
 
 
 #-------------------------------------------------------------
@@ -177,10 +188,16 @@ HISTCONTROL=ignoredups:ignorespace
 # for setting history length see HISTSIZE and HISTFILESIZE in bash(1)
 HISTSIZE=1000
 HISTFILESIZE=2000
+# not portable on all systems
+#HISTFILE=${HISTFILE:="~/.bash_history"}
 
 # check the window size after each command and, if necessary,
 # update the values of LINES and COLUMNS.
 shopt -s checkwinsize
+
+# If not running interactively, don't do anything
+[ -z "$PS1" ] && return
+umask 027
 
 #-------------------------------------------------------------
 # Greeting, motd etc...
@@ -372,9 +389,8 @@ function job_color()
 
 # Adds some text in the terminal frame (if applicable).
 
-
 # Now we construct the prompt.
-PROMPT_COMMAND="history -a"
+PROMPT_COMMAND="${PROMPT_COMMAND:+$PROMPT_COMMAND; }history -a"
 case ${TERM} in
   *term | *term-*color | rxvt | linux)
         PS1="\["$(load_color)"\][\A\[${NC}\] "
@@ -452,6 +468,10 @@ export HISTIGNORE="&:bg:fg:ll:h" ;
 #    ;;
 #esac
 
+if [[ ( -r ${HOME}/.bash_aliases ) ]]; then
+	source ${HOME}/.bash_aliases || true ;
+fi
+
 # enable bash completion in interactive shells
 if ! shopt -oq posix; then
   if [ -f /usr/share/bash-completion/bash_completion ]; then
@@ -459,10 +479,29 @@ if ! shopt -oq posix; then
   elif [ -f /etc/bash_completion ]; then
     source /etc/bash_completion
   fi
+
+  if [ -r ${HOMEBREW_PREFIX:-"${HOME}/homebrew"}/etc/bash_completion ]; then
+    source ${HOMEBREW_PREFIX:-"${HOME}/homebrew"}/etc/bash_completion
+  fi
+
+  if [ -r ${HOMEBREW_PREFIX:-"${HOME}/homebrew"}/completions/bash/brew ]; then
+    source ${HOMEBREW_PREFIX:-"${HOME}/homebrew"}/completions/bash/brew
+  fi
+
+  if [ -d ${HOMEBREW_PREFIX:-"${HOME}/homebrew"}/share/bash-completion/completions/ ]; then
+    source ${HOMEBREW_PREFIX:-"${HOME}/homebrew"}/share/bash-completion/completions/cmake
+    source ${HOMEBREW_PREFIX:-"${HOME}/homebrew"}/share/bash-completion/completions/cpack
+    source ${HOMEBREW_PREFIX:-"${HOME}/homebrew"}/share/bash-completion/completions/ctest
+  fi
 fi
 
 # set up man page search
-declare -x MANPATH="${MANPATH:-/usr/share/man:/usr/local/share/man}:${HOME}/.lib/doc/man:/usr/local/MacGPG2/share/man"
+manappend /usr/share/man
+manappend /usr/local/share/man
+manappend ${HOME}/.lib/doc/man
+manappend /usr/local/MacGPG2/share/man
+manappend ${HOMEBREW_PREFIX:-"${HOME}/homebrew"}/share/man
+manappend ${HOMEBREW_PREFIX:-"${HOME}/homebrew"}/manpages
 export MANPATH
 
 # if the command-not-found package is installed, use it

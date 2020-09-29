@@ -37,6 +37,10 @@ ifeq "$(RM)" ""
 	RM=rm -f
 endif
 
+ifeq "$(CP)" ""
+	CP=cp -n
+endif
+
 ifeq "$(RMDIR)" ""
 	RMDIR=$(RM)R
 endif
@@ -57,6 +61,9 @@ ifeq "$(INSTALL)" ""
 	endif
 	ifeq "$(INST_FILE_OPTS)" ""
 		INST_FILE_OPTS=-m 640
+	endif
+	ifeq "$(INST_CONFIG_OPTS)" ""
+		INST_CONFIG_OPTS=-m 644
 	endif
 	ifeq "$(INST_DIR_OPTS)" ""
 		INST_DIR_OPTS=-m 755 -d
@@ -85,7 +92,7 @@ install: install-etc install-tools install-home
 	$(QUITE)$(WAIT)
 	$(QUIET)$(ECHO) "$@: Done."
 
-install-etc: must_be_root /etc/ /etc/gitconfig /etc/environment
+install-etc: must_be_root /etc/ /etc/gitconfig /etc/environment /etc/bashrc
 	$(QUITE)$(WAIT)
 	$(QUITE)source /etc/environment ;
 	$(QUIET)$(ECHO) "$@: Done."
@@ -115,9 +122,16 @@ install-home: ~/.bashrc ~/.profile ~/.bash_profile ~/.bash_aliases ~/.bash_histo
 	$(QUITE)$(WAIT)
 	$(QUIET)$(ECHO) "$@: installed."
 
+/etc/bashrc: ./payload/etc/bashrc must_be_root /etc/
+	$(QUITE)$(WAIT)
+	$(QUITE)$(CP) $@ $@.previous 2>/dev/null || true
+	$(QUIET)$(INSTALL) $(INST_OWN) $(INST_TOOL_OPTS) $< $@ 2>/dev/null || true
+	$(QUITE)$(WAIT)
+	$(QUIET)$(ECHO) "$@: configured."
+
 /etc/%: ./payload/etc/% must_be_root /etc/
 	$(QUITE)$(WAIT)
-	$(QUIET)$(INSTALL) $(INST_OWN) $(INST_FILE_OPTS) $< $@ 2>/dev/null || true
+	$(QUIET)$(INSTALL) $(INST_OWN) $(INST_CONFIG_OPTS) $< $@ 2>/dev/null || true
 	$(QUITE)$(WAIT)
 	$(QUIET)$(ECHO) "$@: installed."
 
@@ -139,14 +153,14 @@ install-home: ~/.bashrc ~/.profile ~/.bash_profile ~/.bash_aliases ~/.bash_histo
 # uninstalls
 
 uninstall-etc:
-	$(QUITE)$(QUIET)$(RM) /etc/gitconfig 2>/dev/null || true
+	$(QUITE)$(RM) /etc/gitconfig 2>/dev/null || true
+	$(QUITE)$(RM) /etc/bashrc 2>/dev/null && $(QUITE)$(CP) /etc/bashrc.previous /etc/bashrc 2>/dev/null
 	$(QUITE)$(WAIT)
 	$(QUIET)$(ECHO) "$@: Done."
 
-uninstall-home: uninstall-dot-bash_aliases
+uninstall-home: uninstall-dot-bash_aliases uninstall-dot-bash_profile uninstall-dot-bash_history
 	$(QUITE)$(WAIT)
 	$(QUIET)$(ECHO) "$@: Done."
-
 
 uninstall-tools: uninstall-tools-grepip uninstall-tools-grepCIDR uninstall-tools-grepdns uninstall-tools-Tar_it
 	$(QUITE)$(WAIT)
@@ -157,13 +171,13 @@ uninstall-tools-%: /usr/local/bin/% must_be_root /usr/local/bin/
 	$(QUITE)$(WAIT)
 	$(QUIET)$(ECHO) "$<: Removed. ( $@ )"
 
-uninstall-dot-%: ~/.% must_be_root
-	$(QUITE)$(QUIET)$(RM) $< 2>/dev/null || true
+uninstall-dot-%: ~/.%
+	$(QUITE)$(RM) $< 2>/dev/null || true
 	$(QUITE)$(WAIT)
 	$(QUIET)$(ECHO) "$<: Removed. ( $@ )"
 
 uninstall: uninstall-etc uninstall-tools
-	$(QUITE)$(QUIET)$(RM) /etc/gitconfig 2>/dev/null || true
+	$(QUITE)$(RM) /etc/gitconfig 2>/dev/null || true
 	$(QUITE)$(WAIT)
 	$(QUIET)$(ECHO) "$@: Done."
 
