@@ -1,0 +1,11 @@
+# System-wide .bashrc file for interactive bash(1) shells.
+# from https://opensource.apple.com/source/bash/bash-118.40.2/bashrc
+if [ -z "$PS1" ]; then
+   return
+fi
+
+PS1='\h:\W \u\$ '
+# Make bash check its window size after a process completes
+shopt -s checkwinsize
+
+[ -r "/etc/bashrc_$TERM_PROGRAM" ] && . "/etc/bashrc_$TERM_PROGRAM"
