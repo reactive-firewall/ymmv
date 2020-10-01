@@ -8,6 +8,7 @@ alias check-card='gpg2 --use-agent --card-status ; wait ; ssh-add -L ; wait ; yu
 alias source-aliases='source ~/.bash_aliases'
 alias edit-aliases='nano -L ~/.bash_aliases'
 alias list-aliases='alias'
+alias preflist='defaults domains | tr -s , \\n | sort | tr -d \  '
 alias unsudo='sudo -k'
 alias docker-version='docker --version; docker-compose --version ; docker-machine --version; wait ;'
 # debian stubs
