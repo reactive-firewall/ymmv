@@ -9,6 +9,8 @@ mkdir homebrew && curl -L https://github.com/Homebrew/brew/tarball/master | tar 
 chflags 'hidden' homebrew || true ;
 source ~/.bashrc
 fi
+HOMEBREW_USER=$(stat -f %u ~/homebrew/)
+HOMEBREW_GROUP=$(stat -f %g ~/homebrew/)
 umask 002
 brew analytics off
 brew update
@@ -121,10 +123,10 @@ brew install "python"
 brew install "python3"
 #brew install "wget"
 #brew install "youtube-dl"
-#brew cask install docker
+brew cask install docker
 
 ##########################
 # Rebuild All Packages
 ##########################
 brew list | xargs brew reinstall --build-from-source
-brew list --cask | xargs brew cask reinstall --build-from-source
+sudo -E chown -hR ${HOMEBREW_USER}:${HOMEBREW_GROUP} ~/homebrew || true
