@@ -52,11 +52,11 @@ export HAS_CLOUD_ID="NO"
 # automatically configure iCloud values
 if [[ ( $(defaults export MobileMeAccounts - | grep -A5 -F AccountDSID | grep -coiF "iCloud" ) -eq 1 ) ]] ||\
 [[ ($HAS_CLOUD_ID == "YES") ]] ; then
-	CLOUD_ID=$(defaults find AccountDSID | grep -F AccountDSID  | head -n 1 | tr -d '; ' | cut -d\= -f 2)
-	CLOUD_UUID=$(defaults find AccountDSID | grep -F AccountUUID  | head -n 1 | tr -d '\"; ' | cut -d\= -f 2)
+	CLOUD_ID=$(defaults find AccountDSID | grep -F AccountDSID | grep -oE '^\s*[A]{1}[c]{2}[o]{1}.*' | head -n 1 | tr -d '; ' | cut -d\= -f 2)
+	CLOUD_UUID=$(defaults find AccountDSID | grep -F AccountUUID | grep -oE '^\s*[A]{1}[c]{2}[o]{1}.*' | head -n 1 | tr -d '\"; ' | cut -d\= -f 2)
 	CLOUD_UN=$(defaults find AccountDSID | grep -F DisplayName  | head -n 1 | tr -d ';' | cut -d\= -f 2 | grep -oE "\".+\"" | tr -d '"')
 	AUTHOR_NAME="${CLOUD_UN:-Anonymous}"
-	CLOUD_EMAIL=$(defaults find AccountDSID | grep -F AccountID  | head -n 1 | tr -d '\"; ' | cut -d\= -f 2)
+	CLOUD_EMAIL=$(defaults find AccountDSID | grep -F AccountID | grep -oE '^\s*[A]{1}[c]{2}[o]{1}.*' | head -n 1 | tr -d '\"; ' | cut -d\= -f 2)
 	HAS_CLOUD_ID="YES"
 fi
 
@@ -1087,7 +1087,7 @@ DELETE ${PPDOM}.TextEdit organization 2>/dev/null || true
 
 WRITE ${PPDOM}.TextEdit author -string "${AUTHOR_NAME}"
 
-WRITE ${PPDOM}.TextEdit copyright \\U00a9\ All\ Rights\ Reserved
+WRITE ${PPDOM}.TextEdit copyright -string \\U00a9\ All\ Rights\ Reserved
 
 WRITE ${PPDOM}.TextEdit NSNavLastRootDirectory -string "${DEFAULT_SAVE_LOCATION}"
 
