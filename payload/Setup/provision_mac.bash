@@ -5,10 +5,10 @@
 
 # Close any open System Preferences panes, to prevent them from overriding
 # settings we’re about to change
-osascript -e 'tell application "System Preferences" to quit'
+osascript -e 'tell application "System Preferences" to quit' || true
 
 # Ask for the administrator password upfront
-#sudo -v
+#sudo -v || exit 1 ;
 
 # Keep-alive: update existing `sudo` time stamp until `.macos` has finished
 #while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
@@ -17,11 +17,16 @@ osascript -e 'tell application "System Preferences" to quit'
 # General UI/UX                                                               #
 ###############################################################################
 
+# export HOST="ComputerName"
 # Set computer name (as done via System Preferences → Sharing)
-#sudo scutil --set ComputerName "$HOST"
-#sudo scutil --set HostName "$HOST"
-#sudo scutil --set LocalHostName "$HOST"
-#sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName -string "$HOST"
+if [[ ( -n $( scutil --get ComputerName | grep -F "$HOST" )) ]] ; then
+sudo scutil --set ComputerName "$HOST"
+sudo scutil --set HostName "$HOST"
+sudo scutil --set LocalHostName "$HOST"
+sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName -string "$HOST"
+sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.server ServerDescription -string "$HOST"
+sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.server AllowGuestAccess -bool NO
+fi
 
 # Set standby delay to 24 hours (default is 1 hour)
 # sudo pmset -a standbydelay 86400

@@ -52,11 +52,11 @@ export HAS_CLOUD_ID="NO"
 # automatically configure iCloud values
 if [[ ( $(defaults export MobileMeAccounts - | grep -A5 -F AccountDSID | grep -coiF "iCloud" ) -eq 1 ) ]] ||\
 [[ ($HAS_CLOUD_ID == "YES") ]] ; then
-	CLOUD_ID=$(defaults find AccountDSID | grep -F AccountDSID | grep -oE '^\s*[A]{1}[c]{2}[o]{1}.*' | head -n 1 | tr -d '; ' | cut -d\= -f 2)
-	CLOUD_UUID=$(defaults find AccountDSID | grep -F AccountUUID | grep -oE '^\s*[A]{1}[c]{2}[o]{1}.*' | head -n 1 | tr -d '\"; ' | cut -d\= -f 2)
-	CLOUD_UN=$(defaults find AccountDSID | grep -F DisplayName  | head -n 1 | tr -d ';' | cut -d\= -f 2 | grep -oE "\".+\"" | tr -d '"')
-	AUTHOR_NAME="${CLOUD_UN:-Anonymous}"
-	CLOUD_EMAIL=$(defaults find AccountDSID | grep -F AccountID | grep -oE '^\s*[A]{1}[c]{2}[o]{1}.*' | head -n 1 | tr -d '\"; ' | cut -d\= -f 2)
+	export CLOUD_ID=$(defaults find AccountDSID | grep -F AccountDSID | grep -oE '^\s*[A]{1}[c]{2}[o]{1}.*' | head -n 1 | tr -d '; ' | cut -d\= -f 2)
+	export CLOUD_UUID=$(defaults find AccountDSID | grep -F AccountUUID | grep -oE '^\s*[A]{1}[c]{2}[o]{1}.*' | head -n 1 | tr -d '\"; ' | cut -d\= -f 2)
+	export CLOUD_UN=$(defaults find AccountDSID | grep -F DisplayName  | head -n 1 | tr -d ';' | cut -d\= -f 2 | grep -oE "\".+\"" | tr -d '"')
+	export AUTHOR_NAME="${CLOUD_UN:-${LOGNAME}}"
+	export CLOUD_EMAIL=$(defaults find AccountDSID | grep -F AccountID | grep -oE '^\s*[A]{1}[c]{2}[o]{1}.*' | head -n 1 | tr -d '\"; ' | cut -d\= -f 2)
 	HAS_CLOUD_ID="YES"
 fi
 
@@ -66,8 +66,8 @@ fi
 #FACETIME_MESSAGES_ID=""
 #MESSAGES_ID=""
 
-HW_UUID=$(system_profiler -json SPHardwareDataType | grep -F "platform_UUID" | cut -d: -f 2 | tr -d '" ,')
-TOKEN_ID=$(defaults read com.apple.findmy.fmfcore.notbackedup publicAPSToken 2>/dev/null)
+export HW_UUID=$(system_profiler -json SPHardwareDataType | grep -F "platform_UUID" | cut -d: -f 2 | tr -d '" ,')
+export TOKEN_ID=$(defaults read com.apple.findmy.fmfcore.notbackedup publicAPSToken 2>/dev/null)
 
 #-----------------------------------------------------------#
 # All other UUIDs only appear once,                         #
@@ -78,26 +78,23 @@ TOKEN_ID=$(defaults read com.apple.findmy.fmfcore.notbackedup publicAPSToken 2>/
 # Functions                                                 #
 #-----------------------------------------------------------#
 
-DEFAULTS=$(command -v defaults)
-WRITE="${DEFAULTS} write"
-
 function WRITE() {
 	DEFAULTS=$(command -v defaults)
 	echo "Configuring ${1} ${2:-}" ;
-	echo "    Will use key \"${2:-'<empty>'}\" "
-	echo "    Will use type \"${3:-data}\" "
+	echo "    Will use key \"${2:-'<empty>'}\" " ;
+	echo "    Will use type \"${3:-data}\" " ;
 	if [[ ( $(echo "-"$(${DEFAULTS} read-type "${1}" "${2:-}" 2>/dev/null | cut -d\  -f 3 | sed -Ee 's/integer/int/g')) == "${3:-data}" ) ]] ; then
 		${DEFAULTS} write "${1}" "${2:-}" "${@:3:$#}" || echo "args: \"${2:-}\" \"${@:3:$#}\"" ;
 	else
 		echo "    Should use type \"-"$(${DEFAULTS} read-type "${1}" "${2:-}" 2>/dev/null | cut -d\  -f 3 | sed -Ee 's/integer/int/g' | sed -Ee 's/dictionary/dict/g')"\""
 		if [[ ("${USE_DEVELOPER_SETUP}" == "YES") ]] ; then
-			echo "    DEVELOPER OVERRIDE  (Admin Help You, You'll NEED it to recover!)"
+			echo "    DEVELOPER OVERRIDE  (Admin Help You, You'll NEED it to recover!)" ;
 			${DEFAULTS} write "${1}" "${2:-}" "${@:3:$#}" || echo "args: \"${2:-}\" \"${@:3:$#}\"" ;
 			echo "    "
 		else
-		echo "    SKIPPING"
-		fi
-	fi
+		echo "    SKIPPING" ;
+		fi ;
+	fi ;
 	return $? ;
 }
 
@@ -196,6 +193,12 @@ GPDOM="com.google"
 if [[ ( -r "${HOME}/.UserPreferences" ) ]] ; then
 ## WILL ADD USER PREFS HERE
 # load user variables (IGNORES SHELL COMMANDS)
+	export -f WRITE
+	export -f DELETE
+	export -f ENABLE
+	export -f DISABLE
+	export -f ENFORCE_GRAPHICS_MODE
+	export -f ENFORCE_DEV_MODE
 	source <(grep -oE "^(?:\s*)?[-0-9A-Z_]+[=]{1}.+$" "${HOME}/.UserPreferences" | sed -Ee 's/^[[:space:]]+//g' | grep -ovE "^WRITE" | grep -ovE "^DEFAULTS") || true
 	# loads ALLOWED user SETTINGS (IGNORES OTHER SHELL COMMANDS)
 	echo "dev mode is set to ${USE_DEVELOPER_SETUP}"
@@ -206,6 +209,7 @@ if [[ ( -r "${HOME}/.UserPreferences" ) ]] ; then
 	source <(grep -oE "^(?:\s*)?(?:ENFORCE_GRAPHICS_MODE){1}(?:\s*)+.+$" "${HOME}/.UserPreferences" | sed -Ee 's/^[[:space:]]+//g') || true
 	source <(grep -oE "^(?:\s*)?(?:ENFORCE_DEV_MODE){1}(?:\s*)+.+$" "${HOME}/.UserPreferences" | sed -Ee 's/^[[:space:]]+//g') || true
 fi
+
 
 #-----------------------------------------------------------#
 # To Be Deleted                                             #
@@ -568,10 +572,12 @@ DISABLE ~/Library/Preferences/ByHost/com.apple.SubmitDiagInfo.$HW_UUID AutoSubmi
 if [[ ($USE_BLUETOOTH == "NO") ]] ; then
 	# Forbid Bluetooth devices to wake the computer
 	DISABLE ~/Library/Preferences/ByHost/com.apple.Bluetooth.$HW_UUID RemoteWakeEnabled
+else
+	ENABLE ~/Library/Preferences/ByHost/com.apple.Bluetooth.$HW_UUID RemoteWakeEnabled
+	# Increase sound quality for Bluetooth headphones/headsets
+	WRITE com.apple.BluetoothAudioAgent "Apple Bitpool Min (editable)" -int 32
 fi
 
-# Increase sound quality for Bluetooth headphones/headsets
-WRITE com.apple.BluetoothAudioAgent "Apple Bitpool Min (editable)" -int 40
 
 #-----------------------------------------------------------#
 # security.cloudkeychainproxy3.keysToRegister               #
@@ -586,6 +592,7 @@ else
 	DISABLE ${PPDOM}.security.cloudkeychainproxy3.keysToRegister EnsurePeerRegistration
 fi
 
+# DANGER: these can lock you out of your accounts if altered
 #for ARRAY_KEY in FirstUnlockKeys PendingKeys SyncBackupPeerIDs SyncPeerIDs UnlockedKeys ; #do
 #	WRITE ${PPDOM}.security.cloudkeychainproxy3.keysToRegister ${ARRAY_KEY} -array
 #done ;
@@ -645,7 +652,9 @@ WRITE ${PPDOM}.Preferences UserDictionaryLocalPeerIdentityCurrent -string "${LOG
 # SystemPreferences                                         #
 #-----------------------------------------------------------#
 
-WRITE ${PPDOM}.systempreferences DSKDesktopPrefPane -dict UserFolderPaths '("${HOME}/Pictures/Wedding Desktops")'
+if [[ ( -d "${HOME}/Pictures/Wedding Desktops" ) ]] ; then
+	WRITE ${PPDOM}.systempreferences DSKDesktopPrefPane -dict UserFolderPaths '("${HOME}/Pictures/Wedding Desktops")'
+fi
 
 for STRING_KEY in NSNavLastRootDirectory com.apple.TimeMachine.OpenPanelDirectory ; do
 	WRITE ${PPDOM}.systempreferences ${STRING_KEY} -string "${DEFAULT_SAVE_LOCATION}"
@@ -829,10 +838,10 @@ WRITE ${PPDOM}.Safari SearchProviderIdentifier -string "com.duckduckgo"
 WRITE ${PPDOM}.Safari HistoryAgeInDaysLimit -int 8
 
 # Disable Safari’s thumbnail cache for History and Top Sites
-WRITE com.apple.Safari DebugSnapshotsUpdatePolicy -int 2
+# WRITE com.apple.Safari DebugSnapshotsUpdatePolicy -int 2
 
 #Some users want this setting
-#DELETE ${PPDOM}.Safari IncludeInternalDebugMenu 2>/dev/null || true
+DELETE ${PPDOM}.Safari IncludeInternalDebugMenu 2>/dev/null || true
 
 #-----------------------------------------------------------#
 # SafariBookmarksSyncAgent                                  #
@@ -911,14 +920,17 @@ DISABLE ${PPDOM}.FaceTime kPromptEnableReadRecipts
 # messages.nicknames                                        #
 #-----------------------------------------------------------#
 
-ENABLE ${PPDOM}.messages.nicknames NicknameAppleIDAndiCloudAccountMatchAndExist
+# buggy
+#ENABLE ${PPDOM}.messages.nicknames NicknameAppleIDAndiCloudAccountMatchAndExist
 
 #-----------------------------------------------------------#
 # sms                                                       #
 #-----------------------------------------------------------#
 
+#buggy
+
 #Receive phone texts on this one
-ENABLE ${PPDOM}.sms hasBeenApprovedForSMSRelay
+# ENABLE ${PPDOM}.sms hasBeenApprovedForSMSRelay
 
 #-----------------------------------------------------------#
 # iChat                                                     #
@@ -955,9 +967,7 @@ fi
 #recheck on OS updates
 if [[ $(echo "$OS_VERSION_MAJOR" == "10.15") ]] ; then
 WRITE ${PPDOM}.TelephonyUtilities CachedVCCaps -int 17592188010496
-
 WRITE ${PPDOM}.TelephonyUtilities thumperCallingCapabilitiesStates -array ;
-
 fi;
 
 #-----------------------------------------------------------#
@@ -1087,7 +1097,7 @@ DELETE ${PPDOM}.TextEdit organization 2>/dev/null || true
 
 WRITE ${PPDOM}.TextEdit author -string "${AUTHOR_NAME}"
 
-WRITE ${PPDOM}.TextEdit copyright -string \\U00a9\ All\ Rights\ Reserved
+WRITE ${PPDOM}.TextEdit copyright \\U00a9\ All\ Rights\ Reserved
 
 WRITE ${PPDOM}.TextEdit NSNavLastRootDirectory -string "${DEFAULT_SAVE_LOCATION}"
 
@@ -1121,8 +1131,9 @@ WRITE ${PPDOM}.iWork.Keynote KNRemoteCurrentDevicePlaybackUUID -string "${HW_UUI
 # GoogleDrive                                               #
 #-----------------------------------------------------------#
 
+if [[ ( -d "~/Public/Google Drive Drop Box" ) ]] ; then
 WRITE ${GPDOM}.GoogleDrive NSNavLastRootDirectory -string "~/Public/Google Drive Drop Box"
-
+fi
 WRITE ${GPDOM}.GoogleDrive "onboarding_complete" -string shown
 
 for SOME_DOMAIN in GoogleDrive Keystone.Agent ; do
@@ -1611,7 +1622,7 @@ for DISABLE_KEY in mru-spaces mcx-disabled ; do
 done ;
 
 # Set the icon size of Dock items to 36-92 pixels
-WRITE ${PPDOM}.dock tilesize -int 56
+WRITE ${PPDOM}.dock tilesize -int 64
 
 
 # Make Dock icons of hidden applications translucent
@@ -1852,6 +1863,16 @@ if [[ ( -d ~/bin ) ]] ; then
 	chflags hidden ~/bin
 fi
 
+export -n CLOUD_ID
+export -n CLOUD_UUID
+export -n CLOUD_UN
+export -n AUTHOR_NAME
+export -n CLOUD_EMAIL
+export -n TOKEN_ID
+export -n HW_UUID
+export -n MUSIC_LIBRARY_LOCATION
+export -n PPDOM
+export -n GPDOM
 
 # Reset Launchpad, but keep the desktop wallpaper intact
 if [[ ( -d "${HOME}/Library/Application Support/Dock" ) ]] ; then
@@ -1894,15 +1915,15 @@ for app in "Activity Monitor" \
 	"Zoom" \
 	"SizeUp" \
 	"Spectacle" \
-	"SystemUIServer" \
 	"TextEdit" \
 	"Transmission" \
 	"Tweetbot" \
 	"Twitter" \
+	"SystemUIServer" \
 	"Dock" \
 	"Finder" \
 	"Terminal"; do
-	killall "${app}" &> /dev/null || echo "failed to kill ${app:-unknown}"
+	(killall "${app}" >/dev/null || echo "failed to kill ${app:-unknown}") &
 done
 echo "Done. Note that some of these changes require a logout/restart to take effect."
 
