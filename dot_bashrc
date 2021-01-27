@@ -76,12 +76,12 @@ function get_xserver ()
             CAN_USE_COLOR_IN_ENVIORMENT=1 ;
             ;;
         xterm*)
-            XSERVER=$(who am i | awk '{print $NF}' | tr -d ')''(' )
+            XSERVER=$(who am i | awk '{print $NF}' | tr -d ')''(' ) ;
             # Ane-Pieter Wieringa suggests the following alternative:
             #  I_AM=$(who am i)
             #  SERVER=${I_AM#*(}
             #  SERVER=${SERVER%*)}
-            XSERVER=${XSERVER%%:*}
+            XSERVER=${XSERVER%%:*} ;
             ;;
         aterm | rxvt)
             # Find some code that works here. ...
@@ -105,7 +105,7 @@ declare USE_COLOR_IN_ENVIORMENT="${USE_COLOR_IN_ENVIORMENT:-${CAN_USE_COLOR_IN_E
 
 export DISPLAY ;
 export USE_COLOR_IN_ENVIORMENT ;
-export TZ='America/Los_Angeles'
+export TZ='America/Los_Angeles' ;
 
 #-------------------------------------------------------------
 # GPG Setup
@@ -123,7 +123,7 @@ if [[ ( -f "${HOME}/.gpg-agent-info" ) ]]; then
         export GPG_AGENT_PID=$(echo "${GPG_AGENT_INFO}" | cut -d : -f 2 ) ;
 else
 	# close any stale helper agents
-        pkill -9 gpg-agent || true ;
+        pkill -9 gpg-agent 2>/dev/null || true ;
         pkill -9 ssh-agent 2>/dev/null || true ;
  	# Launch new helper agent
 	if [[ $( \uname -s ) == "Darwin" ]] ; then
@@ -159,7 +159,7 @@ ulimit -S -c 0      # Don't want coredumps.
 set -o notify
 set -o noclobber
 set -o ignoreeof
-set -o history
+#shopt -u history
 
 
 # Enable options:
@@ -170,11 +170,12 @@ shopt -s checkwinsize
 shopt -s sourcepath
 shopt -s no_empty_cmd_completion
 shopt -s cmdhist
-shopt -s histappend histverify
+shopt -s histappend
+shopt -s histverify
 shopt -s extglob       # Necessary for programmable completion.
 shopt -s hostcomplete
 shopt -s interactive_comments
-#shopt -s huponexit
+shopt -s huponexit
 
 
 # Disable options:
@@ -528,3 +529,7 @@ fi
 # This file is NOT PART of YMMV's MIT LICENSE CONTENT 
 # as it is modified from versious projects and thus my contributions
 # are probably subject to GPL ... so assume this file is GPL covered.
+
+# this line must be last to avoid history of this file overwriting
+shopt -so history
+
