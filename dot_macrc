@@ -2,7 +2,7 @@
 
 # Close any open System Preferences panes, to prevent them from overriding
 # settings we’re about to change
-osascript -e 'tell application "System Preferences" to quit'
+osascript -e 'tell application "System Preferences" to quit' || true ;
 
 export LANG=${LANG:-"en_US"}
 source ~/.bashrc 2>/dev/null || true
@@ -31,7 +31,7 @@ CURRENT_DATE_TIME=$(date -j "+%Y-%m-%d %H:%M:00 +0800")
 CURRENT_SECONDS=$(date -j "+%s")
 
 
-MAX_DOWNLOAD_CONNECTIONS=3
+MAX_DOWNLOAD_CONNECTIONS=5
 OS_VERSION=$(sw_vers -productVersion)
 OS_VERSION_MAJOR=$(echo $OS_VERSION | cut -d. -f 1-2 )
 
@@ -272,7 +272,7 @@ WRITE ${PPDOM}.SoftwareUpdate ScheduleFrequency -int 1
 WRITE ${PPDOM}.SoftwareUpdate CriticalUpdateInstall -int 1
 
 # Download newly available updates in background
-defaults write com.apple.SoftwareUpdate AutomaticDownload -int 1
+WRITE com.apple.SoftwareUpdate AutomaticDownload -int 1
 
 # Disable Automatically download apps purchased on other Macs
 WRITE ${PPDOM}.SoftwareUpdate ConfigDataInstall -int 0
@@ -283,7 +283,7 @@ ENABLE ${PPDOM}.commerce AutoUpdate
 # Allow the App Store to reboot machine on macOS updates
 ENFORCE_DEV_MODE ${PPDOM}.commerce AutoUpdateRestartRequired NO
 
-softwareupdate --list 2>/dev/null || true
+(softwareupdate --list 2>/dev/null || true ) &
 
 #-----------------------------------------------------------#
 # NSGlobalDomain + Apple Global Domain                      #
@@ -368,7 +368,7 @@ for SOME_DOMAIN in NSGlobalDomain "Apple Global Domain" ; do
 	# Allow the over-the-top focus ring animation when using fancy graphics
 	# Allow smooth scrolling
 	# Enable spring loading for directories
-for DEV_KEY in com.apple.springing.enabled NSUseAnimatedFocusRing NSScrollAnimationEnabled ; do
+	for DEV_KEY in com.apple.springing.enabled NSUseAnimatedFocusRing NSScrollAnimationEnabled ; do
 		ENFORCE_GRAPHICS_MODE "${SOME_DOMAIN}" ${DEV_KEY} YES
 	done ;
 	
@@ -478,20 +478,20 @@ WRITE ${PPDOM}.finder "NSToolbar Configuration Browser" -dict \
 	"TB Size Mode" -int 1
 
 
-FINDER_PLIST_PATH="~/Library/Preferences/com.apple.finder.plist"
+FINDER_PLIST_PATH="${HOME:-"/Users/Shared"}/Library/Preferences/com.apple.finder.plist"
 
 for VIEW_DOMAIN in DesktopViewSettings FK_StandardViewSettings StandardViewSettings ; do
 
 	for VIEW_MODE in "ExtendedListViewSettingsV2:sortColumn" "GalleryViewSettings:arrangeBy" "IconViewSettings:arrangeBy" "ListViewSettings:sortColumn" ; do
 		# Enable snap-to-grid for icons on the desktop and in other icon views
-		PlistBuddy -c "Set :$VIEW_DOMAIN:$VIEW_MODE kind" ${FINDER_PLIST_PATH}
+		PlistBuddy -c "Set :$VIEW_DOMAIN:$VIEW_MODE kind" "${FINDER_PLIST_PATH}" 2>/dev/null || true ;
 	done ;
 
 	for VTEXT_SIZE in "ExtendedListViewSettingsV2:textSize" "GalleryViewSettings:textSize" "IconViewSettings:textSize" "ListViewSettings:textSize" ; do
-		PlistBuddy -c "Set :$VIEW_DOMAIN:$VTEXT_SIZE 14" ${FINDER_PLIST_PATH}
+		PlistBuddy -c "Set :$VIEW_DOMAIN:$VTEXT_SIZE 14" "${FINDER_PLIST_PATH}" 2>/dev/null || true ;
 	done ;
 
-	PlistBuddy -c "Set :$VIEW_DOMAIN:$IconViewSettings:showItemInfo true" ${FINDER_PLIST_PATH}
+	PlistBuddy -c "Set :$VIEW_DOMAIN:$IconViewSettings:showItemInfo true" "${FINDER_PLIST_PATH}" 2>/dev/null || true ;
 
 done ;
 
@@ -507,7 +507,9 @@ WRITE ${PPDOM}.finder NewWindowTargetPath -string "file://${HOME}/"
 
 if [[ ("${USE_DEVELOPER_SETUP}" == "NO") ]] ; then
 	# Disable the crash reporter
-	defaults write ${PPDOM}.CrashReporter DialogType -string "none"
+	WRITE ${PPDOM}.CrashReporter DialogType -string "none"
+else
+	WRITE ${PPDOM}.CrashReporter DialogType -string "full"
 fi
 
 #-----------------------------------------------------------#
@@ -982,8 +984,8 @@ WRITE org.whispersystems.signal-desktop NSNavLastRootDirectory -string "${DEFAUL
 #-----------------------------------------------------------#
 
 # configure send and reply animations in Mail.app
-ENFORCE_GRAPHICS_MODE ${PPDOM}.mail DisableReplyAnimations YES
-ENFORCE_GRAPHICS_MODE ${PPDOM}.mail DisableSendAnimations YES
+ENFORCE_GRAPHICS_MODE ${PPDOM}.mail DisableReplyAnimations NO
+ENFORCE_GRAPHICS_MODE ${PPDOM}.mail DisableSendAnimations NO
 
 # Copy email addresses as `foo@example.com` instead of `Foo Bar <foo@example.com>` in Mail.app
 DISABLE ${PPDOM}.mail AddressesIncludeNameOnPasteboard
@@ -993,7 +995,7 @@ WRITE ${PPDOM}.mail DraftsViewerAttributes -dict-add "DisplayInThreadedMode" -st
 WRITE ${PPDOM}.mail DraftsViewerAttributes -dict-add "SortedDescending" -string "yes"
 WRITE ${PPDOM}.mail DraftsViewerAttributes -dict-add "SortOrder" -string "received-date"
 
-# Disable inline attachments (just show the icons)
+# Disable inline attachments (just show the icons for security)
 ENABLE ${PPDOM}.mail DisableInlineAttachmentViewing
 
 # Enable automatic spell checking (other options: "NoSpellCheckingEnabled")
@@ -1086,7 +1088,7 @@ for SZ_KEY in NSNavPanelExpandedSizeForOpenMode NSNavPanelExpandedSizeForSaveMod
 done ;
 
 for INT_KEY in NSFontSize PlainTextEncodingForWrite ; do
-	WRITE ${PPDOM}.TextEdit ${INT_KEY} -int 10
+	WRITE ${PPDOM}.TextEdit ${INT_KEY} -int 4
 done ;
 
 #WRITE ${PPDOM}.TextEdit PlainTextEncoding -int 4
@@ -1216,7 +1218,7 @@ WRITE ${PPDOM}.itunes "license-agreements" -dict EA0676 1 EA0708 1 EA0733 1 EA07
 
 WRITE ${PPDOM}.itunes recentSearchHints -array
 
-WRITE ${PPDOM}.itunes recentSearches -array "DJ \\U00c5m\\U00e5k"
+WRITE ${PPDOM}.itunes recentSearches -array "DJ \\U00c5m\\U00e5k" ;
 
 #-----------------------------------------------------------#
 # TV                                                        #
@@ -1301,7 +1303,7 @@ WRITE ${PPDOM}.photos.shareddefaults iCloudPhotoLibraryHasBeenEnabledAccountIden
 
 
 WRITE ${PPDOM}.photos.shareddefaults lastHighlightTitlesUpdateDate -date "${CURRENT_DATE_TIME}"
-WRITE ${PPDOM}.photos.shareddefaults CPLDefaultDownload -string Defaul
+WRITE ${PPDOM}.photos.shareddefaults CPLDefaultDownload -string Default
 
 #-----------------------------------------------------------#
 # AppleMediaServices                                        #
@@ -1319,7 +1321,7 @@ done ;
 ENFORCE_GRAPHICS_MODE ${PPDOM}.screencapture "disable-shadow" NO
 
 if [[ ("${USE_FANCY_GRAPHICS}" == "YES") ]] ; then
-	WRITE ${PPDOM}.screencapture type -string pdf
+	WRITE ${PPDOM}.screencapture type -string heic
 else
 	# Save screenshots in HEIC format (other options: PNG, BMP, GIF, JPG, PDF, TIFF, HEIC)
 	WRITE ${PPDOM}.screencapture type -string heic
@@ -1836,7 +1838,7 @@ bash <(defaults find "NSWindow Frame " | sed -Ee 's/Found [0-9]+ keys in domain 
 # Set a custom wallpaper image. `DefaultDesktop.jpg` is already a symlink, and
 # all wallpapers are in `/Library/Desktop Pictures/`.
 if [[ ("${USE_DEVELOPER_SETUP}" == "YES") ]] ; then
-	rm -rf ~/Library/Application Support/Dock/desktoppicture.db
+	rm -rf ~/Library/"Application Support"/Dock/desktoppicture.db
 fi
 
 # Security Settings
@@ -1875,8 +1877,8 @@ export -n PPDOM
 export -n GPDOM
 
 # Reset Launchpad, but keep the desktop wallpaper intact
-if [[ ( -d "${HOME}/Library/Application Support/Dock" ) ]] ; then
-	find "${HOME}/Library/Application Support/Dock" -name "*-*.db" -maxdepth 1 -delete 2>/dev/null || true
+if [[ ( -d "~/Library/Application Support/Dock" ) ]] ; then
+	find "~/Library/Application Support/Dock" -name "*-*.db" -maxdepth 1 -delete 2>/dev/null || true
 fi
 
 if [[ ("${USE_DEVELOPER_SETUP}" == "YES") ]] ; then
@@ -1919,7 +1921,9 @@ for app in "Activity Monitor" \
 	"Transmission" \
 	"Tweetbot" \
 	"Twitter" \
+	"UIKitSystem" \
 	"SystemUIServer" \
+	"QuickLookUIServ" \
 	"Dock" \
 	"Finder" \
 	"Terminal"; do
