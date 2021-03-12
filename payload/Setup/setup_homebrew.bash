@@ -5,8 +5,10 @@
 umask 002
 #ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 if [[ !( -e ~/homebrew ) ]] ; then
+cd ~/
 mkdir homebrew && curl -L https://github.com/Homebrew/brew/tarball/master | tar xz --strip 1 -C homebrew
-chflags 'hidden' homebrew || true ;
+chflags 'hidden' ~/homebrew || true ;
+cd ${OLDPWD}
 source ~/.bashrc
 fi
 HOMEBREW_USER=$(stat -f %u ~/homebrew/)
@@ -129,4 +131,5 @@ brew cask install docker
 # Rebuild All Packages
 ##########################
 brew list | xargs brew reinstall --build-from-source
-sudo -E chown -hR ${HOMEBREW_USER}:${HOMEBREW_GROUP} ~/homebrew || true
+chown -hR ${HOMEBREW_USER}:${HOMEBREW_GROUP} ~/homebrew 2>/dev/null || sudo -E chown -hR ${HOMEBREW_USER}:${HOMEBREW_GROUP} ~/homebrew || true
+exit 0
