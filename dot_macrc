@@ -16,19 +16,19 @@ hash -p /usr/libexec/PlistBuddy PlistBuddy
 export DEFAULT_SAVE_LOCATION="~/Documents"
 
 if [[ ( -e "/Volumes/Music Drive/Music/" ) ]] ; then
-	MUSIC_LIBRARY_LOCATION="/Volumes/Music Drive/Music/Media/"
+	export MUSIC_LIBRARY_LOCATION="/Volumes/Music Drive/Music/Media/"
 else
 	if [[ ( -d "/Users/Shared/Music/" ) ]] ; then
-		MUSIC_LIBRARY_LOCATION="/Users/Shared/Music/"
+		export MUSIC_LIBRARY_LOCATION="/Users/Shared/Music/"
 	else
-		MUSIC_LIBRARY_LOCATION="~/Music/Music/"
+		export MUSIC_LIBRARY_LOCATION="~/Music/Music/"
 	fi
 fi
 
-ZERO_UUID="00000000-0000-0000-0000-000000000000"
+export ZERO_UUID="00000000-0000-0000-0000-000000000000"
 
-CURRENT_DATE_TIME=$(date -j "+%Y-%m-%d %H:%M:00 +0800")
-CURRENT_SECONDS=$(date -j "+%s")
+export CURRENT_DATE_TIME=$(date -j "+%Y-%m-%d %H:%M:00 +0800")
+export CURRENT_SECONDS=$(date -j "+%s")
 
 
 MAX_DOWNLOAD_CONNECTIONS=5
@@ -37,17 +37,17 @@ OS_VERSION_MAJOR=$(echo $OS_VERSION | cut -d. -f 1-2 )
 
 
 # OPTION FLAGS
+# Uncomment an option to override user settings and defaults
 
-export USE_DEVELOPER_SETUP="YES"
+# Developer mode
+#export USE_DEVELOPER_SETUP="YES"
 
 # Graphics mode
 # (USE "NO" if you’re on an older Mac that messes up the animation)
-export USE_FANCY_GRAPHICS="NO"
-export USE_BLUETOOTH="YES"
+#export USE_FANCY_GRAPHICS="NO"
+#export USE_BLUETOOTH="YES"
 
-# DO NOT CHANGE THIS,
-# (sign in in system prefs to appleID instead.)
-export HAS_CLOUD_ID="NO"
+# DO NOT CHANGE THIS
 
 # automatically configure iCloud values
 if [[ ( $(defaults export MobileMeAccounts - | grep -A5 -F AccountDSID | grep -coiF "iCloud" ) -eq 1 ) ]] ||\
@@ -57,7 +57,10 @@ if [[ ( $(defaults export MobileMeAccounts - | grep -A5 -F AccountDSID | grep -c
 	export CLOUD_UN=$(defaults find AccountDSID | grep -F DisplayName  | head -n 1 | tr -d ';' | cut -d\= -f 2 | grep -oE "\".+\"" | tr -d '"')
 	export AUTHOR_NAME="${CLOUD_UN:-${LOGNAME}}"
 	export CLOUD_EMAIL=$(defaults find AccountDSID | grep -F AccountID | grep -oE '^\s*[A]{1}[c]{2}[o]{1}.*' | head -n 1 | tr -d '\"; ' | cut -d\= -f 2)
-	HAS_CLOUD_ID="YES"
+	export HAS_CLOUD_ID="YES"
+else
+	# (sign in in system prefs to appleID instead.)
+	export HAS_CLOUD_ID="NO"
 fi
 
 
@@ -83,7 +86,7 @@ function WRITE() {
 	echo "Configuring ${1} ${2:-}" ;
 	echo "    Will use key \"${2:-'<empty>'}\" " ;
 	echo "    Will use type \"${3:-data}\" " ;
-	if [[ ( $(echo "-"$(${DEFAULTS} read-type "${1}" "${2:-}" 2>/dev/null | cut -d\  -f 3 | sed -Ee 's/integer/int/g')) == "${3:-data}" ) ]] ; then
+	if [[ ( $(echo "-"$(${DEFAULTS} read-type "${1}" "${2:-}" 2>/dev/null | cut -d\  -f 3 | sed -Ee 's/integer/int/g' | sed -Ee 's/-add//g')) == "${3:-data}" ) ]] ; then
 		${DEFAULTS} write "${1}" "${2:-}" "${@:3:$#}" || echo "args: \"${2:-}\" \"${@:3:$#}\"" ;
 	else
 		echo "    Should use type \"-"$(${DEFAULTS} read-type "${1}" "${2:-}" 2>/dev/null | cut -d\  -f 3 | sed -Ee 's/integer/int/g' | sed -Ee 's/dictionary/dict/g')"\""
@@ -92,7 +95,7 @@ function WRITE() {
 			${DEFAULTS} write "${1}" "${2:-}" "${@:3:$#}" || echo "args: \"${2:-}\" \"${@:3:$#}\"" ;
 			echo "    "
 		else
-		echo "    SKIPPING" ;
+		echo "    SKIPPING INSTEAD (safety)" ;
 		fi ;
 	fi ;
 	return $? ;
@@ -202,12 +205,20 @@ if [[ ( -r "${HOME}/.UserPreferences" ) ]] ; then
 	source <(grep -oE "^(?:\s*)?[-0-9A-Z_]+[=]{1}.+$" "${HOME}/.UserPreferences" | sed -Ee 's/^[[:space:]]+//g' | grep -ovE "^WRITE" | grep -ovE "^DEFAULTS") || true
 	# loads ALLOWED user SETTINGS (IGNORES OTHER SHELL COMMANDS)
 	echo "dev mode is set to ${USE_DEVELOPER_SETUP}"
+	export USE_DEVELOPER_SETUP="${USE_DEVELOPER_SETUP:-NO}" ;
+	export CAL_UUID="${CAL_UUID:-${ZERO_UUID}}" ;
+	export USE_FANCY_GRAPHICS="${USE_FANCY_GRAPHICS:-NO}" ;
+	export USE_BLUETOOTH="${USE_BLUETOOTH:-YES}" ;
 	source <(grep -oE "^(?:\s*)?(?:DELETE){1}(?:\s*)+.+$" "${HOME}/.UserPreferences" | sed -Ee 's/^[[:space:]]+//g') || true
 	source <(grep -oE "^(?:\s*)?(?:ENABLE){1}(?:\s*)+.+$" "${HOME}/.UserPreferences" | sed -Ee 's/^[[:space:]]+//g') || true
 	source <(grep -oE "^(?:\s*)?(?:DISABLE){1}(?:\s*)+.+$" "${HOME}/.UserPreferences" | sed -Ee 's/^[[:space:]]+//g') || true
 	source <(grep -oE "^(?:\s*)?(?:WRITE){1}(?:\s*)+.+$" "${HOME}/.UserPreferences" | sed -Ee 's/^[[:space:]]+//g') || true
 	source <(grep -oE "^(?:\s*)?(?:ENFORCE_GRAPHICS_MODE){1}(?:\s*)+.+$" "${HOME}/.UserPreferences" | sed -Ee 's/^[[:space:]]+//g') || true
 	source <(grep -oE "^(?:\s*)?(?:ENFORCE_DEV_MODE){1}(?:\s*)+.+$" "${HOME}/.UserPreferences" | sed -Ee 's/^[[:space:]]+//g') || true
+else
+	export USE_DEVELOPER_SETUP="${USE_DEVELOPER_SETUP:-NO}" ;
+	export USE_FANCY_GRAPHICS="${USE_FANCY_GRAPHICS:-NO}" ;
+	export USE_BLUETOOTH="${USE_BLUETOOTH:-YES}" ;
 fi
 
 
@@ -338,7 +349,7 @@ for SOME_DOMAIN in NSGlobalDomain "Apple Global Domain" ; do
 			WRITE "${SOME_DOMAIN}" com.apple.springing.delay -float 0
 		fi
 	fi
-
+	
 	# WARNING: The setting for AppleShowAllExtensions is required as is. DO NOT MODIFY.
 	# Expand save panel by default
 	# Expand print panel by default
@@ -369,7 +380,7 @@ for SOME_DOMAIN in NSGlobalDomain "Apple Global Domain" ; do
 	WRITE "${SOME_DOMAIN}" NSLinguisticDataAssetsRequested -array "${LANG}" "${LANG:0:2}"
 	WRITE "${SOME_DOMAIN}" NSLinguisticDataAssetsRequestTime -date "${CURRENT_DATE_TIME}"
 	WRITE "${SOME_DOMAIN}" AppleLocale -string "${LANG}"
-
+	
 	# WARNING: This setting is required as is. DO NOT MODIFY.
 	WRITE "${SOME_DOMAIN}" AppleMeasurementUnits -string "Inches"
 
@@ -437,8 +448,8 @@ done ;
 
 # WARNING: This section is required as is. DO NOT MODIFY.
 # Finder: show hidden files in Finder by default
-for DEV_KEY in AppleShowAllFiles ; do
-	ENFORCE_DEV_MODE ${PPDOM}.finder ${DEV_KEY} YES
+for A_DEV_KEY in AppleShowAllFiles ; do
+	ENFORCE_DEV_MODE ${PPDOM}.finder ${A_DEV_KEY} YES
 done ;
 
 # WARNING: This section is required as is. DO NOT MODIFY.
@@ -1906,14 +1917,14 @@ bash <(defaults find "NSWindow Frame " | sed -Ee 's/Found [0-9]+ keys in domain 
 
 # Set a custom wallpaper image. `DefaultDesktop.jpg` is already a symlink, and
 # all wallpapers are in `/Library/Desktop Pictures/`.
-if [[ ("${USE_DEVELOPER_SETUP}" == "YES") ]] ; then
-	rm -rf ~/Library/"Application Support"/Dock/desktoppicture.db
-fi
+#if [[ ("${USE_DEVELOPER_SETUP}" == "YES") ]] ; then
+#	rm -rf ~/Library/"Application Support"/Dock/desktoppicture.db
+#fi
 
 # Security Settings
 
 # Seeds /dev/random after boot with some more iterations
-openssl rand $((($RANDOM*$RANDOM*$RANDOM*$RANDOM)%((2*2*2*2*2*2*2*2)-1))) > /dev/random
+openssl rand $((($RANDOM*$RANDOM*$RANDOM*$RANDOM)%((2*2*2*2*2*2*2*2)-1))) > /dev/random 2>/dev/null || true
 
 # Stop iTunes from responding to the keyboard media keys
 #launchctl unload -w /System/Library/LaunchAgents/com.apple.rcd.plist 2> /dev/null
@@ -1946,9 +1957,9 @@ export -n PPDOM
 export -n GPDOM
 
 # Reset Launchpad, but keep the desktop wallpaper intact
-if [[ ( -d "~/Library/Application Support/Dock" ) ]] ; then
-	find "~/Library/Application Support/Dock" -name "*-*.db" -maxdepth 1 -delete 2>/dev/null || true
-fi
+#if [[ ( -d "~/Library/Application Support/Dock" ) ]] ; then
+#	find ~/Library/"Application Support"/Dock -name "*-*.db" -maxdepth 1 -delete 2>/dev/null || true
+#fi
 
 if [[ ("${USE_DEVELOPER_SETUP}" == "YES") ]] ; then
 # If not running interactively, don't do anything
