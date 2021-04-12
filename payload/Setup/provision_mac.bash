@@ -483,10 +483,7 @@ sudo chflags nohidden /Volumes
 
 # Expand the following File Info panes:
 # “General”, “Open with”, and “Sharing & Permissions”
-defaults write com.apple.finder FXInfoPanesExpanded -dict \
-	General -bool true \
-	OpenWith -bool true \
-	Privileges -bool true
+defaults write com.apple.finder FXInfoPanesExpanded -dict Comments 1 General 1 MetaData 1 Name 0 OpenWith 1 Preview 1 Privileges 1
 
 ###############################################################################
 # Dock, Dashboard, and hot corners                                            #
@@ -700,6 +697,11 @@ defaults write com.apple.mail DisableInlineAttachmentViewing -bool true
 
 # Enable automatic spell checking (other options: "NoSpellCheckingEnabled")
 defaults write com.apple.mail SpellCheckingBehavior -string "InlineSpellCheckingEnabled"
+
+
+defaults write com.apple.dashboard mcx-disabled -boolean YES && killall Dock
+
+#https://raw.githubusercontent.com/l1k/osxparanoia/master/sysctl.conf
 
 ###############################################################################
 # Spotlight                                                                   #
