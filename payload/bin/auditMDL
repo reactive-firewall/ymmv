@@ -1,0 +1,28 @@
+#! /bin/bash
+
+# clean up some leaky settings in mac OS
+
+
+defaults write com.apple.finder FavoriteTagNames -array Trust Quarantine Flagged Confidential Paperwork Work Personal
+defaults delete com.apple.finder FXRecentFolders 2>/dev/null || true
+
+find ~/Library -iname ".DS_Store" -print0 2>/dev/null | xargs -0 -L1 -I{} rm -vf {}
+find ~/homebrew -iname ".DS_Store" -print0 2>/dev/null | xargs -0 -L1 -I{} rm -vf {}
+find ~/bin -iname ".DS_Store" -print0 2>/dev/null | xargs -0 -L1 -I{} rm -vf {}
+
+defaults write com.apple.Safari WebKitPreferences.dnsPrefetchingEnabled -bool false 2>/dev/null || true
+defaults write com.apple.Safari WebKitPreferences.javaEnabled -bool false 2>/dev/null || true
+defaults write com.apple.Safari WebKitPreferences.applePayEnabled -bool false 2>/dev/null || true
+
+defaults write org.gpgtools.updater LastProfileSubmitDate -date $(date "+%C%y-%m-%d")
+defaults write org.gpgtools.updater SULastCheckTime -date $(date "+%C%y-%m-%d")
+defaults delete com.apple.finder RecentMoveAndCopyDestinations 2>/dev/null || true
+defaults delete com.apple.screencapture last-analytics-stamp 2>/dev/null || true
+defaults delete com.apple.systemuiserver last-analytics-stamp 2>/dev/null || true
+
+for BAD_DOMAIN in systemgroup.com.apple.icloud.searchpartyd.sharedsettings com.apple.stocks com.apple.xpc.activity2 com.apple.stocks.account com.apple.universalaccessAuthWarning com.apple.tourist com.apple.studentd com.apple.stockholm com.apple.siri.media-indexer com.apple.sharingd com.apple.security.sosaccount com.apple.AdLib com.apple.screencaptureui ; do
+defaults delete ${BAD_DOMAIN} 2>/dev/null || true
+unlink ~/Library/Preferences/${BAD_DOMAIN}.plist 2>/dev/null || true
+done
+
+defaults write com.apple.AdLib forceLimitAdTracking -bool true
