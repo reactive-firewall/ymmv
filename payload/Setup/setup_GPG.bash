@@ -8,7 +8,7 @@ sudo softwareupdate --install --recommended || true
 bash -c $(dirname $0)/setup_homebrew.bash
 
 # this takes some time:
-curl -fsSL --header "Dnt: 1" --tlsv1.2 --url https://releases.gpgtools.org/GPG_Suite-2020.1.dmg --out /tmp/GPG_Suite.dmg
+curl -fsSL --header "Dnt: 1" --tlsv1.2 --url https://releases.gpgtools.org/GPG_Suite-2020.2.dmg --out /tmp/GPG_Suite.dmg
 hdiutil attach /tmp/GPG_Suite.dmg -mountPoint /Volumes/GPG_Suite
 # must be admin user to install:
 sudo installer -store -pkg /Volumes/GPG_Suite/Install.pkg -target /

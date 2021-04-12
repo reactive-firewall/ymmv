@@ -2,7 +2,7 @@
 
 # Close any open System Preferences panes, to prevent them from overriding
 # settings we’re about to change
-osascript -e 'tell application "System Preferences" to quit'
+osascript -e 'tell application "System Preferences" to quit' || true ;
 
 export LANG=${LANG:-"en_US"}
 source ~/.bashrc 2>/dev/null || true
@@ -31,7 +31,7 @@ CURRENT_DATE_TIME=$(date -j "+%Y-%m-%d %H:%M:00 +0800")
 CURRENT_SECONDS=$(date -j "+%s")
 
 
-MAX_DOWNLOAD_CONNECTIONS=3
+MAX_DOWNLOAD_CONNECTIONS=5
 OS_VERSION=$(sw_vers -productVersion)
 OS_VERSION_MAJOR=$(echo $OS_VERSION | cut -d. -f 1-2 )
 
@@ -52,11 +52,11 @@ export HAS_CLOUD_ID="NO"
 # automatically configure iCloud values
 if [[ ( $(defaults export MobileMeAccounts - | grep -A5 -F AccountDSID | grep -coiF "iCloud" ) -eq 1 ) ]] ||\
 [[ ($HAS_CLOUD_ID == "YES") ]] ; then
-	CLOUD_ID=$(defaults find AccountDSID | grep -F AccountDSID  | head -n 1 | tr -d '; ' | cut -d\= -f 2)
-	CLOUD_UUID=$(defaults find AccountDSID | grep -F AccountUUID  | head -n 1 | tr -d '\"; ' | cut -d\= -f 2)
-	CLOUD_UN=$(defaults find AccountDSID | grep -F DisplayName  | head -n 1 | tr -d ';' | cut -d\= -f 2 | grep -oE "\".+\"" | tr -d '"')
-	AUTHOR_NAME="${CLOUD_UN:-Anonymous}"
-	CLOUD_EMAIL=$(defaults find AccountDSID | grep -F AccountID  | head -n 1 | tr -d '\"; ' | cut -d\= -f 2)
+	export CLOUD_ID=$(defaults find AccountDSID | grep -F AccountDSID | grep -oE '^\s*[A]{1}[c]{2}[o]{1}.*' | head -n 1 | tr -d '; ' | cut -d\= -f 2)
+	export CLOUD_UUID=$(defaults find AccountDSID | grep -F AccountUUID | grep -oE '^\s*[A]{1}[c]{2}[o]{1}.*' | head -n 1 | tr -d '\"; ' | cut -d\= -f 2)
+	export CLOUD_UN=$(defaults find AccountDSID | grep -F DisplayName  | head -n 1 | tr -d ';' | cut -d\= -f 2 | grep -oE "\".+\"" | tr -d '"')
+	export AUTHOR_NAME="${CLOUD_UN:-${LOGNAME}}"
+	export CLOUD_EMAIL=$(defaults find AccountDSID | grep -F AccountID | grep -oE '^\s*[A]{1}[c]{2}[o]{1}.*' | head -n 1 | tr -d '\"; ' | cut -d\= -f 2)
 	HAS_CLOUD_ID="YES"
 fi
 
@@ -66,8 +66,8 @@ fi
 #FACETIME_MESSAGES_ID=""
 #MESSAGES_ID=""
 
-HW_UUID=$(system_profiler -json SPHardwareDataType | grep -F "platform_UUID" | cut -d: -f 2 | tr -d '" ,')
-TOKEN_ID=$(defaults read com.apple.findmy.fmfcore.notbackedup publicAPSToken 2>/dev/null)
+export HW_UUID=$(system_profiler -json SPHardwareDataType | grep -F "platform_UUID" | cut -d: -f 2 | tr -d '" ,')
+export TOKEN_ID=$(defaults read com.apple.findmy.fmfcore.notbackedup publicAPSToken 2>/dev/null)
 
 #-----------------------------------------------------------#
 # All other UUIDs only appear once,                         #
@@ -78,26 +78,23 @@ TOKEN_ID=$(defaults read com.apple.findmy.fmfcore.notbackedup publicAPSToken 2>/
 # Functions                                                 #
 #-----------------------------------------------------------#
 
-DEFAULTS=$(command -v defaults)
-WRITE="${DEFAULTS} write"
-
 function WRITE() {
 	DEFAULTS=$(command -v defaults)
 	echo "Configuring ${1} ${2:-}" ;
-	echo "    Will use key \"${2:-'<empty>'}\" "
-	echo "    Will use type \"${3:-data}\" "
+	echo "    Will use key \"${2:-'<empty>'}\" " ;
+	echo "    Will use type \"${3:-data}\" " ;
 	if [[ ( $(echo "-"$(${DEFAULTS} read-type "${1}" "${2:-}" 2>/dev/null | cut -d\  -f 3 | sed -Ee 's/integer/int/g')) == "${3:-data}" ) ]] ; then
 		${DEFAULTS} write "${1}" "${2:-}" "${@:3:$#}" || echo "args: \"${2:-}\" \"${@:3:$#}\"" ;
 	else
 		echo "    Should use type \"-"$(${DEFAULTS} read-type "${1}" "${2:-}" 2>/dev/null | cut -d\  -f 3 | sed -Ee 's/integer/int/g' | sed -Ee 's/dictionary/dict/g')"\""
 		if [[ ("${USE_DEVELOPER_SETUP}" == "YES") ]] ; then
-			echo "    DEVELOPER OVERRIDE  (Admin Help You, You'll NEED it to recover!)"
+			echo "    DEVELOPER OVERRIDE  (Admin Help You, You'll NEED it to recover!)" ;
 			${DEFAULTS} write "${1}" "${2:-}" "${@:3:$#}" || echo "args: \"${2:-}\" \"${@:3:$#}\"" ;
 			echo "    "
 		else
-		echo "    SKIPPING"
-		fi
-	fi
+		echo "    SKIPPING" ;
+		fi ;
+	fi ;
 	return $? ;
 }
 
@@ -196,6 +193,12 @@ GPDOM="com.google"
 if [[ ( -r "${HOME}/.UserPreferences" ) ]] ; then
 ## WILL ADD USER PREFS HERE
 # load user variables (IGNORES SHELL COMMANDS)
+	export -f WRITE
+	export -f DELETE
+	export -f ENABLE
+	export -f DISABLE
+	export -f ENFORCE_GRAPHICS_MODE
+	export -f ENFORCE_DEV_MODE
 	source <(grep -oE "^(?:\s*)?[-0-9A-Z_]+[=]{1}.+$" "${HOME}/.UserPreferences" | sed -Ee 's/^[[:space:]]+//g' | grep -ovE "^WRITE" | grep -ovE "^DEFAULTS") || true
 	# loads ALLOWED user SETTINGS (IGNORES OTHER SHELL COMMANDS)
 	echo "dev mode is set to ${USE_DEVELOPER_SETUP}"
@@ -206,6 +209,7 @@ if [[ ( -r "${HOME}/.UserPreferences" ) ]] ; then
 	source <(grep -oE "^(?:\s*)?(?:ENFORCE_GRAPHICS_MODE){1}(?:\s*)+.+$" "${HOME}/.UserPreferences" | sed -Ee 's/^[[:space:]]+//g') || true
 	source <(grep -oE "^(?:\s*)?(?:ENFORCE_DEV_MODE){1}(?:\s*)+.+$" "${HOME}/.UserPreferences" | sed -Ee 's/^[[:space:]]+//g') || true
 fi
+
 
 #-----------------------------------------------------------#
 # To Be Deleted                                             #
@@ -268,7 +272,7 @@ WRITE ${PPDOM}.SoftwareUpdate ScheduleFrequency -int 1
 WRITE ${PPDOM}.SoftwareUpdate CriticalUpdateInstall -int 1
 
 # Download newly available updates in background
-defaults write com.apple.SoftwareUpdate AutomaticDownload -int 1
+WRITE com.apple.SoftwareUpdate AutomaticDownload -int 1
 
 # Disable Automatically download apps purchased on other Macs
 WRITE ${PPDOM}.SoftwareUpdate ConfigDataInstall -int 0
@@ -279,7 +283,7 @@ ENABLE ${PPDOM}.commerce AutoUpdate
 # Allow the App Store to reboot machine on macOS updates
 ENFORCE_DEV_MODE ${PPDOM}.commerce AutoUpdateRestartRequired NO
 
-softwareupdate --list 2>/dev/null || true
+(softwareupdate --list 2>/dev/null || true ) &
 
 #-----------------------------------------------------------#
 # NSGlobalDomain + Apple Global Domain                      #
@@ -364,7 +368,7 @@ for SOME_DOMAIN in NSGlobalDomain "Apple Global Domain" ; do
 	# Allow the over-the-top focus ring animation when using fancy graphics
 	# Allow smooth scrolling
 	# Enable spring loading for directories
-for DEV_KEY in com.apple.springing.enabled NSUseAnimatedFocusRing NSScrollAnimationEnabled ; do
+	for DEV_KEY in com.apple.springing.enabled NSUseAnimatedFocusRing NSScrollAnimationEnabled ; do
 		ENFORCE_GRAPHICS_MODE "${SOME_DOMAIN}" ${DEV_KEY} YES
 	done ;
 	
@@ -474,20 +478,20 @@ WRITE ${PPDOM}.finder "NSToolbar Configuration Browser" -dict \
 	"TB Size Mode" -int 1
 
 
-FINDER_PLIST_PATH="~/Library/Preferences/com.apple.finder.plist"
+FINDER_PLIST_PATH="${HOME:-"/Users/Shared"}/Library/Preferences/com.apple.finder.plist"
 
 for VIEW_DOMAIN in DesktopViewSettings FK_StandardViewSettings StandardViewSettings ; do
 
 	for VIEW_MODE in "ExtendedListViewSettingsV2:sortColumn" "GalleryViewSettings:arrangeBy" "IconViewSettings:arrangeBy" "ListViewSettings:sortColumn" ; do
 		# Enable snap-to-grid for icons on the desktop and in other icon views
-		PlistBuddy -c "Set :$VIEW_DOMAIN:$VIEW_MODE kind" ${FINDER_PLIST_PATH}
+		PlistBuddy -c "Set :$VIEW_DOMAIN:$VIEW_MODE kind" "${FINDER_PLIST_PATH}" 2>/dev/null || true ;
 	done ;
 
 	for VTEXT_SIZE in "ExtendedListViewSettingsV2:textSize" "GalleryViewSettings:textSize" "IconViewSettings:textSize" "ListViewSettings:textSize" ; do
-		PlistBuddy -c "Set :$VIEW_DOMAIN:$VTEXT_SIZE 14" ${FINDER_PLIST_PATH}
+		PlistBuddy -c "Set :$VIEW_DOMAIN:$VTEXT_SIZE 14" "${FINDER_PLIST_PATH}" 2>/dev/null || true ;
 	done ;
 
-	PlistBuddy -c "Set :$VIEW_DOMAIN:$IconViewSettings:showItemInfo true" ${FINDER_PLIST_PATH}
+	PlistBuddy -c "Set :$VIEW_DOMAIN:$IconViewSettings:showItemInfo true" "${FINDER_PLIST_PATH}" 2>/dev/null || true ;
 
 done ;
 
@@ -503,7 +507,9 @@ WRITE ${PPDOM}.finder NewWindowTargetPath -string "file://${HOME}/"
 
 if [[ ("${USE_DEVELOPER_SETUP}" == "NO") ]] ; then
 	# Disable the crash reporter
-	defaults write ${PPDOM}.CrashReporter DialogType -string "none"
+	WRITE ${PPDOM}.CrashReporter DialogType -string "none"
+else
+	WRITE ${PPDOM}.CrashReporter DialogType -string "full"
 fi
 
 #-----------------------------------------------------------#
@@ -568,10 +574,12 @@ DISABLE ~/Library/Preferences/ByHost/com.apple.SubmitDiagInfo.$HW_UUID AutoSubmi
 if [[ ($USE_BLUETOOTH == "NO") ]] ; then
 	# Forbid Bluetooth devices to wake the computer
 	DISABLE ~/Library/Preferences/ByHost/com.apple.Bluetooth.$HW_UUID RemoteWakeEnabled
+else
+	ENABLE ~/Library/Preferences/ByHost/com.apple.Bluetooth.$HW_UUID RemoteWakeEnabled
+	# Increase sound quality for Bluetooth headphones/headsets
+	WRITE com.apple.BluetoothAudioAgent "Apple Bitpool Min (editable)" -int 32
 fi
 
-# Increase sound quality for Bluetooth headphones/headsets
-WRITE com.apple.BluetoothAudioAgent "Apple Bitpool Min (editable)" -int 40
 
 #-----------------------------------------------------------#
 # security.cloudkeychainproxy3.keysToRegister               #
@@ -586,6 +594,7 @@ else
 	DISABLE ${PPDOM}.security.cloudkeychainproxy3.keysToRegister EnsurePeerRegistration
 fi
 
+# DANGER: these can lock you out of your accounts if altered
 #for ARRAY_KEY in FirstUnlockKeys PendingKeys SyncBackupPeerIDs SyncPeerIDs UnlockedKeys ; #do
 #	WRITE ${PPDOM}.security.cloudkeychainproxy3.keysToRegister ${ARRAY_KEY} -array
 #done ;
@@ -645,7 +654,9 @@ WRITE ${PPDOM}.Preferences UserDictionaryLocalPeerIdentityCurrent -string "${LOG
 # SystemPreferences                                         #
 #-----------------------------------------------------------#
 
-WRITE ${PPDOM}.systempreferences DSKDesktopPrefPane -dict UserFolderPaths '("${HOME}/Pictures/Wedding Desktops")'
+if [[ ( -d "${HOME}/Pictures/Wedding Desktops" ) ]] ; then
+	WRITE ${PPDOM}.systempreferences DSKDesktopPrefPane -dict UserFolderPaths '("${HOME}/Pictures/Wedding Desktops")'
+fi
 
 for STRING_KEY in NSNavLastRootDirectory com.apple.TimeMachine.OpenPanelDirectory ; do
 	WRITE ${PPDOM}.systempreferences ${STRING_KEY} -string "${DEFAULT_SAVE_LOCATION}"
@@ -829,10 +840,10 @@ WRITE ${PPDOM}.Safari SearchProviderIdentifier -string "com.duckduckgo"
 WRITE ${PPDOM}.Safari HistoryAgeInDaysLimit -int 8
 
 # Disable Safari’s thumbnail cache for History and Top Sites
-WRITE com.apple.Safari DebugSnapshotsUpdatePolicy -int 2
+# WRITE com.apple.Safari DebugSnapshotsUpdatePolicy -int 2
 
 #Some users want this setting
-#DELETE ${PPDOM}.Safari IncludeInternalDebugMenu 2>/dev/null || true
+DELETE ${PPDOM}.Safari IncludeInternalDebugMenu 2>/dev/null || true
 
 #-----------------------------------------------------------#
 # SafariBookmarksSyncAgent                                  #
@@ -911,14 +922,17 @@ DISABLE ${PPDOM}.FaceTime kPromptEnableReadRecipts
 # messages.nicknames                                        #
 #-----------------------------------------------------------#
 
-ENABLE ${PPDOM}.messages.nicknames NicknameAppleIDAndiCloudAccountMatchAndExist
+# buggy
+#ENABLE ${PPDOM}.messages.nicknames NicknameAppleIDAndiCloudAccountMatchAndExist
 
 #-----------------------------------------------------------#
 # sms                                                       #
 #-----------------------------------------------------------#
 
+#buggy
+
 #Receive phone texts on this one
-ENABLE ${PPDOM}.sms hasBeenApprovedForSMSRelay
+# ENABLE ${PPDOM}.sms hasBeenApprovedForSMSRelay
 
 #-----------------------------------------------------------#
 # iChat                                                     #
@@ -955,9 +969,7 @@ fi
 #recheck on OS updates
 if [[ $(echo "$OS_VERSION_MAJOR" == "10.15") ]] ; then
 WRITE ${PPDOM}.TelephonyUtilities CachedVCCaps -int 17592188010496
-
 WRITE ${PPDOM}.TelephonyUtilities thumperCallingCapabilitiesStates -array ;
-
 fi;
 
 #-----------------------------------------------------------#
@@ -972,8 +984,8 @@ WRITE org.whispersystems.signal-desktop NSNavLastRootDirectory -string "${DEFAUL
 #-----------------------------------------------------------#
 
 # configure send and reply animations in Mail.app
-ENFORCE_GRAPHICS_MODE ${PPDOM}.mail DisableReplyAnimations YES
-ENFORCE_GRAPHICS_MODE ${PPDOM}.mail DisableSendAnimations YES
+ENFORCE_GRAPHICS_MODE ${PPDOM}.mail DisableReplyAnimations NO
+ENFORCE_GRAPHICS_MODE ${PPDOM}.mail DisableSendAnimations NO
 
 # Copy email addresses as `foo@example.com` instead of `Foo Bar <foo@example.com>` in Mail.app
 DISABLE ${PPDOM}.mail AddressesIncludeNameOnPasteboard
@@ -983,7 +995,7 @@ WRITE ${PPDOM}.mail DraftsViewerAttributes -dict-add "DisplayInThreadedMode" -st
 WRITE ${PPDOM}.mail DraftsViewerAttributes -dict-add "SortedDescending" -string "yes"
 WRITE ${PPDOM}.mail DraftsViewerAttributes -dict-add "SortOrder" -string "received-date"
 
-# Disable inline attachments (just show the icons)
+# Disable inline attachments (just show the icons for security)
 ENABLE ${PPDOM}.mail DisableInlineAttachmentViewing
 
 # Enable automatic spell checking (other options: "NoSpellCheckingEnabled")
@@ -1076,7 +1088,7 @@ for SZ_KEY in NSNavPanelExpandedSizeForOpenMode NSNavPanelExpandedSizeForSaveMod
 done ;
 
 for INT_KEY in NSFontSize PlainTextEncodingForWrite ; do
-	WRITE ${PPDOM}.TextEdit ${INT_KEY} -int 10
+	WRITE ${PPDOM}.TextEdit ${INT_KEY} -int 4
 done ;
 
 #WRITE ${PPDOM}.TextEdit PlainTextEncoding -int 4
@@ -1121,8 +1133,9 @@ WRITE ${PPDOM}.iWork.Keynote KNRemoteCurrentDevicePlaybackUUID -string "${HW_UUI
 # GoogleDrive                                               #
 #-----------------------------------------------------------#
 
+if [[ ( -d "~/Public/Google Drive Drop Box" ) ]] ; then
 WRITE ${GPDOM}.GoogleDrive NSNavLastRootDirectory -string "~/Public/Google Drive Drop Box"
-
+fi
 WRITE ${GPDOM}.GoogleDrive "onboarding_complete" -string shown
 
 for SOME_DOMAIN in GoogleDrive Keystone.Agent ; do
@@ -1205,7 +1218,7 @@ WRITE ${PPDOM}.itunes "license-agreements" -dict EA0676 1 EA0708 1 EA0733 1 EA07
 
 WRITE ${PPDOM}.itunes recentSearchHints -array
 
-WRITE ${PPDOM}.itunes recentSearches -array "DJ \\U00c5m\\U00e5k"
+WRITE ${PPDOM}.itunes recentSearches -array "DJ \\U00c5m\\U00e5k" ;
 
 #-----------------------------------------------------------#
 # TV                                                        #
@@ -1290,7 +1303,7 @@ WRITE ${PPDOM}.photos.shareddefaults iCloudPhotoLibraryHasBeenEnabledAccountIden
 
 
 WRITE ${PPDOM}.photos.shareddefaults lastHighlightTitlesUpdateDate -date "${CURRENT_DATE_TIME}"
-WRITE ${PPDOM}.photos.shareddefaults CPLDefaultDownload -string Defaul
+WRITE ${PPDOM}.photos.shareddefaults CPLDefaultDownload -string Default
 
 #-----------------------------------------------------------#
 # AppleMediaServices                                        #
@@ -1308,7 +1321,7 @@ done ;
 ENFORCE_GRAPHICS_MODE ${PPDOM}.screencapture "disable-shadow" NO
 
 if [[ ("${USE_FANCY_GRAPHICS}" == "YES") ]] ; then
-	WRITE ${PPDOM}.screencapture type -string pdf
+	WRITE ${PPDOM}.screencapture type -string heic
 else
 	# Save screenshots in HEIC format (other options: PNG, BMP, GIF, JPG, PDF, TIFF, HEIC)
 	WRITE ${PPDOM}.screencapture type -string heic
@@ -1611,7 +1624,7 @@ for DISABLE_KEY in mru-spaces mcx-disabled ; do
 done ;
 
 # Set the icon size of Dock items to 36-92 pixels
-WRITE ${PPDOM}.dock tilesize -int 56
+WRITE ${PPDOM}.dock tilesize -int 64
 
 
 # Make Dock icons of hidden applications translucent
@@ -1825,7 +1838,7 @@ bash <(defaults find "NSWindow Frame " | sed -Ee 's/Found [0-9]+ keys in domain 
 # Set a custom wallpaper image. `DefaultDesktop.jpg` is already a symlink, and
 # all wallpapers are in `/Library/Desktop Pictures/`.
 if [[ ("${USE_DEVELOPER_SETUP}" == "YES") ]] ; then
-	rm -rf ~/Library/Application Support/Dock/desktoppicture.db
+	rm -rf ~/Library/"Application Support"/Dock/desktoppicture.db
 fi
 
 # Security Settings
@@ -1852,10 +1865,20 @@ if [[ ( -d ~/bin ) ]] ; then
 	chflags hidden ~/bin
 fi
 
+export -n CLOUD_ID
+export -n CLOUD_UUID
+export -n CLOUD_UN
+export -n AUTHOR_NAME
+export -n CLOUD_EMAIL
+export -n TOKEN_ID
+export -n HW_UUID
+export -n MUSIC_LIBRARY_LOCATION
+export -n PPDOM
+export -n GPDOM
 
 # Reset Launchpad, but keep the desktop wallpaper intact
-if [[ ( -d "${HOME}/Library/Application Support/Dock" ) ]] ; then
-	find "${HOME}/Library/Application Support/Dock" -name "*-*.db" -maxdepth 1 -delete 2>/dev/null || true
+if [[ ( -d "~/Library/Application Support/Dock" ) ]] ; then
+	find "~/Library/Application Support/Dock" -name "*-*.db" -maxdepth 1 -delete 2>/dev/null || true
 fi
 
 if [[ ("${USE_DEVELOPER_SETUP}" == "YES") ]] ; then
@@ -1894,15 +1917,17 @@ for app in "Activity Monitor" \
 	"Zoom" \
 	"SizeUp" \
 	"Spectacle" \
-	"SystemUIServer" \
 	"TextEdit" \
 	"Transmission" \
 	"Tweetbot" \
 	"Twitter" \
+	"UIKitSystem" \
+	"SystemUIServer" \
+	"QuickLookUIServ" \
 	"Dock" \
 	"Finder" \
 	"Terminal"; do
-	killall "${app}" &> /dev/null || echo "failed to kill ${app:-unknown}"
+	(killall "${app}" >/dev/null || echo "failed to kill ${app:-unknown}") &
 done
 echo "Done. Note that some of these changes require a logout/restart to take effect."
 
