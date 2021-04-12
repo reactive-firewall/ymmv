@@ -336,13 +336,11 @@ defaults write com.apple.screensaver askForPasswordDelay -int 0
 # Save screenshots to the desktop
 defaults write com.apple.screencapture location -string "${HOME}/Desktop"
 
-# Save screenshots in HEIC format (other options: PNG, BMP, GIF, JPG, PDF, TIFF)
-defaults write com.apple.screencapture type -string "heic"
+# Save screenshots in PNG format (other options: BMP, GIF, JPG, PDF, TIFF)
+defaults write com.apple.screencapture type -string "png"
 
 # Disable shadow in screenshots
 defaults write com.apple.screencapture disable-shadow -bool true
-
-defaults delete com.apple.screencapture last-analytics-stamp 2>/dev/null || true
 
 # Enable subpixel font rendering on non-Apple LCDs
 # Reference: https://github.com/kevinSuttle/macOS-Defaults/issues/17#issuecomment-266633501
