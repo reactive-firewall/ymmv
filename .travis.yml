@@ -1,10 +1,14 @@
 language: generic
 sudo: false
 
+dist:
+
 branches:
   only:
     - stable
     - master
+
+env:
 
 addons:
   apt:
@@ -26,14 +30,26 @@ matrix:
           - libdw-dev
           - cmake
     language: generic
+    dist: xenial
+  - os: linux
+    sudo: true
+    addons:
+      apt:
+        packages:
+          - libcurl4-openssl-dev
+          - libelf-dev
+          - libdw-dev
+          - cmake
+    language: generic
     dist: trusty
   - os: linux
     sudo: false
     language: generic
     dist: trusty
   - os: linux
+    sudo: true
     language: generic
-    dist: precice
+    dist: bionic
   - os: osx
     osx_image: xcode6.4
     language: generic
@@ -49,19 +65,74 @@ matrix:
   - os: osx
     osx_image: xcode8.3
     language: generic
+  - os: osx
+    osx_image: xcode9
+    language: shell
+  - os: osx
+    osx_image: xcode10
+    language: shell
+  - os: osx
+    osx_image: xcode11.1
+    language: shell
+  - os: osx
+    osx_image: xcode11.2
+    language: shell
+  - os: osx
+    osx_image: xcode11.3
+    language: shell
+  - os: osx
+    sudo: true
+    osx_image: xcode12
+    language: shell
   allowed failure:
     - os: linux
       sudo: true
+    - os: osx
+      osx_image: xcode6.4
+      language: generic
+    - os: osx
+      osx_image: xcode7.2
+      language: generic
+    - os: osx
+      osx_image: xcode7.3
+      language: generic
+    - os: osx
+      osx_image: xcode8
+      language: generic
+    - os: osx
+      osx_image: xcode8.3
+      language: generic
+    - os: osx
+      osx_image: xcode9
+      language: shell
+    - os: osx
+      osx_image: xcode10
+      language: shell
+
+before_install:
+  - make clean || true
 
 install:
+  - make install-home 2>/dev/null || true
+  - sudo make install 2>/dev/null || true
+  - if [ $TRAVIS_OS_NAME == osx ] ; then sudo make install-tools-mac 2>/dev/null || true ; fi
+
+after_install:
+  - if [ $TRAVIS_OS_NAME == osx ] ; then travis_wait git -C "$(brew --repo homebrew/core)" fetch --unshallow || true ; fi
+  - if [ $TRAVIS_OS_NAME == osx ] ; then travis_retry brew tap homebrew/versions || true ; fi
+  - if [ $TRAVIS_OS_NAME == osx ] ; then travis_wait brew upgrade || travis_retry brew upgrade || true ; fi
+
+before_script:
   - make clean || true
-  - make install 2>/dev/null || true
+  - if [ $TRAVIS_OS_NAME == osx ] ; then echo "SKIP code climate download" ; else curl -L --url https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 -o ./cc-test-reporter 3>/dev/null 2>/dev/null || true ; fi ;
+  - if [ $TRAVIS_OS_NAME == osx ] ; then echo "SKIP code climate setup" ; else chmod +x ./cc-test-reporter || true ; fi ;
+  - if [ $TRAVIS_OS_NAME == osx ] ; then echo "SKIP code climate install" ; else ./cc-test-reporter before-build || true ; fi ;
+  - if [ $TRAVIS_OS_NAME == osx ] ; then echo "SKIP deepsource" ; else (curl https://deepsource.io/cli | sh) || true ; fi ;
 
 script:
-  - make clean || true
   - make test
 
-after_success:
+after_script:
   - ./tests/travis_prep_kcov.sh || true
-  - echo "Done."
-
+  - if [ $TRAVIS_OS_NAME == osx ] ; then echo "SKIP code climate" ; else ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT || true ; fi ;
+  - make clean 2>/dev/null || true

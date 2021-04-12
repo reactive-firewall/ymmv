@@ -4,9 +4,13 @@
 #########################
 umask 002
 #ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+if [[ !( -e ~/homebrew ) ]] ; then
 mkdir homebrew && curl -L https://github.com/Homebrew/brew/tarball/master | tar xz --strip 1 -C homebrew
 chflags 'hidden' homebrew || true ;
 source ~/.bashrc
+fi
+HOMEBREW_USER=$(stat -f %u ~/homebrew/)
+HOMEBREW_GROUP=$(stat -f %g ~/homebrew/)
 umask 002
 brew analytics off
 brew update
@@ -26,9 +30,9 @@ rm -rf "$(brew --cache)"
 ##########################
 # Network tools
 ##########################
+brew install "openssl"
 brew install "dnstracer"
 brew install "nmap"
-brew cask install "openssl"
 
 #########################
 # Cloud Apps
@@ -39,7 +43,7 @@ brew cask install "openssl"
 # Email / Messaging Apps
 #########################
 #brew cask install "slack"
-#brew cask install "twitch"
+brew cask install "twitch"
 
 #########################
 # Files Apps
@@ -52,7 +56,7 @@ brew cask install "openssl"
 #########################
 #brew cask install "max"
 #brew cask install "musicbrainz-picard"
-#brew cask install "vlc"
+brew cask install "vlc"
 brew cask install "gimp"
 
 #########################
@@ -63,7 +67,7 @@ brew install "gnu-pkcs11-scd" || true
 brew install "libgpg-error"
 brew install "pkcs11-helper"
 brew install "gpg-suite-pinentry" || true
-#brew cask install ""
+brew cask install openSC || true
 
 #########################
 # Programming Apps
@@ -89,10 +93,10 @@ brew install "gpg-suite-pinentry" || true
 #########################
 #brew cask install "provisionql"
 #brew cask install "qlcolorcode"
-#brew cask install "qlimagesize"
+brew cask install "qlimagesize"
 brew cask install "qlmarkdown"
 #brew cask install "qlstephen"
-#brew cask install "qlvideo"
+brew cask install "qlvideo"
 brew cask install "quicklook-json"
 #brew cask install "quicklook-pat"
 #brew cask install "quicklookapk"
@@ -108,20 +112,21 @@ brew cleanup
 ##########################
 # Install CLI Tools
 ##########################
-brew install libassuan gnu-pkcs11-scd libgpg-error pkcs11-helper
+brew install libassuan gnu-pkcs11-scd libgpg-error pkcs11-helper || true
 brew install "bash"
 brew install "bash-completion"
 #brew install "ext4fuse"
 #brew install "ffmpeg"
 #brew install "fuse-ntfs-3g"
 brew install "nano"
-brew install "openssl"
 brew install "python"
 brew install "python3"
 #brew install "wget"
 #brew install "youtube-dl"
+brew cask install docker
 
 ##########################
 # Rebuild All Packages
 ##########################
 brew list | xargs brew reinstall --build-from-source
+sudo -E chown -hR ${HOMEBREW_USER}:${HOMEBREW_GROUP} ~/homebrew || true

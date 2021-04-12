@@ -16,7 +16,7 @@ CDPATH=".:/sandbox"
 #unset HISTCONTROL
 
 # force default hist file
-HISTFILE="~/.bash_history"
+#HISTFILE="/tmp/.bash_history"
 # be aware of SHELL_SESSION_DID_HISTORY_CHECK on apple systems
 
 # LibreSSL for Mac OS
@@ -107,6 +107,11 @@ GIT_ASKPASS=${GIT_ASKPASS:-${SSH_ASKPASS}}
 
 #opt out of homebrew tracking
 HOMEBREW_NO_ANALYTICS=1
+# limit homebrew cache age to 2 weeks
+HOMEBREW_CLEANUP_MAX_AGE_DAYS=14
+# force https in homebrew
+HOMEBREW_NO_INSECURE_REDIRECT=1
+
 #default for brew installed readline:
 PKG_CONFIG_PATH=/usr/local/opt/readline/lib/pkgconfig
 
