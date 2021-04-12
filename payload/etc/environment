@@ -28,7 +28,7 @@ CDPATH=".:/sandbox"
 #unset HISTCONTROL
 
 # force default hist file
-HISTFILE="~/.bash_history"
+#HISTFILE="/tmp/.bash_history"
 # be aware of SHELL_SESSION_DID_HISTORY_CHECK on apple systems
 
 # LibreSSL for Mac OS

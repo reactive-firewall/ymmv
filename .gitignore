@@ -13,3 +13,9 @@ lib/
 lib64/
 .cache
 *.log
+# don't store keychains
+dot_gnupg/trustdb.gpg
+dot_gnupg/*.kbx
+payload/*Desktops/
+*.icns
+Icon*
