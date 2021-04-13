@@ -16,19 +16,19 @@ hash -p /usr/libexec/PlistBuddy PlistBuddy
 export DEFAULT_SAVE_LOCATION="~/Documents"
 
 if [[ ( -e "/Volumes/Music Drive/Music/" ) ]] ; then
-	MUSIC_LIBRARY_LOCATION="/Volumes/Music Drive/Music/Media/"
+	export MUSIC_LIBRARY_LOCATION="/Volumes/Music Drive/Music/Media/"
 else
 	if [[ ( -d "/Users/Shared/Music/" ) ]] ; then
-		MUSIC_LIBRARY_LOCATION="/Users/Shared/Music/"
+		export MUSIC_LIBRARY_LOCATION="/Users/Shared/Music/"
 	else
-		MUSIC_LIBRARY_LOCATION="~/Music/Music/"
+		export MUSIC_LIBRARY_LOCATION="~/Music/Music/"
 	fi
 fi
 
-ZERO_UUID="00000000-0000-0000-0000-000000000000"
+export ZERO_UUID="00000000-0000-0000-0000-000000000000"
 
-CURRENT_DATE_TIME=$(date -j "+%Y-%m-%d %H:%M:00 +0800")
-CURRENT_SECONDS=$(date -j "+%s")
+export CURRENT_DATE_TIME=$(date -j "+%Y-%m-%d %H:%M:00 +0800")
+export CURRENT_SECONDS=$(date -j "+%s")
 
 
 MAX_DOWNLOAD_CONNECTIONS=5
@@ -37,27 +37,31 @@ OS_VERSION_MAJOR=$(echo $OS_VERSION | cut -d. -f 1-2 )
 
 
 # OPTION FLAGS
+# Uncomment an option to override user settings and defaults
 
-export USE_DEVELOPER_SETUP="YES"
+# Developer mode
+#export USE_DEVELOPER_SETUP="YES"
 
 # Graphics mode
 # (USE "NO" if you’re on an older Mac that messes up the animation)
-export USE_FANCY_GRAPHICS="NO"
-export USE_BLUETOOTH="YES"
+#export USE_FANCY_GRAPHICS="NO"
+#export USE_BLUETOOTH="YES"
 
-# DO NOT CHANGE THIS,
-# (sign in in system prefs to appleID instead.)
-export HAS_CLOUD_ID="NO"
+# DO NOT CHANGE THIS
 
 # automatically configure iCloud values
 if [[ ( $(defaults export MobileMeAccounts - | grep -A5 -F AccountDSID | grep -coiF "iCloud" ) -eq 1 ) ]] ||\
 [[ ($HAS_CLOUD_ID == "YES") ]] ; then
 	export CLOUD_ID=$(defaults find AccountDSID | grep -F AccountDSID | grep -oE '^\s*[A]{1}[c]{2}[o]{1}.*' | head -n 1 | tr -d '; ' | cut -d\= -f 2)
 	export CLOUD_UUID=$(defaults find AccountDSID | grep -F AccountUUID | grep -oE '^\s*[A]{1}[c]{2}[o]{1}.*' | head -n 1 | tr -d '\"; ' | cut -d\= -f 2)
-	export CLOUD_UN=$(defaults find AccountDSID | grep -F DisplayName  | head -n 1 | tr -d ';' | cut -d\= -f 2 | grep -oE "\".+\"" | tr -d '"')
+	export CLOUD_UN=$(defaults find AccountDSID | grep -F DisplayName | head -n 1 | tr -d ';' | cut -d\= -f 2 | grep -oE "\".+\"" | tr -d '"')
 	export AUTHOR_NAME="${CLOUD_UN:-${LOGNAME}}"
 	export CLOUD_EMAIL=$(defaults find AccountDSID | grep -F AccountID | grep -oE '^\s*[A]{1}[c]{2}[o]{1}.*' | head -n 1 | tr -d '\"; ' | cut -d\= -f 2)
-	HAS_CLOUD_ID="YES"
+	export HAS_CLOUD_ID="YES"
+else
+
+	# (sign in in system prefs to appleID instead.)
+	export HAS_CLOUD_ID="NO"
 fi
 
 
@@ -81,18 +85,20 @@ export TOKEN_ID=$(defaults read com.apple.findmy.fmfcore.notbackedup publicAPSTo
 function WRITE() {
 	DEFAULTS=$(command -v defaults)
 	echo "Configuring ${1} ${2:-}" ;
-	echo "    Will use key \"${2:-'<empty>'}\" " ;
-	echo "    Will use type \"${3:-data}\" " ;
-	if [[ ( $(echo "-"$(${DEFAULTS} read-type "${1}" "${2:-}" 2>/dev/null | cut -d\  -f 3 | sed -Ee 's/integer/int/g')) == "${3:-data}" ) ]] ; then
+	if [[ ("${USE_DEVELOPER_SETUP}" == "YES") ]] ; then
+		echo "    Will use key \"${2:-'<empty>'}\" " ;
+		echo "    Will use type \"${3:-data}\" " ;
+	fi
+	if [[ ( $(echo "-"$(${DEFAULTS} read-type "${1}" "${2:-}" 2>/dev/null | cut -d\  -f 3 | sed -Ee 's/integer/int/g' | sed -Ee 's/dictionary/dict/g' | sed -Ee 's/boolean/bool/g' )) == $(echo "${3:-data}" | sed -Ee 's/-add//g') ) ]] ; then
 		${DEFAULTS} write "${1}" "${2:-}" "${@:3:$#}" || echo "args: \"${2:-}\" \"${@:3:$#}\"" ;
 	else
-		echo "    Should use type \"-"$(${DEFAULTS} read-type "${1}" "${2:-}" 2>/dev/null | cut -d\  -f 3 | sed -Ee 's/integer/int/g' | sed -Ee 's/dictionary/dict/g')"\""
+		echo "    Should use type \"-"$(${DEFAULTS} read-type "${1}" "${2:-}" 2>/dev/null | cut -d\  -f 3 | sed -Ee 's/integer/int/g' | sed -Ee 's/dictionary/dict/g' | sed -Ee 's/boolean/bool/g')"\""
 		if [[ ("${USE_DEVELOPER_SETUP}" == "YES") ]] ; then
 			echo "    DEVELOPER OVERRIDE  (Admin Help You, You'll NEED it to recover!)" ;
 			${DEFAULTS} write "${1}" "${2:-}" "${@:3:$#}" || echo "args: \"${2:-}\" \"${@:3:$#}\"" ;
 			echo "    "
 		else
-		echo "    SKIPPING" ;
+			echo "    SKIPPING INSTEAD (safety)" ;
 		fi ;
 	fi ;
 	return $? ;
@@ -202,12 +208,20 @@ if [[ ( -r "${HOME}/.UserPreferences" ) ]] ; then
 	source <(grep -oE "^(?:\s*)?[-0-9A-Z_]+[=]{1}.+$" "${HOME}/.UserPreferences" | sed -Ee 's/^[[:space:]]+//g' | grep -ovE "^WRITE" | grep -ovE "^DEFAULTS") || true
 	# loads ALLOWED user SETTINGS (IGNORES OTHER SHELL COMMANDS)
 	echo "dev mode is set to ${USE_DEVELOPER_SETUP}"
+	export USE_DEVELOPER_SETUP="${USE_DEVELOPER_SETUP:-NO}" ;
+	export CAL_UUID="${CAL_UUID:-${ZERO_UUID}}" ;
+	export USE_FANCY_GRAPHICS="${USE_FANCY_GRAPHICS:-NO}" ;
+	export USE_BLUETOOTH="${USE_BLUETOOTH:-YES}" ;
 	source <(grep -oE "^(?:\s*)?(?:DELETE){1}(?:\s*)+.+$" "${HOME}/.UserPreferences" | sed -Ee 's/^[[:space:]]+//g') || true
 	source <(grep -oE "^(?:\s*)?(?:ENABLE){1}(?:\s*)+.+$" "${HOME}/.UserPreferences" | sed -Ee 's/^[[:space:]]+//g') || true
 	source <(grep -oE "^(?:\s*)?(?:DISABLE){1}(?:\s*)+.+$" "${HOME}/.UserPreferences" | sed -Ee 's/^[[:space:]]+//g') || true
 	source <(grep -oE "^(?:\s*)?(?:WRITE){1}(?:\s*)+.+$" "${HOME}/.UserPreferences" | sed -Ee 's/^[[:space:]]+//g') || true
 	source <(grep -oE "^(?:\s*)?(?:ENFORCE_GRAPHICS_MODE){1}(?:\s*)+.+$" "${HOME}/.UserPreferences" | sed -Ee 's/^[[:space:]]+//g') || true
 	source <(grep -oE "^(?:\s*)?(?:ENFORCE_DEV_MODE){1}(?:\s*)+.+$" "${HOME}/.UserPreferences" | sed -Ee 's/^[[:space:]]+//g') || true
+else
+	export USE_DEVELOPER_SETUP="${USE_DEVELOPER_SETUP:-NO}" ;
+	export USE_FANCY_GRAPHICS="${USE_FANCY_GRAPHICS:-NO}" ;
+	export USE_BLUETOOTH="${USE_BLUETOOTH:-YES}" ;
 fi
 
 
@@ -239,6 +253,7 @@ for SOME_DOMAIN in AppStore appstore ; do
 		DISABLE ${PPDOM}.${SOME_DOMAIN} ${DISABLE_KEY}
 	done ;
 
+	# WARNING: This section is required as is. DO NOT MODIFY.
 	#Some users might want these two disabled
 	for DEV_KEY in WebKitDeveloperExtras ShowDebugMenu ; do
 		ENFORCE_DEV_MODE ${PPDOM}.${SOME_DOMAIN} ${DEV_KEY} YES
@@ -263,17 +278,22 @@ DISABLE ${PPDOM}.commerce AutoUpdate
 # SoftwareUpdate                                            #
 #-----------------------------------------------------------#
 
+# WARNING: This setting is required as is. DO NOT MODIFY.
 ENABLE ${PPDOM}.SoftwareUpdate AutomaticCheckEnabled
 
+# WARNING: This setting is required as is. DO NOT MODIFY.
 # Check for software updates daily, not just once per week
 WRITE ${PPDOM}.SoftwareUpdate ScheduleFrequency -int 1
 
+# WARNING: This setting is required as is. DO NOT MODIFY.
 # Install System data files & security updates
 WRITE ${PPDOM}.SoftwareUpdate CriticalUpdateInstall -int 1
 
+# WARNING: This setting is required as is. DO NOT MODIFY.
 # Download newly available updates in background
 WRITE com.apple.SoftwareUpdate AutomaticDownload -int 1
 
+# WARNING: This setting is required as is. DO NOT MODIFY.
 # Disable Automatically download apps purchased on other Macs
 WRITE ${PPDOM}.SoftwareUpdate ConfigDataInstall -int 0
 
@@ -332,13 +352,15 @@ for SOME_DOMAIN in NSGlobalDomain "Apple Global Domain" ; do
 			WRITE "${SOME_DOMAIN}" com.apple.springing.delay -float 0
 		fi
 	fi
-
+	
+	# WARNING: The setting for AppleShowAllExtensions is required as is. DO NOT MODIFY.
 	# Expand save panel by default
 	# Expand print panel by default
 	for ENABLE_KEY in NSNavPanelExpandedStateForSaveMode NSNavPanelExpandedStateForSaveMode2 PMPrintingExpandedStateForPrint PMPrintingExpandedStateForPrint2 AppleShowAllExtensions ; do
 		ENABLE "${SOME_DOMAIN}" ${ENABLE_KEY}
 	done ;
 
+	# WARNING: This setting for com.apple.swipescrolldirection and AppleMetricUnits is required as is. DO NOT MODIFY.
 	# Disable smart quotes as they’re annoying when typing code
 	# Disable auto-correct
 	# Disable “natural” (Lion-style) scrolling
@@ -346,18 +368,25 @@ for SOME_DOMAIN in NSGlobalDomain "Apple Global Domain" ; do
 		DISABLE "${SOME_DOMAIN}" ${DISABLE_KEY}
 	done ;
 
+	# WARNING: This setting is required as is. DO NOT MODIFY.
 	WRITE "${SOME_DOMAIN}" RetriesUntilHint -int 0
 	WRITE "${SOME_DOMAIN}" com.apple.mouse.tapBehavior -int 0
+	# WARNING: This setting is required as is. DO NOT MODIFY.
 	ENABLE "${SOME_DOMAIN}" com.apple.trackpad.enableSecondaryClick
 
+	# WARNING: This section is required as is. DO NOT MODIFY.
 	# Set a blazingly fast keyboard repeat rate
 	WRITE "${SOME_DOMAIN}" KeyRepeat -int 1
 	WRITE "${SOME_DOMAIN}" InitialKeyRepeat -int 10
+
 	WRITE "${SOME_DOMAIN}" AppleLanguages -array "${LANG}" "${LANG:0:2}"
 	WRITE "${SOME_DOMAIN}" NSLinguisticDataAssetsRequested -array "${LANG}" "${LANG:0:2}"
 	WRITE "${SOME_DOMAIN}" NSLinguisticDataAssetsRequestTime -date "${CURRENT_DATE_TIME}"
 	WRITE "${SOME_DOMAIN}" AppleLocale -string "${LANG}"
+	
+	# WARNING: This setting is required as is. DO NOT MODIFY.
 	WRITE "${SOME_DOMAIN}" AppleMeasurementUnits -string "Inches"
+
 	WRITE "${SOME_DOMAIN}" AppleTemperatureUnit -string "Fahrenheit"
 
 	# Enable subpixel font rendering on non-Apple LCDs (requires restart)
@@ -365,6 +394,7 @@ for SOME_DOMAIN in NSGlobalDomain "Apple Global Domain" ; do
 	# for true-tone Retnia display use 4 (to prevent flickering)
 	WRITE "${SOME_DOMAIN}" AppleFontSmoothing -int 4
 
+	# WARNING: This setting for com.apple.springing.enabled is required as is. DO NOT MODIFY.
 	# Allow the over-the-top focus ring animation when using fancy graphics
 	# Allow smooth scrolling
 	# Enable spring loading for directories
@@ -380,14 +410,17 @@ for SOME_DOMAIN in NSGlobalDomain "Apple Global Domain" ; do
 	# Disable automatic termination of inactive apps
 	#add NSDisableAutomaticTermination to DEV_KEYs
 
+	# WARNING: This setting is required as is. DO NOT MODIFY.
 	# Enable full keyboard access for all controls
 	# (e.g. enable Tab in modal dialogs)
 	#WRITE "${SOME_DOMAIN}" AppleKeyboardUIMode -int 3
 
+	# WARNING: This setting is required as is. DO NOT MODIFY.
 	for DEV_KEY in WebKitDeveloperExtras ; do
 		ENFORCE_DEV_MODE "${SOME_DOMAIN}" ${DEV_KEY} YES
 	done ;
 
+	# WARNING: This setting for ApplePressAndHoldEnabled is required as is. DO NOT MODIFY.
 	# Disable automatic capitalization as it’s annoying when typing code
 	# Disable press-and-hold for keys in favor of key repeat
 	for DEV_KEY in NSAutomaticCapitalizationEnabled NSAutomaticDashSubstitutionEnabled NSAutomaticPeriodSubstitutionEnabled ApplePressAndHoldEnabled ; do
@@ -410,23 +443,27 @@ WRITE ${PPDOM}.finder CopyProgressWindowLocation -string "{127, 127}"
 
 WRITE ${PPDOM}.finder EmptyTrashProgressWindowLocation -string "{256, 127}"
 
+# WARNING: This section is required as is. DO NOT MODIFY.
 #Disable warnings
 for DEV_KEY in FXEnableExtensionChangeWarning WarnOnEmptyTrash ; do
 	ENFORCE_DEV_MODE ${PPDOM}.finder ${DEV_KEY} NO
 done ;
 
+# WARNING: This section is required as is. DO NOT MODIFY.
 # Finder: show hidden files in Finder by default
-for DEV_KEY in AppleShowAllFiles ; do
-	ENFORCE_DEV_MODE ${PPDOM}.finder ${DEV_KEY} YES
+for A_DEV_KEY in AppleShowAllFiles ; do
+	ENFORCE_DEV_MODE ${PPDOM}.finder ${A_DEV_KEY} YES
 done ;
 
-# Allow window animations and Get Info animations dispite graphics mode
+# WARNING: This section is required as is. DO NOT MODIFY.
+# Allow window animations and Get Info animations despite graphics mode
 DISABLE "${SOME_DOMAIN}" DisableAllAnimations
 
 if [[ ($HAS_CLOUD_ID == "YES") ]] ; then
 	ENABLE ${PPDOM}.finder FXICloudLoggedIn
 fi
 
+# WARNING: This section is required as is. DO NOT MODIFY.
 # Show icons for hard drives, servers, and removable media on the desktop
 # show all filename extensions
 # show status bar
@@ -444,9 +481,11 @@ for DISABLE_KEY in FXICloudDriveDeclinedUpgrade FXICloudDriveDesktop FXICloudDri
 	fi
 done ;
 
+# WARNING: This setting is required as is. DO NOT MODIFY.
 # When performing a search, search the current folder by default
 WRITE com.apple.finder FXDefaultSearchScope -string "SCcf"
 
+# WARNING: This setting is required as is. DO NOT MODIFY.
 # Use list view in all Finder windows by default
 # Four-letter codes for the other view modes: `icnv`, `clmv`, `Flwv`
 WRITE com.apple.finder FXPreferredViewStyle -string "Nlsv"
@@ -495,6 +534,7 @@ for VIEW_DOMAIN in DesktopViewSettings FK_StandardViewSettings StandardViewSetti
 
 done ;
 
+# WARNING: This section is required as is. DO NOT MODIFY.
 # Set Desktop as the default location for new Finder windows
 # For other paths, use `PfLo` and `file:///full/path/here/`
 # values are "PfLo" and "PfDe"
@@ -516,6 +556,7 @@ fi
 # DiskUtility                                               #
 #-----------------------------------------------------------#
 
+# WARNING: This section is required as is. DO NOT MODIFY.
 for ENABLE_KEY in DUDebugMenuEnabled advanced-image-options ; do
 	ENFORCE_DEV_MODE ${PPDOM}.DiskUtility ${ENABLE_KEY} YES
 done ;
@@ -524,6 +565,7 @@ done ;
 # Spotlight                                                 #
 #-----------------------------------------------------------#
 
+# WARNING: This section is required as is. DO NOT MODIFY.
 WRITE ${PPDOM}.Spotlight orderedItems -array \
 	'{"enabled" = 1;"name" = "APPLICATIONS";}' \
 	'{"enabled" = 1;"name" = "SYSTEM_PREFS";}' \
@@ -632,8 +674,10 @@ ENABLE ${PPDOM}.universalaccess closeViewZoomFactor
 # frameworks.diskimages                                     #
 #-----------------------------------------------------------#
 
+# WARNING: This setting is required as is. DO NOT MODIFY.
 DISABLE ${PPDOM}.frameworks.diskimages "skip-verify"
 
+# WARNING: This section is required as is. DO NOT MODIFY.
 for ENABLE_KEY in "auto-open-ro-root" "auto-open-rw-root" "skip-verify-locked" "skip-verify-remote" ; do
 	ENABLE ${PPDOM}.frameworks.diskimages ${ENABLE_KEY}
 done ;
@@ -694,10 +738,12 @@ WRITE ${PPDOM}.Preferences.Extensions.ShareMenu displayOrder -array "com.apple.N
 # preferences.screentime                                    #
 #-----------------------------------------------------------#
 
-ENABLE ${PPDOM}.preferences.screentime HasBeenIntroduced
-
-WRITE ${PPDOM}.preferences.screentime HasShownCommunicationLimitsCompatibilityAlertByDSID -dict-add ${CLOUD_ID} 1
-
+if [[ ($HAS_CLOUD_ID == "YES") ]] ; then
+	ENABLE ${PPDOM}.preferences.screentime HasBeenIntroduced
+	WRITE ${PPDOM}.preferences.screentime HasShownCommunicationLimitsCompatibilityAlertByDSID -dict-add ${CLOUD_ID} 1
+else
+	DISABLE ${PPDOM}.preferences.screentime HasBeenIntroduced
+fi
 #-----------------------------------------------------------#
 # knowledge-agent                                           #
 #-----------------------------------------------------------#
@@ -716,6 +762,7 @@ DISABLE knowledge-agent ScreenTimeSyncDisabled
 # See: https://security.stackexchange.com/a/47786/8918
 # Disable the annoying line marks
 
+# WARNING: This setting for StringEncodings, ShowLineMarks and SecureKeyboardEntry is required as is. DO NOT MODIFY.
 for SOME_DOMAIN in terminal Terminal ; do
 	# Only use UTF-8 in Terminal.app
 	WRITE ${PPDOM}.${SOME_DOMAIN} StringEncodings -array 4 30
@@ -729,6 +776,7 @@ done ;
 # X11                                                       #
 #-----------------------------------------------------------#
 
+# WARNING: This setting is required as is. DO NOT MODIFY.
 # disable remote X11 socket
 ENABLE org.x.X11 nolisten_tcp
 
@@ -738,6 +786,7 @@ DELETE org.x.X11 wm_ffm 2>/dev/null || true
 # ActivityMonitor                                           #
 #-----------------------------------------------------------#
 
+# WARNING: This setting is required as is. DO NOT MODIFY.
 # Show the main window when launching Activity Monitor
 ENABLE ${PPDOM}.ActivityMonitor OpenMainWindow
 
@@ -748,9 +797,11 @@ if [[ ("${USE_FANCY_GRAPHICS}" == "YES") ]] ; then
 	WRITE ${PPDOM}.ActivityMonitor IconType -int 5
 fi
 
+# WARNING: This setting is required as is. DO NOT MODIFY.
 # Show all processes in Activity Monitor
 WRITE ${PPDOM}.ActivityMonitor ShowCategory -int 0
 
+# WARNING: This section is required as is. DO NOT MODIFY.
 # Sort Activity Monitor results by CPU usage
 WRITE ${PPDOM}.ActivityMonitor SortColumn -string "CPUUsage"
 WRITE ${PPDOM}.ActivityMonitor SortDirection -int 0
@@ -773,6 +824,7 @@ WRITE com.adguard.safari.AdGuard NSTreatUnknownArgumentsAsOpen -string NO
 # NetworkBrowser                                            #
 #-----------------------------------------------------------#
 
+# WARNING: This section is required as is. DO NOT MODIFY.
 # Enable AirDrop over Ethernet and on unsupported Macs running Lion
 for ENABLE_KEY in BrowseAllInterfaces ; do
 	ENABLE ${PPDOM}.NetworkBrowser ${ENABLE_KEY}
@@ -790,30 +842,37 @@ fi
 
 #General/Security
 
+# WARNING: This section except for ExcludePrivateWindowWhenRestoringSessionAtLaunch, LocalFileRestrictionsEnabled, and OpenPrivateWindowWhenNotRestoringSessionAtLaunch is required as is. DO NOT MODIFY.
 for ENABLE_KEY in AskBeforeSubmittingInsecureForms ExcludePrivateWindowWhenRestoringSessionAtLaunch LocalFileRestrictionsEnabled OpenPrivateWindowWhenNotRestoringSessionAtLaunch SendDoNotTrackHTTPHeader SuppressSearchSuggestions TreatSHA1CertificatesAsInsecure WarnAboutFraudulentWebsites WebContinuousSpellCheckingEnabled InstallExtensionUpdatesAutomatically ; do
 	ENABLE ${PPDOM}.Safari ${ENABLE_KEY}
 done ;
 
+# WARNING: This section except for AlwaysRestoreSessionAtLaunch, CanPromptForPushNotifications, PreloadTopHit, and ShowFavoritesUnderSmartSearchField is required as is. DO NOT MODIFY.
 for DISABLE_KEY in AlwaysRestoreSessionAtLaunch AutoFillCreditCardData AutoFillFromAddressBook AutoFillMiscellaneousForms AutoFillPasswords AutoOpenSafeDownloads CanPromptForPushNotifications PreloadTopHit ShowFavoritesBar ShowFavoritesUnderSmartSearchField WebAutomaticSpellingCorrectionEnabled UniversalSearchEnabled ShowSidebarInTopSites ; do
 	DISABLE ${PPDOM}.Safari ${DISABLE_KEY}
 done ;
 
+# WARNING: This section except for IncludeInternalDebugMenu is required as is. DO NOT MODIFY.
 for ENABLE_KEY in IncludeDevelopMenu IncludeInternalDebugMenu ShowFullURLInSmartSearchField WebKitDeveloperExtrasEnabledPreferenceKey com.apple.Safari.ContentPageGroupIdentifier.WebKit2DeveloperExtrasEnabled ; do
 	ENFORCE_DEV_MODE ${PPDOM}.Safari ${ENABLE_KEY} YES
 done ;
 
+# WARNING: This setting is required as is. DO NOT MODIFY.
 ENFORCE_DEV_MODE ${PPDOM}.Safari FindOnPageMatchesWordStartsOnly NO
 
 #WebKits
 
+# WARNING: This section except for com.apple.Safari.ContentPageGroupIdentifier.WebKit2BackspaceKeyNavigationEnabled is required as is. DO NOT MODIFY.
 for ENABLE_KEY in WebKitTabToLinksPreferenceKey com.apple.Safari.ContentPageGroupIdentifier.WebKit2TabsToLinks com.apple.Safari.ContentPageGroupIdentifier.WebKit2BackspaceKeyNavigationEnabled ; do
 	ENABLE ${PPDOM}.Safari ${ENABLE_KEY}
 done ;
 
+# WARNING: This section is required as is. DO NOT MODIFY.
 for DISABLE_KEY in WebKitPluginsEnabled com.apple.Safari.ContentPageGroupIdentifier.WebKit2PluginsEnabled WebKitJavaEnabled com.apple.Safari.ContentPageGroupIdentifier.WebKit2JavaEnabled WebKitJavaScriptCanOpenWindowsAutomatically com.apple.Safari.ContentPageGroupIdentifier.WebKit2JavaScriptCanOpenWindowsAutomatically ; do
 	DISABLE ${PPDOM}.Safari ${DISABLE_KEY}
 done ;
 
+# WARNING: This section is required as is. DO NOT MODIFY.
 for SOME_DOMAIN in Safari SafariTechnologyPreview ; do
 
 	for DISABLE_KEY in WebKitMediaPlaybackAllowsInline com.apple.Safari.ContentPageGroupIdentifier.WebKit2AllowsInlineMediaPlayback ; do
@@ -839,6 +898,7 @@ WRITE ${PPDOM}.Safari SearchProviderIdentifier -string "com.duckduckgo"
 
 WRITE ${PPDOM}.Safari HistoryAgeInDaysLimit -int 8
 
+# WARNING: This setting is required as is. DO NOT MODIFY.
 # Disable Safari’s thumbnail cache for History and Top Sites
 # WRITE com.apple.Safari DebugSnapshotsUpdatePolicy -int 2
 
@@ -853,10 +913,11 @@ DELETE ${PPDOM}.Safari IncludeInternalDebugMenu 2>/dev/null || true
 # AppStoreDamon                                             #
 #-----------------------------------------------------------#
 
+if [[ ($HAS_CLOUD_ID == "YES") ]] ; then
 WRITE ${PPDOM}.appstored ArcadeDeviceGUID -string ${CLOUD_ID}
-
+fi
 WRITE ${PPDOM}.appstored ArcadeDeviceID -string "${ZERO_UUID}"
-WRITE ${PPDOM}.appstored ArcadeDeviceIDCreationDate -date "2021-11-11 11:11:11 +0000"
+WRITE ${PPDOM}.appstored ArcadeDeviceIDCreationDate -date "2020-11-11 11:11:11 +0000"
 WRITE ${PPDOM}.appstored ArcadePayoutDeviceID -string "${ZERO_UUID}"
 WRITE ${PPDOM}.appstored ArcadeSubscriptionState -string Unsubscribed
 WRITE ${PPDOM}.appstored WelcomeNotificationLastAppStoreConnectionProductVersion -string "${OS_VERSION}"
@@ -865,8 +926,11 @@ WRITE ${PPDOM}.appstored WelcomeNotificationLastAppStoreConnectionProductVersion
 #-----------------------------------------------------------#
 # Preview                                                   #
 #-----------------------------------------------------------#
-
-WRITE ${PPDOM}.Preview PVGeneralUserName -string "${CLOUD_UN}"
+if [[ ($HAS_CLOUD_ID == "YES") ]] ; then
+	WRITE ${PPDOM}.Preview PVGeneralUserName -string "${CLOUD_UN}"
+else
+	WRITE ${PPDOM}.Preview PVGeneralUserName -string "${USERNAME}"
+fi
 WRITE ${PPDOM}.Preview kPVPDFDefaultPageViewModeOption -int 0
 
 #-----------------------------------------------------------#
@@ -879,6 +943,7 @@ for SOME_DOMAIN in AddressBook addressbook ; do
 		ENABLE ${PPDOM}.${SOME_DOMAIN} ${ENABLE_KEY}
 	done ;
 
+	# WARNING: This setting is required as is. DO NOT MODIFY.
 	ENFORCE_DEV_MODE ${PPDOM}.${SOME_DOMAIN} ABShowDebugMenu YES
 
 	WRITE ${PPDOM}.${SOME_DOMAIN} ABInitialLabelsAddress -array $'"_$!<Work>!$_"'
@@ -906,9 +971,11 @@ DISABLE ${PPDOM}.FaceTime kPromptEnableReadRecipts
 # imservice.ids.FaceTime                                    #
 #-----------------------------------------------------------#
 
+#if [[ ($HAS_CLOUD_ID == "YES") ]] ; then
 #for ARRAY_KEY in ActiveAccounts OnlineAccounts ; do
 #	WRITE ${PPDOM}.imservice.ids.FaceTime ${ARRAY_KEY} -array "${FACETIME_MESSAGES_ID}"
 #done ;
+#fi
 
 #-----------------------------------------------------------#
 # imservice.ids.iMessage                                    #
@@ -987,17 +1054,21 @@ WRITE org.whispersystems.signal-desktop NSNavLastRootDirectory -string "${DEFAUL
 ENFORCE_GRAPHICS_MODE ${PPDOM}.mail DisableReplyAnimations NO
 ENFORCE_GRAPHICS_MODE ${PPDOM}.mail DisableSendAnimations NO
 
-# Copy email addresses as `foo@example.com` instead of `Foo Bar <foo@example.com>` in Mail.app
+# WARNING: This setting is required as is. DO NOT MODIFY.
+# Copy email addresses as 'foo@example.com' instead of 'Foo Bar <foo@example.com>' in Mail.app
 DISABLE ${PPDOM}.mail AddressesIncludeNameOnPasteboard
 
+# WARNING: This section is required as is. DO NOT MODIFY.
 # Display emails in threaded mode, sorted by date (oldest at the top)
 WRITE ${PPDOM}.mail DraftsViewerAttributes -dict-add "DisplayInThreadedMode" -string "yes"
 WRITE ${PPDOM}.mail DraftsViewerAttributes -dict-add "SortedDescending" -string "yes"
 WRITE ${PPDOM}.mail DraftsViewerAttributes -dict-add "SortOrder" -string "received-date"
 
+# WARNING: This setting is required as is. DO NOT MODIFY.
 # Disable inline attachments (just show the icons for security)
 ENABLE ${PPDOM}.mail DisableInlineAttachmentViewing
 
+# WARNING: This setting is required as is. DO NOT MODIFY.
 # Enable automatic spell checking (other options: "NoSpellCheckingEnabled")
 WRITE ${PPDOM}.mail SpellCheckingBehavior -string "InlineSpellCheckingEnabled"
 
@@ -1031,6 +1102,7 @@ WRITE org.gpgtools.gpgmail "savedReport-username" -string "${CLOUD_UN:-${LOGNAME
 
 #WRITE ${PPDOM}.iCal AccountDisplayOrder -array Birthday Local "${CAL_UUID}"
 
+# WARNING: This setting for "TimeZone support enabled" is required as is. DO NOT MODIFY.
 for ENABLE_KEY in CalendarSidebarShown OpenEventsInWindowType "TimeZone support enabled" ; do
 	ENABLE ${PPDOM}.iCal "${ENABLE_KEY}"
 done ;
@@ -1041,7 +1113,7 @@ WRITE ${PPDOM}.iCal AllDayAreaHeight -float 62
 
 WRITE ${PPDOM}.iCal BirthdayEventsGenerationLastLocale -string "$LANG"
 
-#WRITE ${PPDOM}.iCal CalDefaultPrincipal -string "${CAL_UUID}"
+WRITE ${PPDOM}.iCal CalDefaultPrincipal -string "${CAL_UUID:-Local}"
 
 WRITE ${PPDOM}.iCal CalendarSidebarWidth -float 175
 
@@ -1051,7 +1123,8 @@ WRITE ${PPDOM}.iCal CalendarSidebarWidth -float 175
 
 #WRITE ${PPDOM}.iCal NSEventConcurrentProcessingEnabled -string YES
 
-DELETE ${PPDOM}.iCal "NSWindow Frame iCal"
+# needs testing
+DELETE ${PPDOM}.iCal "NSWindow Frame iCal" 2>/dev/null || true
 
 #WRITE ${PPDOM}.iCal "last calendar view description" -string "7-day"
 
@@ -1091,8 +1164,10 @@ for INT_KEY in NSFontSize PlainTextEncodingForWrite ; do
 	WRITE ${PPDOM}.TextEdit ${INT_KEY} -int 4
 done ;
 
-#WRITE ${PPDOM}.TextEdit PlainTextEncoding -int 4
+# WARNING: This setting is required as is. DO NOT MODIFY.
+WRITE ${PPDOM}.TextEdit PlainTextEncoding -int 4
 
+# WARNING: This setting is required as is. DO NOT MODIFY.
 DISABLE ${PPDOM}.TextEdit RichText
 
 DELETE ${PPDOM}.TextEdit organization 2>/dev/null || true
@@ -1112,11 +1187,16 @@ ENABLE ${PPDOM}.TextEdit NSQuitAlwaysKeepsWindows
 for SOME_DOMAIN in Numbers Keynote Pages ; do
 	WRITE ${PPDOM}.iWork.${SOME_DOMAIN} NSNavLastRootDirectory -string "${DEFAULT_SAVE_LOCATION}"
 	WRITE ${PPDOM}.iWork.${SOME_DOMAIN} TSKRemoteStringsLastLocalization -string ${LANG:0:2}
-	WRITE ${PPDOM}.iWork.${SOME_DOMAIN} TSAICloudAuthorNameKey -string "${AUTHOR_NAME}"
+	if [[ ($HAS_CLOUD_ID == "YES") ]] ; then
+		WRITE ${PPDOM}.iWork.${SOME_DOMAIN} TSAICloudAuthorNameKey -string "${AUTHOR_NAME}"
+	else
+		DELETE ${PPDOM}.iWork.${SOME_DOMAIN} TSAICloudAuthorNameKey
+	fi
 	WRITE ${PPDOM}.iWork.${SOME_DOMAIN} TSWPIgnoredWordsDictionary -array
 	WRITE ${PPDOM}.iWork.${SOME_DOMAIN} RecentFontNames -array LucidaGrande
-	WRITE ${PPDOM}.iWork.${SOME_DOMAIN} DownloadableContentURL -string "https://www.icloud.com/iwork/st/content"
-
+	if [[ ($HAS_CLOUD_ID == "YES") ]] ; then
+		WRITE ${PPDOM}.iWork.${SOME_DOMAIN} DownloadableContentURL -string "https://www.icloud.com/iwork/st/content"
+	fi
 	for SZ_KEY in NSNavPanelExpandedSizeForOpenMode NSNavPanelExpandedSizeForSaveMode ; do
         	WRITE ${PPDOM}.iWork.${SOME_DOMAIN} ${SZ_KEY} -string "{1024, 512}"
 	done ;
@@ -1127,7 +1207,9 @@ for SOME_DOMAIN in Numbers Keynote Pages ; do
 	#WRITE ${PPDOM}.iWork.${SOME_DOMAIN} iCloudRegionInfo -dict "*.icloud.com.cn" '{ AssetHost = "localhost"; Domain = "icloud.com.cn"; DownloadableContentURL = "https://localhost/iwork/st/content"; URL = "https://localhost"; }'
 done ;
 
-WRITE ${PPDOM}.iWork.Keynote KNRemoteCurrentDevicePlaybackUUID -string "${HW_UUID}"
+if [[ ($HAS_CLOUD_ID == "YES") ]] ; then
+	WRITE ${PPDOM}.iWork.Keynote KNRemoteCurrentDevicePlaybackUUID -string "${HW_UUID}"
+fi
 
 #-----------------------------------------------------------#
 # GoogleDrive                                               #
@@ -1180,11 +1262,13 @@ WRITE us.zoom.xos "s_skinToneNum" -int 1
 # Music                                                     #
 #-----------------------------------------------------------#
 
-for SOME_DOMAIN in Music itunes ; do
-	WRITE ${PPDOM}.${SOME_DOMAIN} StoreUserInfo -dict ${CLOUD_ID} '{ UserHandle = ""; UserName = '${CLOUD_UN}'; }'
-	WRITE ${PPDOM}.${SOME_DOMAIN} "Store Apple ID" -string "${CLOUD_EMAIL}"
-	WRITE ${PPDOM}.${SOME_DOMAIN} "Store DSID" -int ${CLOUD_ID}
-done ;
+if [[ ($HAS_CLOUD_ID == "YES") ]] ; then
+	for SOME_DOMAIN in Music itunes ; do
+		WRITE ${PPDOM}.${SOME_DOMAIN} StoreUserInfo -dict ${CLOUD_ID} $"{ UserHandle = \"\"; UserName = '${CLOUD_UN}'; }" ;
+		WRITE ${PPDOM}.${SOME_DOMAIN} "Store Apple ID" -string "${CLOUD_EMAIL}"
+		WRITE ${PPDOM}.${SOME_DOMAIN} "Store DSID" -int ${CLOUD_ID}
+	done ;
+fi ;
 
 WRITE ${PPDOM}.Music encoderName -string "AAC Encoder"
 
@@ -1194,8 +1278,9 @@ WRITE ${PPDOM}.Music userMaxConcurrentDownloads -int "${MAX_DOWNLOAD_CONNECTIONS
 # Music - iTunes                                            #
 #-----------------------------------------------------------#
 
+if [[ ($HAS_CLOUD_ID == "YES") ]] ; then
 WRITE ${PPDOM}.itunes MacBuddyStoreID -string "${CLOUD_EMAIL}"
-
+fi
 WRITE ${PPDOM}.itunes "NSNavLastCurrentDirectory:ChooseFile:0" -string "${MUSIC_LIBRARY_LOCATION}"
 
 WRITE ${PPDOM}.itunes "NSNavLastCurrentDirectory:ChooseFolder:0" -string "${MUSIC_LIBRARY_LOCATION}/Media"
@@ -1216,7 +1301,7 @@ done ;
 
 WRITE ${PPDOM}.itunes "license-agreements" -dict EA0676 1 EA0708 1 EA0733 1 EA0773 1 EA0814 1 EA0815 1 EA0961 1 EA1067 1 EA1510 1
 
-WRITE ${PPDOM}.itunes recentSearchHints -array
+WRITE ${PPDOM}.itunes recentSearchHints -array ;
 
 WRITE ${PPDOM}.itunes recentSearches -array "DJ \\U00c5m\\U00e5k" ;
 
@@ -1250,9 +1335,11 @@ for DISABLE_KEY in "photo-sharing-enabled" "public-sharing-enabled" ; do
 	DISABLE ${PPDOM}.amp.mediasharingd "${DISABLE_KEY}"
 done ;
 
-WRITE ${PPDOM}.amp.mediasharingd "home-sharing-settings" -dict "home-sharing-update-play-counts" 1 "home-sharing-user-id" ${CLOUD_ID} "home-sharing-user-name" "${CLOUD_UN}"
+if [[ ($HAS_CLOUD_ID == "YES") ]] ; then
+WRITE ${PPDOM}.amp.mediasharingd "home-sharing-settings" -dict "home-sharing-update-play-counts" 1 "home-sharing-user-id" '$CLOUD_ID' "home-sharing-user-name" "${CLOUD_UN}" ;
+fi ;
 
-WRITE ${PPDOM}.amp.mediasharingd "photo-sharing-settings" -dict apertureAlbums '()' apertureCopyOriginalPhotos 0 apertureCustomAlbumOrder 0 apertureSyncAllAlbums 0 apertureSyncAllFaces 0 apertureSyncMode 0 apertureSyncPhotoVideos 0 iPhotoAlbums '()' iPhotoCopyOriginalPhotos 0 iPhotoCustomAlbumOrder 0 iPhotoPrefsMajorVersion 0 iPhotoPrefsMinorVersion 0 iPhotoSyncAllAlbums 0 iPhotoSyncAllFaces 0 iPhotoSyncMode 0 iPhotoSyncPhotoVideos 0 iPhotoUpgradedDistinguishedAlbums 0 "photo-sharing-source-id" 0 photosAppAlbums '()' photosAppAutoIncludeEnabled 0 photosAppCopyOriginalPhotos 0 photosAppCustomAlbumOrder 0 photosAppEventCount 255 photosAppOnlyFavorites 0 photosAppSyncAllAlbums 0 photosAppSyncAllFaces 0 photosAppSyncMode 0 photosAppSyncPhotoVideos 0 photosFolderAlbums '()' photosFolderCopyOriginalPhotos 0 photosFolderCustomAlbumOrder 0 photosFolderInfo '{ syncFolderIsFromMac = 0; syncFolderIsValid = 0; }' photosFolderSyncMode 0 photosFolderSyncPhotoVideos 0 psAlbumAlbums '()' psAlbumCopyOriginalPhotos 0 psAlbumCustomAlbumOrder 0 psAlbumSyncMode 0 psAlbumSyncPhotoVideos 0 psElementsAlbums '()' psElementsCopyOriginalPhotos 0 psElementsCustomAlbumOrder 0 psElementsSyncMode 0 psElementsSyncPhotoVideos 0
+WRITE ${PPDOM}.amp.mediasharingd "photo-sharing-settings" -dict apertureAlbums '()' apertureCopyOriginalPhotos 0 apertureCustomAlbumOrder 0 apertureSyncAllAlbums 0 apertureSyncAllFaces 0 apertureSyncMode 0 apertureSyncPhotoVideos 0 iPhotoAlbums '()' iPhotoCopyOriginalPhotos 0 iPhotoCustomAlbumOrder 0 iPhotoPrefsMajorVersion 0 iPhotoPrefsMinorVersion 0 iPhotoSyncAllAlbums 0 iPhotoSyncAllFaces 0 iPhotoSyncMode 0 iPhotoSyncPhotoVideos 0 iPhotoUpgradedDistinguishedAlbums 0 "photo-sharing-source-id" 0 photosAppAlbums '()' photosAppAutoIncludeEnabled 0 photosAppCopyOriginalPhotos 0 photosAppCustomAlbumOrder 0 photosAppEventCount 255 photosAppOnlyFavorites 0 photosAppSyncAllAlbums 0 photosAppSyncAllFaces 0 photosAppSyncMode 0 photosAppSyncPhotoVideos 0 photosFolderAlbums '()' photosFolderCopyOriginalPhotos 0 photosFolderCustomAlbumOrder 0 photosFolderInfo '{ syncFolderIsFromMac = 0; syncFolderIsValid = 0; }' photosFolderSyncMode 0 photosFolderSyncPhotoVideos 0 psAlbumAlbums '()' psAlbumCopyOriginalPhotos 0 psAlbumCustomAlbumOrder 0 psAlbumSyncMode 0 psAlbumSyncPhotoVideos 0 psElementsAlbums '()' psElementsCopyOriginalPhotos 0 psElementsCustomAlbumOrder 0 psElementsSyncMode 0 psElementsSyncPhotoVideos 0 || true
 
 WRITE ${PPDOM}.amp.mediasharingd "public-sharing-settings" -dict "public-sharing-share-all-playlists" 0
 
@@ -1271,7 +1358,7 @@ WRITE ${PPDOM}.mediaanalysisd PhotoLibraries -array "~/Pictures/Photos Library.p
 #-----------------------------------------------------------#
 # cloudphotod                                               #
 #-----------------------------------------------------------#
-
+if [[ ($HAS_CLOUD_ID == "YES") ]] ; then
 WRITE ${PPDOM}.cloudphotod CPLEngineInfo -dict \
 	clientLibraryBasePath -string "~/Pictures/Photos Library.photoslibrary/resources/cpl/cloudsync.noindex" \
 	cloudLibraryResourceStoragePath -string "~/Pictures/Photos Library.photoslibrary/resources/cpl/cloudsync.noindex/storage" \
@@ -1282,7 +1369,9 @@ WRITE ${PPDOM}.cloudphotod CPLEngineInfo -dict \
 DELETE ${PPDOM}.cloudphotod "_CPLPreviousOSBuildVersion" 2>/dev/null || true
 
 DELETE ${PPDOM}.cloudphotod "_CPLPreviousCPLVersion" 2>/dev/null || true
-
+else
+DELETE ${PPDOM}.cloudphotod 2>/dev/null || true
+fi
 #-----------------------------------------------------------#
 # photolibraryd                                             #
 #-----------------------------------------------------------#
@@ -1298,9 +1387,10 @@ WRITE ${PPDOM}.photolibraryd kPLPhotoStreamMPSStateNextCheckDateKey -date "${CUR
 # move to initial setup later to allow pref setting (required at least once)
 DELETE ${PPDOM}.photos.shareddefaults iCloudPhotoLibraryHasBeenEnabledAccountIdentifiers ;
 
+if [[ ($HAS_CLOUD_ID == "YES") ]] ; then
 #some users
 WRITE ${PPDOM}.photos.shareddefaults iCloudPhotoLibraryHasBeenEnabledAccountIdentifiers -array "${CLOUD_UUID}"
-
+fi
 
 WRITE ${PPDOM}.photos.shareddefaults lastHighlightTitlesUpdateDate -date "${CURRENT_DATE_TIME}"
 WRITE ${PPDOM}.photos.shareddefaults CPLDefaultDownload -string Default
@@ -1316,6 +1406,8 @@ done ;
 #-----------------------------------------------------------#
 # screencapture                                             #
 #-----------------------------------------------------------#
+
+# WARNING: This section is required as is. DO NOT MODIFY.
 
 # Disable shadow in screenshots
 ENFORCE_GRAPHICS_MODE ${PPDOM}.screencapture "disable-shadow" NO
@@ -1336,15 +1428,16 @@ WRITE ${PPDOM}.screencapture location -string "~/Pictures/Screenshots"
 # imagecapture                                              #
 #-----------------------------------------------------------#
 
+# WARNING: This setting is required as is. DO NOT MODIFY.
 # Prevent Photos from opening automatically when devices are plugged in
 ENFORCE_DEV_MODE ${PPDOM}.ImageCapture disableHotPlug YES
 
 #-----------------------------------------------------------#
 # gamed                                                     #
 #-----------------------------------------------------------#
-
+if [[ ($HAS_CLOUD_ID == "YES") ]] ; then
 WRITE ${PPDOM}.gamed GKLastPushTokenPlayerID -string "G:${CLOUD_ID}"
-
+fi
 #-----------------------------------------------------------#
 # Classroom                                                 #
 #-----------------------------------------------------------#
@@ -1372,6 +1465,8 @@ done ;
 $MKDIR ~/Movies/QuickTime 2>/dev/null || true
 
 WRITE ${PPDOM}.QuickTimePlayerX NSNavLastRootDirectory -string "~/Movies/QuickTime"
+
+# WARNING: This setting is required as is. DO NOT MODIFY.
 ENABLE ${PPDOM}.QuickTimePlayerX MGPlayMovieOnOpen
 
 #-----------------------------------------------------------#
@@ -1427,6 +1522,7 @@ for SOME_DOMAIN in AppleMultitouchTrackpad driver.AppleBluetoothMultitouch.track
 	WRITE ${PPDOM}.${SOME_DOMAIN} TrackpadTwoFingerFromRightEdgeSwipeGesture -int 3
 	WRITE ${PPDOM}.${SOME_DOMAIN} USBMouseStopsTrackpad -int 0
 	WRITE ${PPDOM}.${SOME_DOMAIN} version -int 12 || true
+	# WARNING: This setting for TrackpadRightClick is required as is. DO NOT MODIFY.
 	for ENABLE_KEY in TrackpadHandResting TrackpadMomentumScroll TrackpadRightClick TrackpadScroll UserPreferences ; do
 		ENABLE ${PPDOM}.${SOME_DOMAIN} ${ENABLE_KEY}
 	done ;
@@ -1461,7 +1557,7 @@ WRITE ${PPDOM}.HIToolbox AppleSelectedInputSources -array '{InputSourceKind = "K
 
 #buggy
 #ENABLE ${PPDOM}.textInput.keyboardServices.textReplacement KSLSShouldUpdateCache
-WRITE ${PPDOM}.textInput.keyboardServices.textReplacement kDidInsertSampleShortcutForPeer "${LOGNAME:-${USER}}~${HW_UUID}"
+WRITE ${PPDOM}.textInput.keyboardServices.textReplacement kDidInsertSampleShortcutForPeer -string "${LOGNAME:-${USER}}~${HW_UUID}"
 
 #-----------------------------------------------------------#
 # TextInputMenu                                             #
@@ -1530,22 +1626,26 @@ WRITE ${PPDOM}.assistant.support "Siri Data Sharing Opt-In Status" -int 2
 # FMF + FMIP                                                #
 #-----------------------------------------------------------#
 
+if [[ ($HAS_CLOUD_ID == "YES") ]] ; then
 for SOME_DOMAIN in findmy.fmfcore.notbackedup findmy.fmipcore.notbackedup ; do
 	WRITE ${PPDOM}.${SOME_DOMAIN} publicAPSToken -string ${TOKEN_ID}
 	ENABLE ${PPDOM}.${SOME_DOMAIN} windowVisible
 done ;
+fi
 
+if [[ ($HAS_CLOUD_ID == "YES") ]] ; then
 WRITE ${PPDOM}.findmy.fmfcore.notbackedup FMFGarbageCollectorIdentityKey -string ${CLOUD_ID}
 WRITE ${PPDOM}.findmy.fmipcore.notbackedup FMIPGarbageCollectorIdentityKey -string ${CLOUD_ID}
+fi
 
 #-----------------------------------------------------------#
 # icloud.fmfd                                               #
 #-----------------------------------------------------------#
-
+if [[ ($HAS_CLOUD_ID == "YES") ]] ; then
 for STRING_KEY in kFMFDlastLoggedInPrsId storedDSID ; do
 	WRITE ${PPDOM}.icloud.fmfd ${STRING_KEY} -string ${CLOUD_ID}
 done ;
-
+fi
 #WRITE ${PPDOM}.icloud.fmfd storedConfigKey -dict-add sendOnlyFMFChannel 1 blockFMFChannel 0
 
 #-----------------------------------------------------------#
@@ -1557,9 +1657,9 @@ WRITE ${PPDOM}.icloud.fmip clientconfiguration -dict-add deviceNameSyncEnabled 1
 #-----------------------------------------------------------#
 # fmip.voiceassistantsync                                   #
 #-----------------------------------------------------------#
-
+if [[ ($HAS_CLOUD_ID == "YES") ]] ; then
 WRITE ${PPDOM}.icloud.fmip.voiceassistantsync object -dict-add ownerPersonId ${CLOUD_ID}
-
+fi
 #-----------------------------------------------------------#
 # BKAgentService                                            #
 #-----------------------------------------------------------#
@@ -1580,26 +1680,34 @@ ENABLE ${PPDOM}.LaunchServices LSQuarantine
 # cloudpaird                                                #
 #-----------------------------------------------------------#
 
+if [[ ($HAS_CLOUD_ID == "YES") ]] ; then
 for ENABLE_KEY in MagicCloudPairingAccessoryEncryptionPreferences MagicCloudPairingMasterEncryptionPreferences MagicCloudPairingProtectedAccessorySubscription SecuredAccessoryZoneSubscription SecuredZoneSubscription ; do
 	ENABLE ${PPDOM}.cloudpaird ${ENABLE_KEY}
 done ;
+fi
 
 #-----------------------------------------------------------#
 # corerecents.recentsd                                      #
 #-----------------------------------------------------------#
 
+if [[ ($HAS_CLOUD_ID == "YES") ]] ; then
 WRITE ${PPDOM}.corerecents.recentsd LastiCloudAccountPersonID -string ${CLOUD_ID}
 
 ENABLE ${PPDOM}.corerecents.recentsd LastiCloudAccountWasLoggedIn
-
+else
+DELETE ${PPDOM}.corerecents.recentsd LastiCloudAccountPersonID
+DISABLE ${PPDOM}.corerecents.recentsd LastiCloudAccountWasLoggedIn
+fi
 #-----------------------------------------------------------#
 # dashboard                                                 #
 #-----------------------------------------------------------#
 
+# WARNING: This setting is required as is. DO NOT MODIFY.
 for ENABLE_KEY in "mcx-disabled" ; do
 	ENABLE ${PPDOM}.dashboard "${ENABLE_KEY}"
 done ;
 
+# WARNING: This setting is required as is. DO NOT MODIFY.
 ENFORCE_DEV_MODE ${PPDOM}.dashboard devmode YES
 
 #-----------------------------------------------------------#
@@ -1609,14 +1717,18 @@ ENFORCE_DEV_MODE ${PPDOM}.dashboard devmode YES
 # Enable group windows by application in Mission Control
 # (i.e. use the old Exposé behavior instead)
 # Don’t show Dashboard as a Space
+
+# WARNING: This section is required as is. DO NOT MODIFY.
 for ENABLE_KEY in show-process-indicators expose-group-by-app dashboard-in-overlay; do
 	ENABLE ${PPDOM}.dock ${ENABLE_KEY}
 done ;
 
+# WARNING: This setting is required as is. DO NOT MODIFY.
 for DOCK_G_KEY in enable-spring-load-actions-on-all-items ; do
 	ENFORCE_GRAPHICS_MODE ${PPDOM}.dock ${DOCK_G_KEY} YES
 done ;
 
+# WARNING: The setting for mru-spaces is required as is. DO NOT MODIFY.
 # Disable Dashboard
 # Don’t automatically rearrange Spaces based on most recent use
 for DISABLE_KEY in mru-spaces mcx-disabled ; do
@@ -1630,15 +1742,17 @@ WRITE ${PPDOM}.dock tilesize -int 64
 # Make Dock icons of hidden applications translucent
 # add showhidden YES to devlist
 
+# WARNING: This setting is required as is. DO NOT MODIFY.
 for DEV_KEY in  minimize-to-application ; do
 	ENFORCE_DEV_MODE ${PPDOM}.dock ${DEV_KEY} YES
 done ;
 
+# WARNING: This setting is required as is. DO NOT MODIFY.
 for DEV_KEY in launchanim ; do
 	ENFORCE_DEV_MODE ${PPDOM}.dock ${DEV_KEY} NO
 done ;
 
-
+# WARNING: This setting is required as is. DO NOT MODIFY.
 # THIS WILL BE MOVED TO FIRST RUN ONLY SCRIPT IN FUTURE
 ENABLE ${PPDOM}.dock autohide
 
@@ -1695,6 +1809,7 @@ WRITE ${PPDOM}.dock wvous-bl-modifier -int 0
 # desktopservices                                           #
 #-----------------------------------------------------------#
 
+# WARNING: This section is required as is. DO NOT MODIFY.
 # Avoid creating .DS_Store files on network or USB volumes
 for ENABLE_KEY in DSDontWriteNetworkStores DSDontWriteUSBStores ; do
 	ENABLE ${PPDOM}.desktopservices ${ENABLE_KEY}
@@ -1709,8 +1824,11 @@ for DEV_KEY in DevMode HVIncludesKBSearches ; do
 	ENFORCE_DEV_MODE ${PPDOM}.helpviewer ${DEV_KEY} YES
 done ;
 
+if [[ ($HAS_CLOUD_ID == "YES") ]] ; then
 ENABLE ${PPDOM}.helpviewer WebKitOfflineWebApplicationCacheEnabled
-
+else
+DISABLE ${PPDOM}.helpviewer WebKitOfflineWebApplicationCacheEnabled
+fi
 #-----------------------------------------------------------#
 # imdpersistence.IMDPersistenceAgent                        #
 #-----------------------------------------------------------#
@@ -1746,8 +1864,11 @@ WRITE ${PPDOM}.quicklook.ThumbnailsAgent QLMTCacheSizeLastCheckAbsoluteTime -flo
 #-----------------------------------------------------------#
 # rapport                                                   #
 #-----------------------------------------------------------#
-
+if [[ ($HAS_CLOUD_ID == "YES") ]] ; then
 WRITE ${PPDOM}.rapport familySyncedName -string $(scutil --get ComputerName)
+else
+DELETE ${PPDOM}.rapport familySyncedName
+fi
 
 #-----------------------------------------------------------#
 # routined                                                  #
@@ -1763,12 +1884,14 @@ fi
 # screensaver                                               #
 #-----------------------------------------------------------#
 
+# WARNING: This setting is required as is. DO NOT MODIFY.
 # Require password immediately after sleep or screen saver begins
 ENABLE ${PPDOM}.screensaver askForPassword
 
 #Needs smartcard
 #ENABLE ${PPDOM}.screensaver tokenRemovalAction
 
+# WARNING: This setting is required as is. DO NOT MODIFY.
 # Ensures screen locks immediately when requested
 WRITE ${PPDOM}.screensaver askForPasswordDelay -int 0
 
@@ -1822,7 +1945,7 @@ echo ""
 #-----------------------------------------------------------#
 
 # Clean up saved window frame previews
-bash <(defaults find "NSWindow Frame " | sed -Ee 's/Found [0-9]+ keys in domain /defaults delete /g' | sed -Ee 's/\{.*$//g' | tr -d '\n' | tr -s '}' '\n' | cut -d\= -f 1 | tr -d "\:'" | tr -s ' ') || true
+bash <(defaults find "NSWindow Frame " 2>/dev/null | sed -Ee 's/Found [0-9]+ keys in domain /defaults delete /g' | sed -Ee 's/\{.*$//g' | tr -d '\n' | tr -s '}' '\n' | cut -d\= -f 1 | tr -d "\:'" | tr -s ' ') || true ;
 
 # General UI/UX
 
@@ -1837,14 +1960,14 @@ bash <(defaults find "NSWindow Frame " | sed -Ee 's/Found [0-9]+ keys in domain 
 
 # Set a custom wallpaper image. `DefaultDesktop.jpg` is already a symlink, and
 # all wallpapers are in `/Library/Desktop Pictures/`.
-if [[ ("${USE_DEVELOPER_SETUP}" == "YES") ]] ; then
-	rm -rf ~/Library/"Application Support"/Dock/desktoppicture.db
-fi
+#if [[ ("${USE_DEVELOPER_SETUP}" == "YES") ]] ; then
+#	rm -rf ~/Library/"Application Support"/Dock/desktoppicture.db
+#fi
 
 # Security Settings
 
 # Seeds /dev/random after boot with some more iterations
-openssl rand $((($RANDOM*$RANDOM*$RANDOM*$RANDOM)%((2*2*2*2*2*2*2*2)-1))) > /dev/random
+openssl rand $((($RANDOM*$RANDOM*$RANDOM*$RANDOM)%((16*16)-1))) > /dev/random 2>/dev/null || true
 
 # Stop iTunes from responding to the keyboard media keys
 #launchctl unload -w /System/Library/LaunchAgents/com.apple.rcd.plist 2> /dev/null
@@ -1864,6 +1987,9 @@ fi
 if [[ ( -d ~/bin ) ]] ; then
 	chflags hidden ~/bin
 fi
+if [[ ( -d ~/ymmv ) ]] ; then
+	chflags hidden ~/ymmv
+fi
 
 export -n CLOUD_ID
 export -n CLOUD_UUID
@@ -1877,14 +2003,15 @@ export -n PPDOM
 export -n GPDOM
 
 # Reset Launchpad, but keep the desktop wallpaper intact
-if [[ ( -d "~/Library/Application Support/Dock" ) ]] ; then
-	find "~/Library/Application Support/Dock" -name "*-*.db" -maxdepth 1 -delete 2>/dev/null || true
-fi
+#if [[ ( -d "~/Library/Application Support/Dock" ) ]] ; then
+#	find ~/Library/"Application Support"/Dock -name "*-*.db" -maxdepth 1 -delete 2>/dev/null || true
+#fi
 
 if [[ ("${USE_DEVELOPER_SETUP}" == "YES") ]] ; then
 # If not running interactively, don't do anything
 if [[ ( -t 0 ) ]] ; then
 echo "Developer Terminal detected. (Restart required)"
+echo "try: # ps -o pid -o command -u $USER | grep -vF \"coreauthd\" | sed -E -e 's/^[[:space:]]+//g' | tr -s ' ' ' ' | cut -d\  -f 1 | xargs -L1 -I{} kill {}";
 exit 0 ;
 fi
 fi
@@ -1920,15 +2047,13 @@ for app in "Activity Monitor" \
 	"TextEdit" \
 	"Transmission" \
 	"Tweetbot" \
-	"Twitter" \
-	"UIKitSystem" \
-	"SystemUIServer" \
-	"QuickLookUIServ" \
-	"Dock" \
-	"Finder" \
-	"Terminal"; do
-	(killall "${app}" >/dev/null || echo "failed to kill ${app:-unknown}") &
+	"Twitter"; do
+	(sleep 1 && killall "${app}" >/dev/null || echo "failed to kill ${app:-unknown}") &
 done
+wait ;
+
+ps -o pid -o command -u $USER | grep -vF "coreauthd" | sed -E -e 's/^[[:space:]]+//g' | tr -s ' ' ' ' | cut -d\  -f 1 | xargs -L1 -I{} kill {} 2>/dev/null || true ;
+
 echo "Done. Note that some of these changes require a logout/restart to take effect."
 
 exit 0 ;

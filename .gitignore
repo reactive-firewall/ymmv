@@ -19,3 +19,5 @@ dot_gnupg/*.kbx
 payload/*Desktops/
 *.icns
 Icon*
+*.workflow
+*.workflow/*

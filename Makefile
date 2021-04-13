@@ -2,7 +2,7 @@
 
 # reactive-firewall/YMMV Repo Template
 # ..................................
-# Copyright (c) 2017-2020, Kendrick Walls
+# Copyright (c) 2017-2021, Kendrick Walls
 # ..................................
 # Licensed under MIT (the "License");
 # you may not use this file except in compliance with the License.
@@ -116,6 +116,12 @@ install-tools-mac: must_be_root /usr/local/bin/ /usr/local/bin/auditALFW install
 install-home: ~/.bashrc ~/.profile ~/.bash_profile ~/.bash_aliases ~/.bash_history
 	$(QUIET)$(ECHO) "$@: Configured."
 
+~/.%rc: ./dot_%rc
+	$(QUITE)$(WAIT)
+	$(QUIET)$(INSTALL) $(INST_USER_OWN) $(INST_TOOL_OPTS) $< $@ 2>/dev/null || true
+	$(QUITE)$(WAIT)
+	$(QUIET)$(ECHO) "$@: installed."
+
 ~/.%: ./dot_%
 	$(QUITE)$(WAIT)
 	$(QUIET)$(INSTALL) $(INST_USER_OWN) $(INST_FILE_OPTS) $< $@ 2>/dev/null || true
@@ -158,7 +164,7 @@ uninstall-etc:
 	$(QUITE)$(WAIT)
 	$(QUIET)$(ECHO) "$@: Done."
 
-uninstall-home: uninstall-dot-bash_aliases uninstall-dot-bash_profile uninstall-dot-bash_history
+uninstall-home: uninstall-dot-bash_aliases uninstall-dot-bash_profile uninstall-dot-bash_history uninstall-dot-macrc
 	$(QUITE)$(WAIT)
 	$(QUIET)$(ECHO) "$@: Done."
 
