@@ -5,6 +5,9 @@ SHELL=/bin/bash
 # Keep bash over zsh for Mac OS X
 BASH_SILENCE_DEPRECATION_WARNING=1
 
+# temporary files on Mac OS X
+#TMPDIR=`getconf DARWIN_USER_TEMP_DIR`
+
 #configure less to use color and utf-8
 LESSCHARSET='utf-8'
 LESS="-i -w  -z-4 -g -h30 -M -X -F -R -P%t?f%f "
