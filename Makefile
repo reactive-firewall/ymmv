@@ -18,15 +18,19 @@
 
 
 ifeq "$(ECHO)" ""
-	ECHO=echo
+	ECHO=$(command -p echo)
+endif
+
+ifeq "$(ALFW)" ""
+	ALFW=/usr/libexec/ApplicationFirewall/socketfilterfw
 endif
 
 ifeq "$(LINK)" ""
-	LINK=ln -sf
+	LINK=$(command -p ln) -sf
 endif
 
 ifeq "$(MAKE)" ""
-	MAKE=make
+	MAKE=$(command -p make)
 endif
 
 ifeq "$(WAIT)" ""
@@ -66,7 +70,7 @@ ifeq "$(INSTALL)" ""
 		INST_CONFIG_OPTS=-m 644
 	endif
 	ifeq "$(INST_DIR_OPTS)" ""
-		INST_DIR_OPTS=-m 755 -d
+		INST_DIR_OPTS=$(INST_TOOL_OPTS) -d
 	endif
 endif
 
@@ -78,7 +82,7 @@ ifeq "$(LOG)" "no"
 	QUIET=@
 endif
 
-.SUFFIXES: .zip .php .css .html .bash .sh .py .pyc .txt .js
+.SUFFIXES: .zip .php .css .html .bash .sh .py .pyc .txt .js .plist .dmg
 
 PHONY: must_be_root install-tools-mac cleanup install-home uninstall
 
@@ -98,11 +102,11 @@ install-etc: must_be_root /etc/ /etc/gitconfig /etc/environment /etc/bashrc
 	$(QUIET)$(ECHO) "$@: Done."
 
 install-pf: must_be_root /etc/ /etc/pf.conf /etc/pf.anchors/local.user
-	$(QUITE)/usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate on
-	$(QUITE)/usr/libexec/ApplicationFirewall/socketfilterfw --setloggingmode on
-	$(QUITE)/usr/libexec/ApplicationFirewall/socketfilterfw --setstealthmode on
-	$(QUITE)/usr/libexec/ApplicationFirewall/socketfilterfw --setallowsigned on
-	$(QUITE)/usr/libexec/ApplicationFirewall/socketfilterfw --setallowsignedapp off || true
+	$(QUITE)$(ALFW) --setglobalstate on
+	$(QUITE)$(ALFW) --setloggingmode on
+	$(QUITE)$(ALFW) --setstealthmode on
+	$(QUITE)$(ALFW) --setallowsigned on
+	$(QUITE)$(ALFW) --setallowsignedapp off || true
 	$(QUITE)pkill -HUP socketfilterfw || true ;
 	$(QUITE)$(WAIT)
 	$(QUIET)$(ECHO) "$@: Restart Required."
@@ -128,9 +132,14 @@ install-home: ~/.bashrc ~/.profile ~/.bash_profile ~/.bash_aliases ~/.bash_histo
 	$(QUITE)$(WAIT)
 	$(QUIET)$(ECHO) "$@: installed."
 
+/etc/bashrc.previous: must_be_root /etc/
+	$(QUITE)$(CP) $@ $@.previous 2>/dev/null || true
+	$(QUITE)$(WAIT)
+	$(QUIET)$(ECHO) "$@: backed up."
+
 /etc/bashrc: ./payload/etc/bashrc must_be_root /etc/
 	$(QUITE)$(WAIT)
-	$(QUITE)$(CP) $@ $@.previous 2>/dev/null || true
+	$(QUITE)$(MAKE) -C ./ -f ./Makefile $@.previous 2>/dev/null || true
 	$(QUIET)$(INSTALL) $(INST_OWN) $(INST_TOOL_OPTS) $< $@ 2>/dev/null || true
 	$(QUITE)$(WAIT)
 	$(QUIET)$(ECHO) "$@: configured."
@@ -158,7 +167,7 @@ install-home: ~/.bashrc ~/.profile ~/.bash_profile ~/.bash_aliases ~/.bash_histo
 
 # uninstalls
 
-uninstall-etc:
+uninstall-etc: /etc/bashrc.previous
 	$(QUITE)$(RM) /etc/gitconfig 2>/dev/null || true
 	$(QUITE)$(RM) /etc/bashrc 2>/dev/null && $(QUITE)$(CP) /etc/bashrc.previous /etc/bashrc 2>/dev/null
 	$(QUITE)$(WAIT)
