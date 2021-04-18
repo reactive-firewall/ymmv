@@ -84,11 +84,11 @@ EXIT_CODE=0
 
 # THIS IS THE ACTUAL TEST
 if [[ -f ../dot_gitconfig ]] ; then
-	git config -f ../dot_gitconfig --list || EXIT_CODE=1
+	git config -f ../dot_gitconfig --list --name-only 2>&1 || EXIT_CODE=1
 elif [[ -f ./dot_gitconfig ]] ; then
-	git config -f ./dot_gitconfig --list || EXIT_CODE=1
+	git config -f ./dot_gitconfig --list --name-only 2>&1 || EXIT_CODE=1
 elif [[ -f ./.gitconfig ]] ; then
-	git config -f ./.gitconfig --list || EXIT_CODE=1
+	git config -f ./.gitconfig --list --name-only 2>&1 || EXIT_CODE=1
 else
 	echo "FAIL: missing git config file"
 	EXIT_CODE=1

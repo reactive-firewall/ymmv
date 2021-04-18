@@ -126,7 +126,7 @@ else
         pkill -9 gpg-agent 2>/dev/null || true ;
         pkill -9 ssh-agent 2>/dev/null || true ;
  	# Launch new helper agent
-	if [[ $( \uname -s ) == "Darwin" ]] ; then
+	if [[ $( \uname -s ) == "Darwin" ]] && [[ -x /usr/local/MacGPG2/bin/gpg-agent  ]] ; then
 		eval $(/usr/local/MacGPG2/bin/gpg-agent --enable-ssh-support --ssh-fingerprint-digest SHA256 --homedir=${HOME}/.gnupg/ --daemon -s )
 		unset SSH_AGENT_PID
 		if [ "${gnupg_SSH_AUTH_SOCK_by:-0}" -ne $$ ]; then
@@ -135,7 +135,7 @@ else
         	export GPG_AGENT_PID=$(pgrep "gpg-agent" | tail -n 1) ;
 		export SSH_AGENT_PID=${GPG_AGENT_PID}
 		export GPG_AGENT_INFO
-	else
+	elif [[ ( -x $(command -v gpg-agent) ) ]] ; then
 		eval $(gpg-agent -s --enable-ssh-support --daemon --write-env-file )
 	# if your implementation is missing --write-env-file, and does not create the .gpg-agent-info file uncomment the following
 	#       echo "GPG_AGENT_INFO=${GPG_AGENT_INFO} ; export GPG_AGENT_INFO" > "${HOME}/.gpg-agent-info"
@@ -364,8 +364,7 @@ function disk_color()
         echo -en "${red}" ;
         # No 'write' privilege in the current directory.
     elif [ -s "${PWD}" ] ; then
-        local used=$(command df -P "$PWD" |
-                   awk 'END {print $5} {sub(/%/,"")}' | grep -oE "\d+" | tail -n +1 )
+        local used=$(command df -P "$PWD" | awk 'END {print $5} {sub(/%/,"")}' | grep -oE "\d+" | tail -n +1 )
         if [ ${used} -gt 95 ]; then
             echo -en "${ALERT}" ;           # Disk almost full (>95%).
         elif [ ${used} -gt 90 ]; then
