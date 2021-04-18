@@ -18,7 +18,7 @@
 
 
 ifeq "$(ECHO)" ""
-	ECHO=$(command -p echo)
+	ECHO=command -p echo
 endif
 
 ifeq "$(ALFW)" ""
@@ -26,7 +26,7 @@ ifeq "$(ALFW)" ""
 endif
 
 ifeq "$(LINK)" ""
-	LINK=$(command -p ln) -sf
+	LINK=command -p ln -sf
 endif
 
 ifeq "$(MAKE)" ""
