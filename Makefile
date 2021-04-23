@@ -26,11 +26,11 @@ ifeq "$(ALFW)" ""
 endif
 
 ifeq "$(LINK)" ""
-	LINK=command -p ln -sf
+	LINK=command -pv ln -sf
 endif
 
 ifeq "$(MAKE)" ""
-	MAKE=$(command -p make)
+	MAKE=command -pv make
 endif
 
 ifeq "$(WAIT)" ""
@@ -84,7 +84,7 @@ endif
 
 .SUFFIXES: .zip .php .css .html .bash .sh .py .pyc .txt .js .plist .dmg
 
-PHONY: must_be_root install-tools-mac cleanup install-home uninstall
+PHONY: must_be_root install-tools-mac install-pf cleanup install-tools install-etc install-home uninstall build
 
 build:
 	$(QUIET)$(ECHO) "No need to build. Try make -f Makefile install"
@@ -200,8 +200,9 @@ purge: clean uninstall
 	$(QUIET)$(ECHO) "$@: Done."
 
 test: cleanup
-	$(QUIET)bash -c ./tests/test_*sh
-	$(QUIET)$(ECHO) "$@: Done."
+	$(QUIET)$(ECHO) "$@: START."
+	$(QUIET)ls -1 ./tests/test_*sh | xargs -L1 -I{} bash -c "{} && echo '{}: OK' || echo '{}: FAILED'"
+	$(QUIET)$(ECHO) "$@: END."
 
 test-tox: cleanup
 	$(QUIET)$(ECHO) "$@: N/A."

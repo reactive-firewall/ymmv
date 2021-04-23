@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Close any open System Preferences panes, to prevent them from overriding
-# settings we’re about to change
+# settings we're about to change
 osascript -e 'tell application "System Preferences" to quit' || true ;
 
 export LANG=${LANG:-"en_US"}
@@ -21,7 +21,7 @@ else
 	if [[ ( -d "/Users/Shared/Music/" ) ]] ; then
 		export MUSIC_LIBRARY_LOCATION="/Users/Shared/Music/"
 	else
-		export MUSIC_LIBRARY_LOCATION="~/Music/Music/"
+		export MUSIC_LIBRARY_LOCATION="${HOME:-/Users/Shared}/Music/Music/"
 	fi
 fi
 
@@ -31,7 +31,7 @@ export CURRENT_DATE_TIME=$(date -j "+%Y-%m-%d %H:%M:00 +0800")
 export CURRENT_SECONDS=$(date -j "+%s")
 
 
-MAX_DOWNLOAD_CONNECTIONS=5
+declare -i MAX_DOWNLOAD_CONNECTIONS=5
 OS_VERSION=$(sw_vers -productVersion)
 OS_VERSION_MAJOR=$(echo $OS_VERSION | cut -d. -f 1-2 )
 
@@ -59,9 +59,11 @@ if [[ ( $(defaults export MobileMeAccounts - | grep -A5 -F AccountDSID | grep -c
 	export CLOUD_EMAIL=$(defaults find AccountDSID | grep -F AccountID | grep -oE '^\s*[A]{1}[c]{2}[o]{1}.*' | head -n 1 | tr -d '\"; ' | cut -d\= -f 2)
 	export HAS_CLOUD_ID="YES"
 else
-
 	# (sign in in system prefs to appleID instead.)
 	export HAS_CLOUD_ID="NO"
+	export AUTHOR_NAME="${LOGNAME:-Unknown}"
+	export -n CLOUD_EMAIL ;
+	export CLOUD_UUID=${CLOUD_UUID:-$ZERO_UUID}
 fi
 
 
@@ -229,7 +231,7 @@ fi
 # To Be Deleted                                             #
 #-----------------------------------------------------------#
 
-for BAD_DOMAIN in AppleMediaServices DiskUtility EmojiCache UIKit avfoundation.frecents audio.AudioMIDISetup bookstoreagent stockholm stocks stocks.account macos.classroom garageband10 Messages imessage EmojiPreferences PTPCamera Preview.ImageSizingPresets Preview.ViewState proactive.PersonalizationPortrait registration MobileDeviceCrashCopy dockfixup ids.deviceproperties internal.ck studentd ; do
+for BAD_DOMAIN in AppleMediaServices DiskUtility EmojiCache UIKit avfoundation.frecents audio.AudioMIDISetup bookstoreagent stockholm stocks stocks.account macos.classroom garageband10 Messages imessage EmojiPreferences PTPCamera Preview.ImageSizingPresets Preview.ViewState proactive.PersonalizationPortrait registration MobileDeviceCrashCopy dockfixup ids.deviceproperties internal.ck studentd ScriptEditor2 ; do
 
 	DELETE ${PPDOM}.${BAD_DOMAIN} 2>/dev/null || true
 
@@ -240,6 +242,12 @@ done ;
 #-----------------------------------------------------------#
 
 DELETE org.gpgtools.gpgmail 2>/dev/null || true
+
+# the whole domain of pbs might not be needed
+DELETE pbs 2>/dev/null || true
+
+# the next one is a STRANGE NAME with an empty dot at the end
+DELETE com.sonorissoftware. 2>/dev/null || true
 
 DELETE com.apple.imservice.ids.iMessage 2>/dev/null || true
 
@@ -260,6 +268,7 @@ for SOME_DOMAIN in AppStore appstore ; do
 	done ;
 
 	WRITE ${PPDOM}.${SOME_DOMAIN} AutoPlayVideoSetting -string off
+
 	WRITE ${PPDOM}.${SOME_DOMAIN} lastBootstrapTimeZone -string "${TZ}"
 	WRITE ${PPDOM}.${SOME_DOMAIN} NSNavLastRootDirectory -string "${DEFAULT_SAVE_LOCATION}"
 	WRITE ${PPDOM}.${SOME_DOMAIN} mostRecentTabIdentifier -string updates
@@ -352,7 +361,7 @@ for SOME_DOMAIN in NSGlobalDomain "Apple Global Domain" ; do
 			WRITE "${SOME_DOMAIN}" com.apple.springing.delay -float 0
 		fi
 	fi
-	
+
 	# WARNING: The setting for AppleShowAllExtensions is required as is. DO NOT MODIFY.
 	# Expand save panel by default
 	# Expand print panel by default
@@ -383,7 +392,7 @@ for SOME_DOMAIN in NSGlobalDomain "Apple Global Domain" ; do
 	WRITE "${SOME_DOMAIN}" NSLinguisticDataAssetsRequested -array "${LANG}" "${LANG:0:2}"
 	WRITE "${SOME_DOMAIN}" NSLinguisticDataAssetsRequestTime -date "${CURRENT_DATE_TIME}"
 	WRITE "${SOME_DOMAIN}" AppleLocale -string "${LANG}"
-	
+
 	# WARNING: This setting is required as is. DO NOT MODIFY.
 	WRITE "${SOME_DOMAIN}" AppleMeasurementUnits -string "Inches"
 
@@ -401,7 +410,7 @@ for SOME_DOMAIN in NSGlobalDomain "Apple Global Domain" ; do
 	for DEV_KEY in com.apple.springing.enabled NSUseAnimatedFocusRing NSScrollAnimationEnabled ; do
 		ENFORCE_GRAPHICS_MODE "${SOME_DOMAIN}" ${DEV_KEY} YES
 	done ;
-	
+
 	# DEV MODE
 	# Display ASCII control characters using caret notation in standard text views
 	# Try e.g. `cd /tmp; unidecode "\x{0000}" > cc.txt; open -e cc.txt`
@@ -426,7 +435,6 @@ for SOME_DOMAIN in NSGlobalDomain "Apple Global Domain" ; do
 	for DEV_KEY in NSAutomaticCapitalizationEnabled NSAutomaticDashSubstitutionEnabled NSAutomaticPeriodSubstitutionEnabled ApplePressAndHoldEnabled ; do
 		ENFORCE_DEV_MODE "${SOME_DOMAIN}" ${DEV_KEY} NO
 	done ;
-	
 
 	# Clean up some
 
@@ -920,7 +928,8 @@ WRITE ${PPDOM}.appstored ArcadeDeviceID -string "${ZERO_UUID}"
 WRITE ${PPDOM}.appstored ArcadeDeviceIDCreationDate -date "2020-11-11 11:11:11 +0000"
 WRITE ${PPDOM}.appstored ArcadePayoutDeviceID -string "${ZERO_UUID}"
 WRITE ${PPDOM}.appstored ArcadeSubscriptionState -string Unsubscribed
-WRITE ${PPDOM}.appstored WelcomeNotificationLastAppStoreConnectionProductVersion -string "${OS_VERSION}"
+# this needs to be moved to user prefs
+# WRITE ${PPDOM}.appstored WelcomeNotificationLastAppStoreConnectionProductVersion -string "${OS_VERSION}"
 
 
 #-----------------------------------------------------------#
@@ -1209,6 +1218,8 @@ done ;
 
 if [[ ($HAS_CLOUD_ID == "YES") ]] ; then
 	WRITE ${PPDOM}.iWork.Keynote KNRemoteCurrentDevicePlaybackUUID -string "${HW_UUID}"
+else
+	DELETE ${PPDOM}.iWork.Keynote KNRemoteCurrentDevicePlaybackUUID
 fi
 
 #-----------------------------------------------------------#
@@ -1216,12 +1227,20 @@ fi
 #-----------------------------------------------------------#
 
 if [[ ( -d "~/Public/Google Drive Drop Box" ) ]] ; then
-WRITE ${GPDOM}.GoogleDrive NSNavLastRootDirectory -string "~/Public/Google Drive Drop Box"
+	WRITE ${GPDOM}.GoogleDrive NSNavLastRootDirectory -string "~/Public/Google Drive Drop Box"
 fi
 WRITE ${GPDOM}.GoogleDrive "onboarding_complete" -string shown
 
 for SOME_DOMAIN in GoogleDrive Keystone.Agent ; do
 	WRITE ${GPDOM}.${SOME_DOMAIN} ReportingAttributes -dict "com.google.Keystone" '{}'
+done ;
+
+#-----------------------------------------------------------#
+# TurboTax                                                  #
+#-----------------------------------------------------------#
+
+for SOME_YEAR in 2015 2016 2017 2018 2019 2020 ; do
+        ENABLE com.intuit.turbotax.${SOME_YEAR} "License Signed" ;
 done ;
 
 #-----------------------------------------------------------#
@@ -1262,17 +1281,21 @@ WRITE us.zoom.xos "s_skinToneNum" -int 1
 # Music                                                     #
 #-----------------------------------------------------------#
 
-if [[ ($HAS_CLOUD_ID == "YES") ]] ; then
-	for SOME_DOMAIN in Music itunes ; do
+for SOME_DOMAIN in Music itunes TV ; do
+	if [[ ($HAS_CLOUD_ID == "YES") ]] ; then
 		WRITE ${PPDOM}.${SOME_DOMAIN} StoreUserInfo -dict ${CLOUD_ID} $"{ UserHandle = \"\"; UserName = '${CLOUD_UN}'; }" ;
 		WRITE ${PPDOM}.${SOME_DOMAIN} "Store Apple ID" -string "${CLOUD_EMAIL}"
 		WRITE ${PPDOM}.${SOME_DOMAIN} "Store DSID" -int ${CLOUD_ID}
-	done ;
-fi ;
+	else
+		WRITE ${PPDOM}.${SOME_DOMAIN} StoreUserInfo -dict ;
+		DELETE ${PPDOM}.${SOME_DOMAIN} "Store Apple ID"
+		DELETE ${PPDOM}.${SOME_DOMAIN} "Store DSID"
+	fi
+	WRITE ${PPDOM}.${SOME_DOMAIN} userMaxConcurrentDownloads -int "${MAX_DOWNLOAD_CONNECTIONS}"
+done ;
 
 WRITE ${PPDOM}.Music encoderName -string "AAC Encoder"
 
-WRITE ${PPDOM}.Music userMaxConcurrentDownloads -int "${MAX_DOWNLOAD_CONNECTIONS}"
 
 #-----------------------------------------------------------#
 # Music - iTunes                                            #
@@ -1659,6 +1682,8 @@ WRITE ${PPDOM}.icloud.fmip clientconfiguration -dict-add deviceNameSyncEnabled 1
 #-----------------------------------------------------------#
 if [[ ($HAS_CLOUD_ID == "YES") ]] ; then
 WRITE ${PPDOM}.icloud.fmip.voiceassistantsync object -dict-add ownerPersonId ${CLOUD_ID}
+else
+DELETE ${PPDOM}.icloud.fmip.voiceassistantsync object 2>/dev/null || true
 fi
 #-----------------------------------------------------------#
 # BKAgentService                                            #
@@ -1673,7 +1698,7 @@ DISABLE ${PPDOM}.BKAgentService BKAgentServiceUseriCloudSetting
 #-----------------------------------------------------------#
 
 # REQUIRED FOR SECURITY
-# Enable the “Are you sure you want to open this application?” dialog
+# Enable the "Are you sure you want to open this application?" dialog
 ENABLE ${PPDOM}.LaunchServices LSQuarantine
 
 #-----------------------------------------------------------#
@@ -1908,7 +1933,8 @@ WRITE ${PPDOM}.screensaver askForPasswordDelay -int 0
 #done ;
 
 #WRITE ${PPDOM}.sharingd lastUpdated -date "2020-09-18 02:22:25 +0000"
-WRITE ${PPDOM}.sharingd lastUpdated -date "${CURRENT_DATE_TIME}"
+#BUGGY
+#WRITE ${PPDOM}.sharingd lastUpdated -date "${CURRENT_DATE_TIME}"
 
 #-----------------------------------------------------------#
 # stocks.account                                            #

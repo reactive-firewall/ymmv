@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
 # original idea modified from (circa yet unlicensed April 2018 version):
-# ~/.macos — https://mths.be/macos
+# ~/.macos https://mths.be/macos
 
 # Close any open System Preferences panes, to prevent them from overriding
-# settings we’re about to change
+# settings we're about to change
 osascript -e 'tell application "System Preferences" to quit' || true
 
 # Ask for the administrator password upfront
@@ -46,7 +46,7 @@ defaults write NSGlobalDomain AppleShowScrollBars -string "Automatic" 2>/dev/nul
 # Possible values: `WhenScrolling`, `Automatic` and `Always`
 
 # Disable smooth scrolling
-# (Uncomment if you’re on an older Mac that messes up the animation)
+# (Uncomment if you're on an older Mac that messes up the animation)
 #defaults write NSGlobalDomain NSScrollAnimationEnabled -bool false
 
 # Increase window resize speed for Cocoa applications
@@ -185,7 +185,7 @@ sudo defaults write /Library/Preferences/com.apple.Bluetooth BluetoothAutoSeekPo
 defaults write ~/Library/Preferences/ByHost/com.apple.Bluetooth.$HW_UUID RemoteWakeEnabled -bool false
 
 # Disables Bonjour Advertising
-sudo defaults write /System/Library/LaunchDaemons/com.apple.mDNSResponder ProgramArguments -array-add "-NoMulticastAdvertisements"
+sudo defaults write /System/Library/LaunchDaemons/com.apple.mDNSResponder ProgramArguments -array-add "-NoMulticastAdvertisements" || true
 
 # Disables remote login
 sudo systemsetup -f -setremotelogin off &> /dev/null

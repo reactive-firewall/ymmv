@@ -67,28 +67,29 @@ PATH="/bin:/sbin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin"
 umask 137
 
 LOCK_FILE="/tmp/git_config_test_script_lock"
-
-if [[ -f ${LOCK_FILE} ]] ; then
-	exit 0 ;
-fi
-
-trap 'rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 1 ;' SIGABRT
-trap 'rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 1 ;' SIGHUP
-trap 'rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 1 ;' SIGTERM
-trap 'rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 1 ;' SIGQUIT
-trap 'rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 1 ;' SIGINT
-trap 'rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 0 ;' EXIT
-
-touch ${LOCK_FILE} 2>/dev/null || exit 0 ;
 EXIT_CODE=0
+
+if [[ ( $(shlock -f ${LOCK_FILE} -p $$ ) -eq 0 ) ]] ; then
+        trap 'rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 1 ;' SIGHUP || EXIT_CODE=3
+        trap 'rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 1 ;' SIGTERM || EXIT_CODE=4
+        trap 'rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 1 ;' SIGQUIT || EXIT_CODE=5
+        trap 'rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 1 ;' SIGSTOP || EXIT_CODE=7
+        trap 'rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 1 ;' SIGINT || EXIT_CODE=8
+        trap 'rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 1 ;' SIGABRT || EXIT_CODE=9
+        trap 'rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit ${EXIT_CODE} ;' EXIT || EXIT_CODE=1
+else
+        echo Test already in progress by `head ${LOCK_FILE}` ;
+        false ;
+        exit 255 ;
+fi
 
 # THIS IS THE ACTUAL TEST
 if [[ -f ../dot_gitconfig ]] ; then
-	git config -f ../dot_gitconfig --list --name-only 2>&1 || EXIT_CODE=1
+	git config -f ../dot_gitconfig --list --name-only 1>/dev/null 2>&1 || EXIT_CODE=1
 elif [[ -f ./dot_gitconfig ]] ; then
-	git config -f ./dot_gitconfig --list --name-only 2>&1 || EXIT_CODE=1
-elif [[ -f ./.gitconfig ]] ; then
-	git config -f ./.gitconfig --list --name-only 2>&1 || EXIT_CODE=1
+	git config -f ./dot_gitconfig --list --name-only 1>/dev/null 2>&1 || EXIT_CODE=1
+elif [[ -f ./.git/config ]] ; then
+	git config -f ./.git/config --list --name-only 1>/dev/null 2>&1 || EXIT_CODE=1
 else
 	echo "FAIL: missing git config file"
 	EXIT_CODE=1

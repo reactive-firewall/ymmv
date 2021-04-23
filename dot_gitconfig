@@ -1,0 +1,65 @@
+[http]
+	sslVerify = true
+	sslVersion = tlsv1.2
+	extraHeader = DNT: 1
+	cookieFile = ~/.git_http_cookies
+
+[core]
+	protectNTFS = true
+	protectHFS = true
+	trustctime = false
+	logAllRefUpdates = true
+	warnAmbiguousRefs = true
+	editor = nano -L
+	safecrlf = true
+	compression = 9
+
+[commit]
+	status = true
+
+[status]
+	branch = true
+	showStash = true
+	submoduleSummary = true
+
+[diff]
+	context = 6
+	renames = copies
+	renameLimit = 10
+	algorithm = minimal
+
+[fetch]
+	recurseSubmodules = true
+	output = full
+	prune = true
+
+
+[transfer]
+	fsckObjects = true
+
+[gui]
+	diffContext = 6
+	matchTrackingBranch = true
+	pruneDuringFetch = true
+
+[merge]
+	log = 50
+	renormalize = true
+	branchdesc = true
+	verbosity = 3
+
+[notes]
+	mergeStrategy = cat_sort_uniq
+	rewriteMode = cat_sort_uniq
+
+[rebase]
+	stat = true
+
+[rerere]
+	enabled = true
+
+[gpg]
+	program = gpg2
+
+[i18n]
+	logOutputEncoding = utf-8
