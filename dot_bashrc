@@ -35,10 +35,13 @@ pathappend ${HOME}/bin
 pathappend /Applications/Docker.app/Contents/Resources/bin
 pathappend /usr/local/MacGPG2/bin
 
+# idea from https://rakhesh.com/mac/macos-launchctl-commands/
+export XPC_SERVICE_NAME=$(echo -n $(head -n 1 <(launchctl list 2>/dev/null | grep -F com.apple.Terminal. | tr -s '\t ' ' ' | cut -d\  -f 3-3)).$$ )
+
 # enable this to force color use
 #export CAN_USE_COLOR_IN_ENVIORMENT=1 ;
 
-if [[ $( \uname -s ) == "Darwin" ]] ; then
+if [[ $( command uname -s ) == "Darwin" ]] ; then
 	export BASH_SILENCE_DEPRECATION_WARNING=1
 fi
 
@@ -91,8 +94,7 @@ function get_xserver ()
 
 if [ -z ${DISPLAY:-""} ]; then
     get_xserver
-    if [[ -z ${XSERVER}  || ${XSERVER} == $(hostname) ||
-	${XSERVER} == "unix" ]]; then
+    if [[ -z ${XSERVER}  || ${XSERVER} == $(hostname) || ${XSERVER} == "unix" ]]; then
           DISPLAY="${HOSTNAME:-127.0.0.1}:0.0"          # Display on local host.
     else
        DISPLAY=${XSERVER:-127.0.0.1}:0.0     # Display on remote host.
@@ -101,7 +103,7 @@ fi
 
 
 
-declare USE_COLOR_IN_ENVIORMENT="${USE_COLOR_IN_ENVIORMENT:-${CAN_USE_COLOR_IN_ENVIORMENT:=0}}" ;
+declare USE_COLOR_IN_ENVIORMENT="${USE_COLOR_IN_ENVIORMENT:-${CAN_USE_COLOR_IN_ENVIORMENT:-0}}" ;
 
 export DISPLAY ;
 export USE_COLOR_IN_ENVIORMENT ;
@@ -110,9 +112,9 @@ export TZ='America/Los_Angeles' ;
 #-------------------------------------------------------------
 # GPG Setup
 #-------------------------------------------------------------
-
+if [[ !( $(shopt -q login_shell) ) ]] ; then
 # ensure that the gpg agent is working with bash env
-if [[ ( -f "${HOME}/.gpg-agent-info" ) ]]; then
+if [[ ( -f "${HOME}/.gpg-agent-info" ) ]] && [[ !( $( \uname -s ) == "Darwin" ) ]] ; then
 	# load current GPG/SSH helper agents info
         source "${HOME}/.gpg-agent-info" ;
 	# setup the GPG/SSH environment to use helper agents (i.e make sub-shells work too)
@@ -123,7 +125,8 @@ if [[ ( -f "${HOME}/.gpg-agent-info" ) ]]; then
         export GPG_AGENT_PID=$(echo "${GPG_AGENT_INFO}" | cut -d : -f 2 ) ;
 else
 	# close any stale helper agents
-        pkill -9 gpg-agent 2>/dev/null || true ;
+	# need to add loop while more than one
+        pkill -15 gpg-agent 2>/dev/null || true ;
         pkill -9 ssh-agent 2>/dev/null || true ;
  	# Launch new helper agent
 	if [[ $( \uname -s ) == "Darwin" ]] && [[ -x /usr/local/MacGPG2/bin/gpg-agent  ]] ; then
@@ -131,10 +134,9 @@ else
 		unset SSH_AGENT_PID
 		if [ "${gnupg_SSH_AUTH_SOCK_by:-0}" -ne $$ ]; then
 			export SSH_AUTH_SOCK="$(gpgconf --list-dirs agent-ssh-socket)"
+		else
+			export SSH_AUTH_SOCK=${SSH_AUTH_SOCK} ;
 		fi
-        	export GPG_AGENT_PID=$(pgrep "gpg-agent" | tail -n 1) ;
-		export SSH_AGENT_PID=${GPG_AGENT_PID}
-		export GPG_AGENT_INFO
 	elif [[ ( -x $(command -v gpg-agent) ) ]] ; then
 		eval $(gpg-agent -s --enable-ssh-support --daemon --write-env-file )
 	# if your implementation is missing --write-env-file, and does not create the .gpg-agent-info file uncomment the following
@@ -143,9 +145,14 @@ else
 	#       echo "SSH_AGENT_PID=${SSH_AGENT_PID} ; export SSH_AGENT_PID" >> "${HOME}/.gpg-agent-info"
 	#       echo "GPG_AGENT_PID=$(echo "${GPG_AGENT_INFO}" | cut -d : -f 2 ) ; export GPG_AGENT_PID" >> "${HOME}/.gpg-agent-info"
 	fi
+	export GPG_AGENT_PID=$(pgrep -nf "gpg-agent" | tail -n 1) ;
+	export SSH_AGENT_PID=${GPG_AGENT_PID:-${SSH_AGENT_PID}} ;
+	if [[ -e ${HOME}/.gnupg/.S.gpg-agent ]] ; then
+		export GPG_AGENT_INFO="${HOME}/.gnupg/.S.gpg-agent:${GPG_AGENT_PID}:1" ;
+	fi
 fi
 export GPG_TTY=$(tty)
-
+fi
 
 #-------------------------------------------------------------
 # Some settings
@@ -159,7 +166,7 @@ ulimit -S -c 0      # Don't want coredumps.
 set -o notify
 set -o noclobber
 set -o ignoreeof
-#shopt -u history
+#shopt -uo history
 
 
 # Enable options:
@@ -200,7 +207,10 @@ HISTFILESIZE=2000
 shopt -s checkwinsize
 
 # If not running interactively, don't do anything
+#[ $(shopt -q login_shell) ] && return
+
 [ -z "$PS1" ] && return
+
 umask 027
 
 #-------------------------------------------------------------
@@ -239,7 +249,7 @@ declare WHITE=${WHITE:='\e[1;37m'};
 declare On_Black=${On_Black:='\e[40m'};
 declare On_White=${On_White:='\e[47m'};
 
-declare NC='\e[0m' ;            # No Color
+declare NC=$'\e[0m' ;            # No Color
 declare UNDERLINE='\e[4;1m' ;   # Underline
 # --> Nice. Has the same effect as using "ansi.sys" in DOS.
 
@@ -290,7 +300,7 @@ else
 
 function _exit()              # Function to run upon exit of shell.
 {
-    echo "Goodbye ${LOGNAME}"
+    echo "Goodbye ${LOGNAME}" ;
 }
 
 fi
@@ -345,49 +355,49 @@ function load()
 # Returns a color indicating system load.
 function load_color()
 {
-    local SYSLOAD=$(load)
-    if [ ${SYSLOAD} -gt ${XLOAD} ]; then
-        echo -en "${ALERT}" ;
-    elif [ ${SYSLOAD} -gt ${MLOAD} ]; then
-        echo -en "${red}" ;
-    elif [ ${SYSLOAD} -gt ${SLOAD} ]; then
-        echo -en "${RED}" ;
-    else
-        echo -en "${green}" ;
-    fi
+	local SYSLOAD=$(load)
+	if [ ${SYSLOAD} -gt ${XLOAD} ]; then
+		echo -en "${ALERT}" ;
+	elif [ ${SYSLOAD} -gt ${MLOAD} ]; then
+		echo -en "${red}" ;
+	elif [ ${SYSLOAD} -gt ${SLOAD} ]; then
+		echo -en "${RED}" ;
+	else
+		echo -en "${green}" ;
+	fi
 }
 
 # Returns a color according to free disk space in $PWD.
 function disk_color()
 {
-    if [ ! -w "${PWD}" ] ; then
-        echo -en "${red}" ;
-        # No 'write' privilege in the current directory.
-    elif [ -s "${PWD}" ] ; then
-        local used=$(command df -P "$PWD" | awk 'END {print $5} {sub(/%/,"")}' | grep -oE "\d+" | tail -n +1 )
-        if [ ${used} -gt 95 ]; then
-            echo -en "${ALERT}" ;           # Disk almost full (>95%).
-        elif [ ${used} -gt 90 ]; then
-            echo -en "${RED}" ;            # Free disk space almost gone.
-	elif [ ${used} -gt 80 ]; then
-            echo -en "${yellow}" ;            # Free disk space rather low.
-        else
-            echo -en "${GREEN}" ;           # Free disk space is ok.
-        fi
-    else
-        echo -en "${green}" ;
-        # Current directory is size '0' (like /proc, /sys etc).
-    fi
+	if [ ! -w "${PWD}" ] ; then
+		echo -en "${red}" ;
+		# No 'write' privilege in the current directory.
+	elif [ -s "${PWD}" ] ; then
+		local used=$(command df -P "$PWD" | awk 'END {print $5} {sub(/%/,"")}' | grep -oE "\d+" | tail -n +1 )
+		if [ ${used} -gt 95 ]; then
+			echo -en "${ALERT}" ;           # Disk almost full (>95%).
+		elif [ ${used} -gt 90 ]; then
+			echo -en "${RED}" ;            # Free disk space almost gone.
+		elif [ ${used} -gt 80 ]; then
+			echo -en "${yellow}" ;            # Free disk space rather low.
+		else
+			echo -en "${GREEN}" ;           # Free disk space is ok.
+		fi ;
+	else
+		echo -en "${green}" ;
+		# Current directory is size '0' (like /proc, /sys etc).
+	fi ;
 }
 
 # Returns a color according to running/suspended jobs.
 function job_color()
 {
-    if [ $(jobs -s | wc -l) -gt "0" ]; then
-        echo -en "${RED}" ;
-    elif [ $(jobs -r | wc -l) -gt "0" ] ; then
-        echo -en "${CYAN}" ;
-    fi
+	if [ $(jobs -s | wc -l) -gt "0" ]; then
+		echo -en "${RED}" ;
+	elif [ $(jobs -r | wc -l) -gt "0" ] ; then
+		echo -en "${CYAN}" ;
+	fi
 }
 
 # Adds some text in the terminal frame (if applicable).
@@ -421,10 +431,11 @@ esac
 #-------------------------------------------------------------
 
 alias more='less'
-export PAGER=less
 export LESSCHARSET='utf-8'
+if [[ ( -x /usr/bin/lesspipe.sh ) ]] ; then
 export LESSOPEN='|/usr/bin/lesspipe.sh %s 2>&-' ;
                 # Use this if lesspipe.sh exists.
+fi ;
 export LESS="-i -w  -z-4 -g -h30 -M -X -F -R -P%t?f%f " ;
 # LESS man page colors (makes Man pages more readable).
 export LESS_TERMCAP_mb=$'\e[01;31m'
@@ -434,13 +445,16 @@ export LESS_TERMCAP_se=$'\e[0m'
 export LESS_TERMCAP_so=$'\e[01;44;33m'
 export LESS_TERMCAP_ue=$'\e[0m'
 export LESS_TERMCAP_us=$'\e[01;32m'
+export PAGER=less
 
 else
 	alias more='less'
 	export PAGER=less
 	export LESSCHARSET='utf-8'
-	export LESSOPEN='|/usr/bin/lesspipe.sh %s 2>&-'
-                # Use this if lesspipe.sh exists.
+	if [[ ( -x /usr/bin/lesspipe.sh ) ]] ; then
+		export LESSOPEN='|/usr/bin/lesspipe.sh %s 2>&-'
+		# Use this if lesspipe.sh exists.
+	fi ;
 	export LESS='-i -d -w  -z-4 -g -h30 -m -X -F -R -P%t?f%f '
 
 	PS1="\A \u@\h \W --> " ;
@@ -529,6 +543,7 @@ fi
 # as it is modified from versious projects and thus my contributions
 # are probably subject to GPL ... so assume this file is GPL covered.
 
+shopt -s interactive_comments
+
 # this line must be last to avoid history of this file overwriting
 shopt -so history
-
