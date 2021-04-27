@@ -1,6 +1,5 @@
 #! /bin/bash
 
-# needs cleaned up
 if [[ !( -r ~/Downloads/macsfancontrol.zip ) ]] ; then
 curl -fsSL https://crystalidea.com/downloads/macsfancontrol.zip -o ~/Downloads/macsfancontrol.zip || exit 1 ;
 fi ;

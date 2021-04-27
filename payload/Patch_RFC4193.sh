@@ -3,11 +3,9 @@
 # AUTHOR: REACTIVE-FIREWALL                 #
 # VERSION 1.00 RELEASE DATE OCT 15 2020     #
 # DESC:  FORCE rfc4193 PREFIX ONLY          #
+# REQUIREMENTS:                             #
+#  OS X 10.15 or newer                      #
 #############################################
-#REQUIREMENTS:
-#  OS X 10.15 or newer
-#############################################
-#CHECK FOR OS X 10.15
 if [[  $(sw_vers -productVersion | grep '10.15')  ]] || [[  $(sw_vers -productVersion | grep '11.1')  ]]
 then
    if [[ -f /etc/sysctl.conf ]]
