@@ -1339,6 +1339,8 @@ if [[ ($HAS_CLOUD_ID == "YES") ]] ; then
 WRITE ${PPDOM}.amp.mediasharingd "home-sharing-settings" -dict "home-sharing-update-play-counts" 1 "home-sharing-user-id" '$CLOUD_ID' "home-sharing-user-name" "${CLOUD_UN}" ;
 fi ;
 
+WRITE ${PPDOM}.amp.mediasharingd "photo-sharing-settings" -dict apertureAlbums '()' apertureCopyOriginalPhotos 0 apertureCustomAlbumOrder 0 apertureSyncAllAlbums 0 apertureSyncAllFaces 0 apertureSyncMode 0 apertureSyncPhotoVideos 0 iPhotoAlbums '()' iPhotoCopyOriginalPhotos 0 iPhotoCustomAlbumOrder 0 iPhotoPrefsMajorVersion 0 iPhotoPrefsMinorVersion 0 iPhotoSyncAllAlbums 0 iPhotoSyncAllFaces 0 iPhotoSyncMode 0 iPhotoSyncPhotoVideos 0 iPhotoUpgradedDistinguishedAlbums 0 "photo-sharing-source-id" 0 photosAppAlbums '()' photosAppAutoIncludeEnabled 0 photosAppCopyOriginalPhotos 0 photosAppCustomAlbumOrder 0 photosAppEventCount 255 photosAppOnlyFavorites 0 photosAppSyncAllAlbums 0 photosAppSyncAllFaces 0 photosAppSyncMode 0 photosAppSyncPhotoVideos 0 photosFolderAlbums '()' photosFolderCopyOriginalPhotos 0 photosFolderCustomAlbumOrder 0 photosFolderInfo '{ syncFolderIsFromMac = 0; syncFolderIsValid = 0; }' photosFolderSyncMode 0 photosFolderSyncPhotoVideos 0 psAlbumAlbums '()' psAlbumCopyOriginalPhotos 0 psAlbumCustomAlbumOrder 0 psAlbumSyncMode 0 psAlbumSyncPhotoVideos 0 psElementsAlbums '()' psElementsCopyOriginalPhotos 0 psElementsCustomAlbumOrder 0 psElementsSyncMode 0 psElementsSyncPhotoVideos 0 || true
+
 WRITE ${PPDOM}.amp.mediasharingd "public-sharing-settings" -dict "public-sharing-share-all-playlists" 0
 
 #-----------------------------------------------------------#
