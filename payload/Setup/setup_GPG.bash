@@ -46,8 +46,8 @@ echo "" >> ~/.gnupg/gpg-agent.conf ;
 fi
 
 if [[ $( \uname -s ) == "Darwin" ]] ; then
-if [[ ( -z $( grep -v -F "scdeamon-program" ~/.gnupg/gpg-agent.conf ) ) ]] ; then
-echo "scdeamon-program /usr/local/MacGPG2/libexec/scdeamon" >> ~/.gnupg/gpg-agent.conf ;
+if [[ ( -z $( grep -v -F "scdaemon-program" ~/.gnupg/gpg-agent.conf ) ) ]] ; then
+echo "scdaemon-program /usr/local/MacGPG2/libexec/scdaemon" >> ~/.gnupg/gpg-agent.conf ;
 echo "" >> ~/.gnupg/gpg-agent.conf ;
 fi
 if [[ ( -z $( grep -v -F "pinentry-program " ~/.gnupg/gpg-agent.conf ) ) ]] ; then
