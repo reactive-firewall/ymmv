@@ -11,21 +11,23 @@ if [[ ( `umask` -le 27 ) ]] ; then umask 022 ; fi ;
 
 # configure paths
 function pathappend() {
-  for ARG in "$@" ; do
-    if [[ -d "$ARG" ]] && [[ ":$PATH:" != *":$ARG:"* ]] ; then
-        PATH="${PATH:+"$PATH:"}$ARG" ;
+  for PATH_ARG in "$@" ; do
+    if [[ -d "$PATH_ARG" ]] && [[ ":$PATH:" != *":$PATH_ARG:"* ]] ; then
+        PATH="${PATH:+"$PATH:"}$PATH_ARG" ;
 	export PATH ;
     fi
   done
+  unset PATH_ARG 2>/dev/null || true ;
 }
 
 function manappend() {
-  for ARG in "$@" ; do
-    if [[ -d "$ARG" ]] && [[ ":$MANPATH:" != *":$ARG:"* ]] ; then
-        MANPATH="${MANPATH:+"$MANPATH:"}$ARG" ;
+  for MAN_ARG in "$@" ; do
+    if [[ -d "$MAN_ARG" ]] && [[ ":$MANPATH:" != *":$MAN_ARG:"* ]] ; then
+        MANPATH="${MANPATH:+"$MANPATH:"}$MAN_ARG" ;
 	export MANPATH ;
     fi
   done
+  unset MAN_ARG 2>/dev/null || true ;
 }
 
 
