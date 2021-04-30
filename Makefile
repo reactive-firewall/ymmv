@@ -114,7 +114,7 @@ install-pf: must_be_root /etc/ /etc/pf.conf /etc/pf.anchors/local.user
 install-tools: must_be_root /usr/local/bin/ /usr/local/bin/grepip /usr/local/bin/grepCIDR /usr/local/bin/grepdns /usr/local/bin/Tar_it
 	$(QUIET)$(ECHO) "$@: Done."
 
-install-tools-mac: must_be_root /usr/local/bin/ /usr/local/bin/auditALFW install-pf
+install-tools-mac: must_be_root /usr/local/bin/ /usr/local/bin/auditALFW /usr/local/bin/auditGK install-pf
 	$(QUIET)$(ECHO) "$@: Done."
 
 install-home: ~/.bashrc ~/.profile ~/.bash_profile ~/.bash_aliases ~/.bash_history
