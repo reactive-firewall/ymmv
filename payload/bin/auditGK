@@ -93,7 +93,7 @@ function getAppID() {
 if [[ ( $(head <(mdls -name kMDItemCFBundleIdentifier -raw "${@:1:$#}") 2>/dev/null | grep -Foc "(null)" 2>/dev/null ) -eq 0 ) ]] ; then
 head <(mdls -name kMDItemCFBundleIdentifier -raw "${@:1:$#}")
 else
-tail -n 1 <(grep -A 1 -F "CFBundleIdentifier" "${@:1:$#}/Contents/Info.plist" 2>/dev/null ) | tr -s '><' '>' | cut -d \> -f 2 2>/dev/null ;
+command grep -F "." <( grep -Fv "plist version" <(grep -Ee "([[:alnum:]]+[\.]+[[:print:]]+)*?" <(grep -A 1 -F "CFBundleIdentifier" <(strings "${@:1:$#}/Contents/Info.plist" 2>/dev/null) 2>/dev/null | tail -n 1 ) ) | tr -s '><' '>' | sed -e 's/string>//g' | cut -d \> -f 2 2>/dev/null ) 2>/dev/null ;
 fi ;
 }
 
@@ -107,27 +107,29 @@ TEMP_APP_SOURCE=$(spctl -vvvv --continue --no-cache -a "${@:1:$#}" 2>&1 | tail -
 # need to check codesigned
 if [[ ( $( codesign -vvvv --deep -R="anchor apple or anchor apple generic" "${@:1:$#}" 2>&1 | grep -coF "failed" ) -gt 0 ) ]] ; then
 echo "Adding new rule for ${TEMP_APP_ID_VAR:-${@:1:$#}} (block by default)" ;
-spctl --add --label "${TEMP_APP_SOURCE}" "${@:1:$#}" || echo "The application is STILL not added. (Would block if run as admin)" ; wait ;
+spctl --add --label "${TEMP_APP_SOURCE}" --priority 1.0 "${@:1:$#}" || echo "The application is STILL not added. (Would block if run as admin)" ; wait ;
+spctl --remove --label "${TEMP_APP_SOURCE}" --path "${@:1:$#}" 2>/dev/null >/dev/null || true ;
 spctl --disable --label "${TEMP_APP_SOURCE}" "${@:1:$#}" 2>/dev/null >/dev/null || true ;
 tagefile Quarantine "${@:1:$#}" 2>/dev/null || true ;
 elif [[ ( $( codesign -vvvv --deep -R="anchor apple" "${@:1:$#}" 2>&1 | grep -coF "explicit requirement satisfied" ) -gt 0 ) ]] ; then
 echo "${TEMP_APP_ID_VAR:-${@:1:$#}} is codesigned by apple." ;
 tagfile Trust "${@:1:$#}" || true ;
-spctl --add --label "${TEMP_APP_SOURCE}" "${@:1:$#}" || echo "The application is STILL not added. (Would allow if run as admin)" ; wait ;
+spctl --add --label "${TEMP_APP_SOURCE}" --priority 2.0 "${@:1:$#}" || echo "The application is STILL not added. (Would allow if run as admin)" ; wait ;
 spctl --enable --label "${TEMP_APP_SOURCE}" "${@:1:$#}" 2>/dev/null >/dev/null || true ;
 elif [[ ( $( codesign -vvvv --deep -R="anchor apple or anchor apple generic" "${@:1:$#}" 2>&1 | grep -coF "explicit requirement satisfied" ) -gt 0 ) ]] ; then
 echo "${TEMP_APP_ID_VAR:-${@:1:$#}} seems to be codesigned." ;
 tagfile Trust "${@:1:$#}" || true ;
-spctl --add --label "${TEMP_APP_SOURCE}" "${@:1:$#}" || echo "The application is STILL not added. (Would allow if run as admin)" ; wait ;
+spctl --add --label "${TEMP_APP_SOURCE}" --priority 1.0 "${@:1:$#}" || echo "The application is STILL not added. (Would allow if run as admin)" ; wait ;
 fi ;
 elif [[ ( $( spctl -vv --continue --no-cache -a "${@:1:$#}" 2>&1 | head -n 1 | cut -d: -f 2 | grep -coF "rejected" ) -gt 0 ) ]] ; then
 TEMP_APP_SOURCE=$(spctl -vvvv --no-cache -a "${@:1:$#}" 2>&1 | tail -n 1 | cut -d\= -f 2)
 #echo "Enforcing rule for ${TEMP_APP_ID_VAR:-${@:1:$#}} (block by default)" ;
-#echo "Removing our rule for ${TEMP_APP_ID_VAR:-${@:1:$#}} (block by default)" ;
-#spctl --remove --label "${TEMP_APP_SOURCE}" "${@:1:$#}" || echo "The application is STILL not added. (Would block if run as admin)" ; wait ;
+echo "Removing our rule for ${TEMP_APP_ID_VAR:-${@:1:$#}} (if any)" ;
+spctl --remove --label "${TEMP_APP_SOURCE}" --priority 1.0 --path "${@:1:$#}" || echo "No rules Removed. (Was there any?)" ; wait ;
 spctl --disable --label "${TEMP_APP_SOURCE}" "${@:1:$#}" 2>/dev/null >/dev/null || true ;
 tagefile Quarantine "${@:1:$#}" 2>/dev/null || true ;
 else
+echo "Something very unlikly happened:"
 echo "Skipping path ${TEMP_APP_ID_VAR:-${@:1:$#}}: " $( spctl -vv --continue --no-cache -a "${@:1:$#}" 2>&1 | head -n 1 | cut -d: -f 2 ) ; wait ;
 fi
 exit 0 ;
