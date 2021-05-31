@@ -120,6 +120,16 @@ install-tools-mac: must_be_root /usr/local/bin/ /usr/local/bin/auditALFW /usr/lo
 install-home: ~/.bashrc ~/.profile ~/.bash_profile ~/.bash_aliases ~/.bash_history
 	$(QUIET)$(ECHO) "$@: Configured."
 
+~/.config/: ./payload/config/
+	$(QUIET)$(INSTALL) $(INST_USER_OWN) $(INST_DIR_OPTS) ~/.config/ 2>/dev/null || true
+	$(QUITE)$(WAIT)
+
+~/.config/%: ./payload/config/% ~/.config/
+	$(QUITE)$(WAIT)
+	$(QUIET)$(INSTALL) $(INST_USER_OWN) $(INST_TOOL_OPTS) $< $@ 2>/dev/null || true
+	$(QUITE)$(WAIT)
+	$(QUIET)$(ECHO) "$@: installed."
+
 ~/.%rc: ./dot_%rc
 	$(QUITE)$(WAIT)
 	$(QUIET)$(INSTALL) $(INST_USER_OWN) $(INST_TOOL_OPTS) $< $@ 2>/dev/null || true
