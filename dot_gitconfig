@@ -4,6 +4,10 @@
 	extraHeader = DNT: 1
 	cookieFile = ~/.git_http_cookies
 
+[user]
+	name = reactive-firewall
+	email = reactive-firewall@users.noreply.github.com
+
 [core]
 	protectNTFS = true
 	protectHFS = true
