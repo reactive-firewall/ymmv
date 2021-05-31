@@ -18,6 +18,20 @@
 	frag = yellow
 	func = brightyellow
 
+[color "branch"]
+	current = cyan
+	remote = red
+	upstream = yellow
+	local = green
+	plain = white
+
+[color "decorate"]
+	grafted = white
+	HEAD = cyan
+	branch = green
+	remoteBranch = magenta
+	tag = yellow
+
 [core]
 	protectNTFS = true
 	protectHFS = true
