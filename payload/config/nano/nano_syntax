@@ -5,6 +5,9 @@ color cyan "[[:digit:]]"
 color magenta "if[[:space:]]"
 color magenta "el[se]{2}[\ ]?[[i]{1}[f]{1}]?|el[if]{2}|else"
 color red "\"[[:alnum:][:space:]_&%{^}:=/\'\"\\\$\.-]*\""
+## Trailing whitespace
+icolor ,green "[[:space:]]+$"
+
 # Shell scripts
 syntax "shell" "[.]{1}[comand]{6}|.+[.]{1}[sh]{2}|.+[.]{1}[abhs]{4}"
 header "^#!.*/(env +)?bash( |$)"
@@ -16,6 +19,7 @@ color green start="[[:space:]]#" end="$"
 color red "\"[[:alnum:][:space:]_&%{^}:=/\'\"\\\$\.-]*\""
 color red "\'[[:alnum:][:space:]_&%{^}:=/\'\"\\\$\.-]*\'"
 color green start="^#" end="$"
+color ,yellow "[[:space:]]+$"
 # java source code
 syntax "java" "\.java$"
 color magenta "(boolean|byte|char|double|float|int|long|new|short|this|transient|void)[;]?[[:space:]]+"
@@ -33,6 +37,7 @@ color green start="//." end="$"
 color green start="/\*" end="\*/"
 color green start="/\*\*" end="\*/"
 color brightgreen,green "[ 	]+$"
+icolor ,red "[[:space:]]+$"
 
 ## Python source code
 syntax "python" "\.py$"
@@ -66,24 +71,143 @@ color white "[(){}]" "\[" "\]"
 
 ## numbers
 color brightcyan "\b[0-9]+\b"
-
-
 ## strings
 color red "[u]?['][^']*[^\\][']" "[u]?[']{3}.*[^\\][']{3}"
 color red "["][^"\\]*["]" "["]{3}[^"\\]*["]{3}"
 #block strings
 color red start=""""([^"]?|$)" end="(^|[^"]?)"""" start="'''[^']" end="[^']'''"
-
-
 ## comments
 color green "#.*$"
-
 ## block comments
 color green start="^\s*?"""\b" end=""""" start="^\s*?'''\b" end="'''"
-
-
 #color cyan start=""""[^"]" end="[^"]"""" start="'''[^']" end="[^']'''"
 #color cyan start="([[:space:]]"""|^""")" end=""""" start="'''[^']" end="'''"
 #color cyan start=""""" end=""""" start="'''" end="'''"
 #color cyan start="("""[^"]|[^"]""")" end="("""[^"]|[^"]""")" start="'''[^']" end="'''"
 #color cyan start="\"\"\"" end="\"\"\""
+icolor ,red "[[:space:]]+$"
+
+
+## patch files and diff source code.
+##
+syntax "Patch" "\.(patch|diff)$"
+header "diff (output|--git)"
+color brightgreen "^\+.*"
+color green "^\+\+\+.*"
+color white "^ .*"
+color brightred "^-.*"
+color red "^---.*"
+color brightyellow "^@@.*"
+color brightyellow "^\\ No newline at end of file$"
+color magenta "^diff.*"
+
+## Markdown source code
+syntax "Markdown" "\.(md|mkd|mkdn|markdown)$"
+# Tables (Github extension)
+color cyan ".*[ :]\|[ :].*"
+# quotes
+color white,black  start="^>" end="^$"
+color white,black  "^>.*"
+# Emphasis
+color green "(^|[[:space:]])(_[^ ][^_]*_|\*[^ ][^*]*\*)"
+# Strong emphasis
+color brightgreen "(^|[[:space:]])(__[^ ][^_]*__|\*\*[^ ][^*]*\*\*)"
+# strike-through
+color red "(^|[[:space:]])~~[^ ][^~]*~~"
+# horizontal rules
+color brightmagenta "^(---+|===+|___+|\*\*\*+)\s*$"
+# headlines
+color white  "^#{1,6}.*"
+# lists
+color blue   "^[[:space:]]*[\*+-] |^[[:space:]]*[0-9]+\. "
+# leading whitespace
+color black    "^[[:space:]]+"
+# misc
+color magenta "\(([CcRrPp]|[TtSs][Mm])\)" "\.{3}" "(^|[[:space:]])\-\-($|[[:space:]])"
+# links
+color magenta "\[[^]]+\]"
+color magenta "\[([^][]|\[[^]]*\])*\]\([^)]+\)"
+# images
+color blue "!\[[^][]*\](\([^)]+\)|\[[^]]+\])"
+# urls
+color cyan "https?://[^ )>]+"
+# code
+color yellow "`[^`]*`|^ {4}[^-+*].*"
+color yellow start="^```[^$]" end="^```$"
+color yellow "^```$"
+
+color ,green "[[:space:]]+$"
+
+## Makefile source code
+syntax "Makefile" "([Mm]akefile|\.ma?k)$"
+header "^#!.*/(env +)?[bg]?make( |$)"
+magic "makefile script"
+comment "#"
+
+color cyan "\<(ifeq|ifdef|ifneq|ifndef|else|endif)\>"
+color brightmagenta "^(export|include|override)\>"
+color magenta "^[^:=	]+:"
+color cyan "^[^:+	]+\+"
+color yellow "[%]"
+color white "[=,]" "\+=|\?=|:=|&&|\|\|"
+color magenta "\$\((abspath|addprefix|addsuffix|and|basename|call|dir)[[:space:]]"
+color magenta "\$\((error|eval|filter|filter-out|findstring|firstword)[[:space:]]"
+color magenta "\$\((flavor|foreach|if|info|join|lastword|notdir|or)[[:space:]]"
+color magenta "\$\((origin|patsubst|realpath|shell|sort|strip|suffix)[[:space:]]"
+color magenta "\$\((value|warning|wildcard|word|wordlist|words)[[:space:]]"
+color white "[()$]"
+color red ""(\\.|[^"])*"|'(\\.|[^'])*'"
+color brightblue "\$+(\{[^} ]+\}|\([^) ]+\))"
+color yellow "\$[@^<*?%|+]|\$\([@^<*?%+-][DF]\)"
+color magenta "\$\$|\\.?"
+color green "(^|[[:space:]])#([^{].*)?$"
+color brightwhite "^	@#.*"
+
+color ,green "[[:space:]]+$"
+
+## NANORC Source code
+syntax "Nanorc" "\.?nano(rc|_syntax)$"
+comment "#"
+
+## Possible errors and parameters
+icolor brightred "^[[:space:]]*((un)?set|include|syntax|i?color).*$"
+## Colors
+icolor black " black"
+icolor red " red"
+icolor green " green"
+icolor yellow " yellow"
+icolor blue " blue"
+icolor magenta " magenta"
+icolor cyan " cyan"
+icolor white " white"
+icolor normal " normal"
+icolor brightblack " brightblack"
+icolor brightred " brightred"
+icolor brightgreen " brightgreen"
+icolor brightyellow " brightyellow"
+icolor brightblue " brightblue"
+icolor brightmagenta " brightmagenta"
+icolor brightcyan " brightcyan"
+icolor brightwhite " brightwhite"
+icolor brightnormal " brightnormal"
+icolor ,black ",black "
+icolor ,red ",red "
+icolor ,green ",green "
+icolor ,yellow ",yellow "
+icolor ,blue ",blue "
+icolor ,magenta ",magenta "
+icolor ,cyan ",cyan "
+icolor ,white ",white "
+icolor white,black "white,black "
+icolor ,normal ",normal"
+icolor magenta "^[[:space:]]*i?color\>" "\<(start|end)="
+icolor yellow "^[[:space:]]*(set|unset)[[:space:]]+(errorcolor|functioncolor|keycolor|numbercolor|selectedcolor|statuscolor|stripecolor|titlecolor)[[:space:]]+(bright)?(white|black|red|blue|green|yellow|magenta|cyan|normal)?(,(white|black|red|blue|green|yellow|magenta|cyan|normal))?\>"
+## Keywords
+icolor brightgreen "^[[:space:]]*(set|unset)[[:space:]]+(afterends|allow_insecure_backup|atblanks|autoindent|backup|backupdir|boldtext|brackets|breaklonglines|casesensitive|constantshow|cutfromcursor|emptyline|errorcolor|fill|functioncolor|guidestripe|historylog|jumpyscrolling|keycolor|linenumbers|locking|matchbrackets|morespace|mouse|multibuffer|noconvert|nohelp|nonewlines|nopauses|nowrap|numbercolor|operatingdir|positionlog|preserve|punct|quickblank|quotestr|rawsequences|rebinddelete|regexp|selectedcolor|showcursor|smarthome|smooth|softwrap|speller|statuscolor|stripecolor|suspend|tabsize|tabstospaces|tempfile|titlecolor|trimblanks|unix|view|whitespace|wordbounds|wordchars|zap)\>"
+icolor blue "^[[:space:]]*(bind|set|unset|syntax|header|include|magic)\>"
+## Strings
+icolor white ""(\\.|[^"])*""
+## Comments
+icolor green "^[[:space:]]*#.*$"
+icolor brightgreen "^[[:space:]]*##.*$"
+icolor ,green "[[:space:]]+$"
