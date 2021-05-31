@@ -11,6 +11,7 @@
 	logAllRefUpdates = true
 	warnAmbiguousRefs = true
 	editor = nano -L
+	pager = less
 	safecrlf = true
 	compression = 9
 
@@ -28,11 +29,20 @@
 	renameLimit = 10
 	algorithm = minimal
 
+[color "diff"]
+	new = green
+	old = red
+	newmoved = brightgreen
+	oldmoved = brightred
+	context = white
+	meta = magenta
+	frag = yellow
+	func = brightyellow
+
 [fetch]
 	recurseSubmodules = true
 	output = full
 	prune = true
-
 
 [transfer]
 	fsckObjects = true
