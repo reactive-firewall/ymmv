@@ -4,9 +4,29 @@
 	extraHeader = DNT: 1
 	cookieFile = ~/.git_http_cookies
 
-[user]
-	name = reactive-firewall
-	email = reactive-firewall@users.noreply.github.com
+[color "diff"]
+	new = green
+	old = red
+	newmoved = brightgreen
+	oldmoved = brightred
+	context = white
+	meta = magenta
+	frag = yellow
+	func = brightyellow
+
+[color "branch"]
+	current = cyan
+	remote = red
+	upstream = yellow
+	local = green
+	plain = white
+
+[color "decorate"]
+	grafted = white
+	HEAD = cyan
+	branch = green
+	remoteBranch = magenta
+	tag = yellow
 
 [core]
 	protectNTFS = true
@@ -40,7 +60,7 @@
 	renames = copies
 	renameLimit = 127
 	algorithm = histogram
-        indentHeuristic = true
+	indentHeuristic = true
 	
 
 [fetch]
