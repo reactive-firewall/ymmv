@@ -3,17 +3,22 @@
 # the pf firewall
 
 # set the macros
-ext_if = "{ en*, awdl* }"
-rare_if = "{ p2p*, utun* }"
-int_if = "lo0"
-all_if = "{ vlan*, fw*, en*, awdl*, p2p*, utun*, " $int_if "}"
+ext_if = "{ en* }"
+int_if = "{ lo0, bridge* }"
+rare_if = "{ vlan*, fw*, p2p*, utun*, gif*, llw*, stf*, awdl*, ap* }"
+all_if = "{ vlan*, fw*, en*, p2p*, utun*, lo*, bridge*, gif*, llw*, stf*, awdl*, ap* }"
+most_if = "{ vlan*, fw*, en*, p2p*, utun*, lo0, llw*, awdl*, ap* }"
 
 # dns servers
-#google_dns_srv = "{ 8.8.4.4, 8.8.8.8, 2001:4860:4860::8888, 2001:4860:4860::8844 }"
-#lvl3_dns_srv = "{ 4.2.2.0/29 }"
-#cloudflare_dns_srv = "{ 1.1.1.1, 1.0.0.1, 2606:4700:4700::1111, 2606:4700:4700::1001 }"
+google_dns_srv = "{ 8.8.4.4, 8.8.8.8, 2001:4860:4860::8888, 2001:4860:4860::8844 }"
+lvl3_dns_srv = "{ 4.2.2.0/29 }"
+cloudflare_dns_srv = "{ 1.1.1.1, 1.0.0.1, 2606:4700:4700::1111, 2606:4700:4700::1001 }"
 # add your dns here or use a localhost resolver
-#dns_srv = "{ 2001:503:ba3e::2:30, 2001:500:200::b, 2001:500:2::c, 2001:500:2d::d, 2001:500:a8::e, 192.112.36.4, 2001:500:12::d0d, 128.63.2.53, 2001:500:1::53, 192.36.148.17, 192.58.128.30, 2001:7fe::53, 2001:503:c27::2:30, 193.0.14.129, 199.7.83.42, 202.12.27.33, 2001:7fd::1, 2001:500:3::42, 2001:dc3::35, 127.0.0.0/8, 10.0.0.0/8 }"
+dns_srv = "{ 2001:503:ba3e::2:30, 2001:500:200::b, 2001:500:2::c, 2001:500:2d::d, 2001:500:a8::e, 192.112.36.4, 2001:500:12::d0d, 128.63.2.53, 2001:500:1::53, 192.36.148.17, 192.58.128.30, 2001:7fe::53, 2001:503:c27::2:30, 193.0.14.129, 199.7.83.42, 202.12.27.33, 2001:7fd::1, 2001:500:3::42, 2001:dc3::35, 127.0.0.0/8, 10.0.0.0/8 }"
+
+# private nets
+# private_network = "{ 10/8, 192.168/16, 172.16/12 }"
+#linklocal_network = "{ 169.254.0.0/16, 224.0.0.251, 239.255.255.250, fe80::/10, ff02::fb }"
 
 # see https://support.apple.com/kb/HT6175?viewlocale=en_US for more info
 tcp_pts = "{ 22, 25, 53, 43, 80, 123, osu-nms, 389, 427, 443, 500, 515, 548, 554, 587, 631, 636, 985, 993, 995, 1723, nfsd, 3689, svn, ipsec-msft, 4613, 5556, 5557, winfs, sip, jabber-client, vnc-server, irdmi, 8008, radan-http, 8443, 8843, git, 42000:42999 }"
@@ -36,89 +41,86 @@ udp_itunes_airplay_pts = "{ 6001:6010, 6011 }"
 # RULES
 #######
 
-set timeout tcp.tsdiff 5
-set timeout tcp.opening 10
-
-antispoof for lo0
-
-# private nets
-table <private> const { 10/8, 172.16/12, 192.168/16 }
-table <linklocal> const { 224.0.0/24, 169.254.0.0/16, fe80::/10, ff02::fb }
-
-# dns servers
-table <google_dns_srv> const { 8.8.4.4, 8.8.8.8, 2001:4860:4860::8888, 2001:4860:4860::8844 }
-table <lvl3_dns_srv> const { 4.2.2.0/29 }
-table <cloudflare_dns_srv> const { 1.1.1.1, 1.0.0.1, 2606:4700:4700::1111, 2606:4700:4700::1001 }
-# add your dns here or use a localhost resolver
-table <dns_srv> const { 2001:503:ba3e::2:30, 2001:500:200::b, 2001:500:2::c, 2001:500:2d::d, 2001:500:a8::e, 192.112.36.4, 2001:500:12::d0d, 128.63.2.53, 2001:500:1::53, 192.36.148.17, 192.58.128.30, 2001:7fe::53, 2001:503:c27::2:30, 193.0.14.129, 199.7.83.42, 202.12.27.33, 2001:7fd::1, 2001:500:3::42, 2001:dc3::35, 127.0.0.0/8, 10.0.0.0/8 }
-
-table <blocklist> persist
-
-set skip on lo0
-block in log
-# allow DHCP
-pass out quick proto udp from any port 68 to any port 67
-pass in quick proto udp from any port 67 to any port 68
-# DHCPv6
-pass out quick inet6 proto tcp from any port 547 to any port 547
-pass in quick inet6 proto tcp from any port 547 to any port 547
-block return on $rare_if all
-# block anything coming from source we have no back routes for
-block in log quick from no-route to any
-
 # block packets whose ingress interface does not match the one in
 # the route back to their source address
 # block in from urpf-failed to any
+antispoof for lo0
 
-antispoof for $int_if
+table <private> const persist { 10/8, 192.168/16, 172.16/12 }
+table <linklocal> const persist { 169.254.0.0/16, fe80::/10 }
+table <zeroconf> const persist { 224.0.0.251, 239.255.255.250, ff02::fb }
+table <blocklist> persist
 
-anchor "100.preroute/*"
+set skip on $int_if
 
-block in inet proto icmp probability 20% icmp-type 8 code 0
-pass out inet proto icmp from any to any icmp-type 8 code 0
-pass out inet6 proto 58 from any to any icmp6-type 129 code 0
-block in quick inet proto icmp from any to any icmp-type 8 code 0
-block in quick inet6 proto 58 from any to any icmp6-type 129 code 0
+anchor "local.user/*" {
+	block in log all label "default block rule"
+	anchor "../0.dhcp" {
+		pass out quick proto udp from any port 68 to any port 67 label "allow DHCP requests out"
+		pass in quick proto udp from any port 67 to any port 68 label "allow DHCP responses in"
+		pass out quick inet6 proto tcp from any port 547 to any port 547 label "allow DHCPv6 requests out"
+		pass in quick inet6 proto tcp from any port 547 to any port 547 label "allow DHCPv6 responses in"
+		anchor "../bad.dhcp" {
+			block out quick proto udp from any port 67 to any label "block DHCP responses out"
+		}
+	}
+	anchor "../0.other" {
+		block return quick on $rare_if all label "block unusual $if stuff"
+		block in log quick from no-route to any label "block anyonomus stuff"
+	}
+	anchor "../100.control" {
+		block in inet proto icmp probability 20% icmp-type 8 code 0
+		pass out inet proto icmp from any to any icmp-type 8 code 0
+		pass out inet6 proto 58 from any to any icmp6-type 129 code 0
+		block in quick inet proto icmp from any to any icmp-type 8 code 0
+		block in quick inet6 proto 58 from any to any icmp6-type 129 code 0
+	}
+	anchor "../200.odd" {
+		block log quick on $most_if proto $rare_proto all
+		block log quick on $rare_if proto $rare_proto all
+	}
+	anchor "../300" {
+		pass out proto tcp from any to any port $extra_tcp_pts modulate state
+		pass out proto tcp from any to any port $tcp_pts keep state
+	}
+	anchor "../300.local" on $ext_if {
+		pass out proto tcp from any to {<private>} port $tcp_push_pts keep state
+		pass out proto tcp from {<private>} port $tcp_push_pts to {<private>} keep state
+	}
+	anchor "../300.incoming" {
+		block in quick proto tcp from any port $tcp_pts to any flags S/SFRAPU no state
+		block return in proto tcp from any port $tcp_pts to any flags S/SFRAP
+		block in proto tcp from any port $tcp_pts to any flags S/SA
+	}
+	anchor "../302" on $most_if {
+		pass in proto tcp from any port $tcp_pts to any port $dyn_pts flags FA/SFRAP
+		pass in proto tcp from any port $tcp_pts to any port $dyn_pts flags RA/SFRAP
+	}
+	anchor "../321.time" on $most_if {
+		pass out proto udp from any port 123 to any port $dyn_pts label "Allow NTP"
+	}
+	anchor "../400.dns" {
+		block in quick proto tcp from any port 53 to any flags S/SFRA no state label "Ignore DNS Scans"
+		block drop in quick log proto udp from any port 53 to any port <1024 label "Block Odd DNS"
+		pass out proto udp from any to $dns_srv port 53 label "Allow Pure DNS via $dstaddr"
+		pass out proto udp from any to $cloudflare_dns_srv port 53 label "Allow Pure DNS via $dstaddr"
+		pass out proto udp from any to $google_dns_srv port 53 label "Allow google DNS"
+		pass out log proto udp from any to any port 53 label "Allow other DNS with logging"
+		pass out log on $ext_if proto udp from {<private>} to {<private>} port 5353 label "Allow mDNS on local net"
+	}
+	anchor "../500" {
+		pass in on $ext_if proto udp from any port $udp_pts to any port $dyn_pts no state label "Allow most UDP"
+		pass in on $ext_if proto udp from any to any port $udp_itunes_airplay_pts label "Allow apple continuity via UDP"
+		pass in proto udp from any port $udp_push_pts to any port $dyn_pts keep state label "Allow apple push notification ports in"
+	}
+	anchor "../999.default" {
+		pass out proto tcp from any to any keep state label "Allow TCP Egress"
+		pass out proto udp from any to any keep state label "Allow UDP Egress"
+		pass out proto icmp all keep state label "Allow ICMP Egress"
+		pass out inet6 proto $ipv6_protos all keep state label "Allow IPv6 Egress"
+	}
+}
 
-block log quick on $ext_if proto $rare_proto all
-block log quick on $rare_if proto $rare_proto all
+block log quick on $all_if from {<blocklist>} to any label "Blacklisted Ingress Default Rule"
+block log quick on $most_if from any to {<blocklist>} label "Blacklisted Egress Default Rule"
 
-pass out proto tcp from any to any port $extra_tcp_pts modulate state
-pass out proto tcp from any to any port $tcp_pts keep state
-# network limited
-pass out on $ext_if proto tcp from any to {<private>} port $tcp_push_pts keep state
-pass out on $ext_if proto tcp from {<private>} port $tcp_push_pts to {<private>} keep state
-
-block in quick proto tcp from any port $tcp_pts to any flags S/SFRAPU no state
-block return in proto tcp from any port $tcp_pts to any flags S/SFRAP
-block in proto tcp from any port $tcp_pts to any flags S/SA
-
-pass in proto tcp from any port $tcp_pts to any port $dyn_pts flags FA/SFRAP
-pass in proto tcp from any port $tcp_pts to any port $dyn_pts flags RA/SFRAP
-
-#Allow ntp
-pass out proto udp from any port 123 to any port $dyn_pts
-
-#Allow dns
-block in proto tcp from any port 53 to any flags S/SFRA no state
-block drop in quick log proto udp from any port 53 to any port <1024
-pass out proto udp from any to {<google_dns_srv>} port 53
-pass out proto udp from any to {<cloudflare_dns_srv>} port 53
-pass out proto udp from any to {<dns_srv>} port 53
-pass out log proto udp from any to any port 53
-pass out log on $ext_if proto udp from {<linklocal>} to {<linklocal>} port 5353
-
-
-# allow almost everything
-pass in on $ext_if proto udp from any port $udp_pts to any port $dyn_pts no state
-pass in on $ext_if proto udp from any to any port $udp_itunes_airplay_pts
-pass in proto udp from any port $udp_push_pts to any port $dyn_pts keep state
-pass out proto tcp from any to any keep state
-pass out proto udp from any to any keep state
-pass out proto icmp all keep state
-block drop in inet6 proto $ipv6_protos no state
-block return-icmp6 in on $ext_if inet6 proto $ipv6_protos no state
-pass out inet6 proto $ipv6_protos all keep state
-
-block log on $ext_if from {<blocklist>} to any
-block log on $ext_if from any to {<blocklist>}
