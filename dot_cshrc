@@ -1,0 +1,11 @@
+#echo "HOME_DOT_CSHRC IS RUNNING"
+setenv CLASSPATH .
+
+if ( $SHLVL > 1 ) then
+/bin/bash -l ; wait ; logout ;
+endif
+
+logout ;
+
+# should never reach this point 
+exit 1 ;
