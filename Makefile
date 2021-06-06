@@ -57,6 +57,9 @@ ifeq "$(INSTALL)" ""
 	ifeq "$(INST_USER_OWN)" ""
 		INST_USER_OWN=-C -o $(USER) -g staff
 	endif
+	ifeq "$(INST_TOOL_OWN)" ""
+		INST_USER_OWN=-C -o root -g admin
+	endif
 	ifeq "$(INST_OPTS)" ""
 		INST_OPTS=-m 751
 	endif
@@ -162,13 +165,13 @@ install-home: ~/.bashrc ~/.profile ~/.bash_profile ~/.bash_aliases ~/.bash_histo
 
 /etc/pf.anchors/%: ./payload/etc/pf.anchors/% must_be_root /etc/ /etc/pf.anchors/
 	$(QUITE)$(WAIT)
-	$(QUIET)$(INSTALL) $(INST_OWN) $(INST_FILE_OPTS) $< $@ 2>/dev/null || true
+	$(QUIET)$(INSTALL) $(INST_TOOL_OWN) $(INST_FILE_OPTS) $< $@ 2>/dev/null || true
 	$(QUITE)$(WAIT)
 	$(QUIET)$(ECHO) "$@: installed."
 
 /usr/local/bin/%: ./payload/bin/% must_be_root /usr/local/bin/
 	$(QUITE)$(WAIT)
-	$(QUIET)$(INSTALL) $(INST_OWN) $(INST_TOOL_OPTS) $< $@
+	$(QUIET)$(INSTALL) $(INST_TOOL_OWN) $(INST_TOOL_OPTS) $< $@
 	$(QUITE)$(WAIT)
 	$(QUIET)$(ECHO) "$@: installed."
 
