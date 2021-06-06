@@ -117,10 +117,10 @@ install-pf: must_be_root /etc/ /etc/pf.conf /etc/pf.anchors/local.user
 install-tools: must_be_root /usr/local/bin/ /usr/local/bin/grepip /usr/local/bin/grepCIDR /usr/local/bin/grepdns /usr/local/bin/Tar_it
 	$(QUIET)$(ECHO) "$@: Done."
 
-install-tools-mac: must_be_root /usr/local/bin/ /usr/local/bin/auditALFW /usr/local/bin/auditGK install-pf
+install-tools-mac: must_be_root /usr/local/bin/ /usr/local/bin/sud /usr/local/bin/auditALFW /usr/local/bin/auditGK install-pf
 	$(QUIET)$(ECHO) "$@: Done."
 
-install-home: ~/.bashrc ~/.profile ~/.bash_profile ~/.bash_aliases ~/.bash_history ~/.plan
+install-home: ~/.bashrc ~/.profile ~/.bash_profile ~/.bash_aliases ~/.bash_history ~/.plan ~/.tcshrc ~/.cshrc
 	$(QUIET)$(ECHO) "$@: Configured."
 
 ~/.config/: ./payload/config/
@@ -129,7 +129,7 @@ install-home: ~/.bashrc ~/.profile ~/.bash_profile ~/.bash_aliases ~/.bash_histo
 
 ~/.config/%: ./payload/config/% ~/.config/
 	$(QUITE)$(WAIT)
-	$(QUIET)$(INSTALL) $(INST_USER_OWN) $(INST_TOOL_OPTS) $< $@ 2>/dev/null || true
+	$(QUIET)$(INSTALL) $(INST_USER_OWN) $(INST_CONFIG_OPTS) $< $@ 2>/dev/null || true
 	$(QUITE)$(WAIT)
 	$(QUIET)$(ECHO) "$@: installed."
 
@@ -186,11 +186,11 @@ uninstall-etc: /etc/bashrc.previous
 	$(QUITE)$(WAIT)
 	$(QUIET)$(ECHO) "$@: Done."
 
-uninstall-home: uninstall-dot-bash_aliases uninstall-dot-bash_profile uninstall-dot-bash_history uninstall-dot-macrc
+uninstall-home: uninstall-dot-bash_aliases uninstall-dot-bash_profile uninstall-dot-bash_history uninstall-dot-macrc uninstall-dot-cshrc uninstall-dot-tcshrc uninstall-dot-plan
 	$(QUITE)$(WAIT)
 	$(QUIET)$(ECHO) "$@: Done."
 
-uninstall-tools: uninstall-tools-grepip uninstall-tools-grepCIDR uninstall-tools-grepdns uninstall-tools-Tar_it
+uninstall-tools: uninstall-tools-grepip uninstall-tools-grepCIDR uninstall-tools-grepdns uninstall-tools-Tar_it uninstall-tools-sud
 	$(QUITE)$(WAIT)
 	$(QUIET)$(ECHO) "$@: Done."
 
