@@ -60,7 +60,7 @@
 #    even if the above stated remedy fails of its essential purpose.
 ################################################################################
 
-THE_FILE="${1}"
+THE_FILE="${@:1:$#}"
 
 PLIST_HEADER_STUB='<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"><plist version="1.0"><array><string>'
 PLIST_FOOTER_STUB="</string></array></plist>"
@@ -116,7 +116,7 @@ echo "${TEMP_APP_ID_VAR:-${@:1:$#}} is codesigned by apple." ;
 tagfile Trust "${@:1:$#}" || true ;
 spctl --add --label "${TEMP_APP_SOURCE}" --priority 2.0 "${@:1:$#}" || echo "The application is STILL not added. (Would allow if run as admin)" ; wait ;
 spctl --enable --label "${TEMP_APP_SOURCE}" "${@:1:$#}" 2>/dev/null >/dev/null || true ;
-elif [[ ( $( codesign -vvvv --deep -R="anchor apple or anchor apple generic" "${@:1:$#}" 2>&1 | grep -coF "explicit requirement satisfied" ) -gt 0 ) ]] ; then
+elif [[ ( $( codesign -vvvv --deep -R="anchor apple generic" "${@:1:$#}" 2>&1 | grep -coF "explicit requirement satisfied" ) -gt 0 ) ]] ; then
 echo "${TEMP_APP_ID_VAR:-${@:1:$#}} seems to be codesigned." ;
 tagfile Trust "${@:1:$#}" || true ;
 spctl --add --label "${TEMP_APP_SOURCE}" --priority 1.0 "${@:1:$#}" || echo "The application is STILL not added. (Would allow if run as admin)" ; wait ;
