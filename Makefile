@@ -120,7 +120,7 @@ install-tools: must_be_root /usr/local/bin/ /usr/local/bin/grepip /usr/local/bin
 install-tools-mac: must_be_root /usr/local/bin/ /usr/local/bin/auditALFW /usr/local/bin/auditGK install-pf
 	$(QUIET)$(ECHO) "$@: Done."
 
-install-home: ~/.bashrc ~/.profile ~/.bash_profile ~/.bash_aliases ~/.bash_history
+install-home: ~/.bashrc ~/.profile ~/.bash_profile ~/.bash_aliases ~/.bash_history ~/.plan
 	$(QUIET)$(ECHO) "$@: Configured."
 
 ~/.config/: ./payload/config/
