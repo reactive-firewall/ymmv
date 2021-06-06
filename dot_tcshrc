@@ -1,0 +1,7 @@
+setenv CLASSPATH $XDG_CONFIG_HOME/java/:.
+if ( $SHLVL > 1 ) then
+setenv SHELL /bin/bash
+setenv DYLD_LIBRARY_PATH /dev/null
+unset DYLD_LIBRARY_PATH
+/bin/bash -l ; wait ; logout ;
+endif
