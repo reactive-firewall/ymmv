@@ -96,22 +96,22 @@ init:
 	$(QUIET)$(ECHO) "$@: Done."
 
 install: install-etc install-tools install-home
-	$(QUITE)$(WAIT)
+	$(QUIET)$(WAIT)
 	$(QUIET)$(ECHO) "$@: Done."
 
 install-etc: must_be_root /etc/ /etc/gitconfig /etc/environment /etc/bashrc
-	$(QUITE)$(WAIT)
-	$(QUITE)source /etc/environment ;
+	$(QUIET)$(WAIT)
+	$(QUIET)source /etc/environment ;
 	$(QUIET)$(ECHO) "$@: Done."
 
 install-pf: must_be_root /etc/ /etc/pf.conf /etc/pf.anchors/local.user
-	$(QUITE)$(ALFW) --setglobalstate on
-	$(QUITE)$(ALFW) --setloggingmode on
-	$(QUITE)$(ALFW) --setstealthmode on
-	$(QUITE)$(ALFW) --setallowsigned on
-	$(QUITE)$(ALFW) --setallowsignedapp off || true
-	$(QUITE)pkill -HUP socketfilterfw || true ;
-	$(QUITE)$(WAIT)
+	$(QUIET)$(ALFW) --setglobalstate on
+	$(QUIET)$(ALFW) --setloggingmode on
+	$(QUIET)$(ALFW) --setstealthmode on
+	$(QUIET)$(ALFW) --setallowsigned on
+	$(QUIET)$(ALFW) --setallowsignedapp off || true
+	$(QUIET)pkill -HUP socketfilterfw || true ;
+	$(QUIET)$(WAIT)
 	$(QUIET)$(ECHO) "$@: Restart Required."
 
 install-tools: must_be_root /usr/local/bin/ /usr/local/bin/grepip /usr/local/bin/grepCIDR /usr/local/bin/grepdns /usr/local/bin/Tar_it
@@ -123,56 +123,79 @@ install-tools-mac: must_be_root /usr/local/bin/ /usr/local/bin/sud /usr/local/bi
 install-home: ~/.bashrc ~/.profile ~/.bash_profile ~/.bash_aliases ~/.bash_history ~/.plan ~/.tcshrc ~/.cshrc
 	$(QUIET)$(ECHO) "$@: Configured."
 
+install-better-home: install-home ~/.nofinger nano-config git-config
+	$(QUIET)$(ECHO) "$@: Configured."
+
+nano-config: nano-config-dir ~/.config/nano/nanorc ~/.config/nano/nano_syntax
+	$(QUIET)$(WAIT)
+	$(QUIET)$(ECHO) "User nano env: Configured."
+
+git-config: git-config-dir ~/.config/git/attributes
+	$(QUIET)$(WAIT)
+	$(QUIET)$(ECHO) "User Git: Configured."
+
 ~/.config/: ./payload/config/
 	$(QUIET)$(INSTALL) $(INST_USER_OWN) $(INST_DIR_OPTS) ~/.config/ 2>/dev/null || true
-	$(QUITE)$(WAIT)
+	$(QUIET)$(WAIT)
 
-~/.config/%: ./payload/config/% ~/.config/
-	$(QUITE)$(WAIT)
+~/.config/%: ./payload/config/$(%F) ~/.config/
+	$(QUIET)$(WAIT)
 	$(QUIET)$(INSTALL) $(INST_USER_OWN) $(INST_CONFIG_OPTS) $< $@ 2>/dev/null || true
-	$(QUITE)$(WAIT)
+	$(QUIET)$(WAIT)
+	$(QUIET)$(ECHO) "$@: installed."
+
+~/.config/%: ./payload/config/$(%D)/$(%F) ~/.config/$(%D)
+	$(QUIET)$(WAIT)
+	$(QUIET)$(INSTALL) $(INST_USER_OWN) $(INST_CONFIG_OPTS) $< $@ 2>/dev/null || true
+	$(QUIET)$(WAIT)
+	$(QUIET)$(ECHO) "$@: installed."
+
+%-config-dir: ./payload/config/%/ ~/.config/
+	$(QUIET)$(WAIT)
+	$(QUIET)$(INSTALL) $(INST_USER_OWN) $(INST_DIR_OPTS) $@ 2>/dev/null || true
+	$(QUIET)$(WAIT)
 	$(QUIET)$(ECHO) "$@: installed."
 
 ~/.%rc: ./dot_%rc
-	$(QUITE)$(WAIT)
+	$(QUIET)$(WAIT)
 	$(QUIET)$(INSTALL) $(INST_USER_OWN) $(INST_TOOL_OPTS) $< $@ 2>/dev/null || true
-	$(QUITE)$(WAIT)
+	$(QUIET)$(WAIT)
 	$(QUIET)$(ECHO) "$@: installed."
 
 ~/.%: ./dot_%
-	$(QUITE)$(WAIT)
+	$(QUIET)$(WAIT)
 	$(QUIET)$(INSTALL) $(INST_USER_OWN) $(INST_FILE_OPTS) $< $@ 2>/dev/null || true
-	$(QUITE)$(WAIT)
+	$(QUIET)$(WAIT)
 	$(QUIET)$(ECHO) "$@: installed."
 
 /etc/bashrc.previous: must_be_root /etc/
-	$(QUITE)$(CP) $@ $@.previous 2>/dev/null || true
-	$(QUITE)$(WAIT)
+	$(QUIET)$(CP) $@ $@.previous 2>/dev/null || true
+	$(QUIET)$(WAIT)
 	$(QUIET)$(ECHO) "$@: backed up."
 
 /etc/bashrc: ./payload/etc/bashrc must_be_root /etc/
-	$(QUITE)$(WAIT)
-	$(QUITE)$(MAKE) -C ./ -f ./Makefile $@.previous 2>/dev/null || true
+	$(QUIET)$(WAIT)
+	$(QUIET)$(MAKE) -C ./ -f ./Makefile $@.previous 2>/dev/null || true
 	$(QUIET)$(INSTALL) $(INST_OWN) $(INST_TOOL_OPTS) $< $@ 2>/dev/null || true
-	$(QUITE)$(WAIT)
+	$(QUIET)$(WAIT)
 	$(QUIET)$(ECHO) "$@: configured."
 
 /etc/%: ./payload/etc/% must_be_root /etc/
-	$(QUITE)$(WAIT)
+	$(QUIET)$(WAIT)
 	$(QUIET)$(INSTALL) $(INST_OWN) $(INST_CONFIG_OPTS) $< $@ 2>/dev/null || true
-	$(QUITE)$(WAIT)
+	$(QUIET)$(WAIT)
 	$(QUIET)$(ECHO) "$@: installed."
 
 /etc/pf.anchors/%: ./payload/etc/pf.anchors/% must_be_root /etc/ /etc/pf.anchors/
-	$(QUITE)$(WAIT)
+	$(QUIET)$(WAIT)
 	$(QUIET)$(INSTALL) $(INST_TOOL_OWN) $(INST_FILE_OPTS) $< $@ 2>/dev/null || true
-	$(QUITE)$(WAIT)
+	$(QUIET)$(WAIT)
 	$(QUIET)$(ECHO) "$@: installed."
 
 /usr/local/bin/%: ./payload/bin/% must_be_root /usr/local/bin/
-	$(QUITE)$(WAIT)
+	$(QUIET)$(WAIT)
 	$(QUIET)$(INSTALL) $(INST_TOOL_OWN) $(INST_TOOL_OPTS) $< $@
-	$(QUITE)$(WAIT)
+	$(QUIET)$(WAIT)
 	$(QUIET)$(ECHO) "$@: installed."
 
 /usr/local/bin/: must_be_root
@@ -181,32 +204,32 @@ install-home: ~/.bashrc ~/.profile ~/.bash_profile ~/.bash_aliases ~/.bash_histo
 # uninstalls
 
 uninstall-etc: /etc/bashrc.previous
-	$(QUITE)$(RM) /etc/gitconfig 2>/dev/null || true
-	$(QUITE)$(RM) /etc/bashrc 2>/dev/null && $(QUITE)$(CP) /etc/bashrc.previous /etc/bashrc 2>/dev/null
-	$(QUITE)$(WAIT)
+	$(QUIET)$(RM) /etc/gitconfig 2>/dev/null || true
+	$(QUIET)$(RM) /etc/bashrc 2>/dev/null && $(QUIET)$(CP) /etc/bashrc.previous /etc/bashrc 2>/dev/null
+	$(QUIET)$(WAIT)
 	$(QUIET)$(ECHO) "$@: Done."
 
 uninstall-home: uninstall-dot-bash_aliases uninstall-dot-bash_profile uninstall-dot-bash_history uninstall-dot-macrc uninstall-dot-cshrc uninstall-dot-tcshrc uninstall-dot-plan
-	$(QUITE)$(WAIT)
+	$(QUIET)$(WAIT)
 	$(QUIET)$(ECHO) "$@: Done."
 
 uninstall-tools: uninstall-tools-grepip uninstall-tools-grepCIDR uninstall-tools-grepdns uninstall-tools-Tar_it uninstall-tools-sud
-	$(QUITE)$(WAIT)
+	$(QUIET)$(WAIT)
 	$(QUIET)$(ECHO) "$@: Done."
 
 uninstall-tools-%: /usr/local/bin/% must_be_root /usr/local/bin/
-	$(QUITE)$(QUIET)$(RM) $< 2>/dev/null || true
-	$(QUITE)$(WAIT)
+	$(QUIET)$(QUIET)$(RM) $< 2>/dev/null || true
+	$(QUIET)$(WAIT)
 	$(QUIET)$(ECHO) "$<: Removed. ( $@ )"
 
 uninstall-dot-%: ~/.%
-	$(QUITE)$(RM) $< 2>/dev/null || true
-	$(QUITE)$(WAIT)
+	$(QUIET)$(RM) $< 2>/dev/null || true
+	$(QUIET)$(WAIT)
 	$(QUIET)$(ECHO) "$<: Removed. ( $@ )"
 
 uninstall: uninstall-etc uninstall-tools
-	$(QUITE)$(RM) /etc/gitconfig 2>/dev/null || true
-	$(QUITE)$(WAIT)
+	$(QUIET)$(RM) /etc/gitconfig 2>/dev/null || true
+	$(QUIET)$(WAIT)
 	$(QUIET)$(ECHO) "$@: Done."
 
 purge: clean uninstall
