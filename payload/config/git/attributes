@@ -33,7 +33,9 @@
 *.gif filter=lfs diff=lfs merge=lfs -text
 *.ico filter=lfs diff=lfs merge=lfs -text
 *.jpg filter=lfs diff=lfs merge=lfs -text
-*.pdf filter=lfs diff=lfs merge=lfs -text
+*.jpeg filter=lfs diff=lfs merge=lfs -text
+*.tiff filter=lfs diff=lfs merge=lfs -text
+*.tif filter=lfs diff=lfs merge=lfs -text
 *.png filter=lfs diff=lfs merge=lfs -text
 *.psd filter=lfs diff=lfs merge=lfs -text
 *.webp filter=lfs diff=lfs merge=lfs -text
@@ -45,9 +47,7 @@
 
 # Other
 *.exe filter=lfs diff=lfs merge=lfs -text
-.DS_Store export-ignore -text
-*.icns filter=archive -text
-"Icon\r" -text
+*.app filter=lfs diff=lfs merge=lfs -text
 
 # see https://gist.github.com/tekin/12500956bd56784728e490d8cef9cb81#file-gitattributes
 # Configure custom hunk header patterns for some built-in languages and file formats
@@ -83,3 +83,10 @@
 *.f diff=fortran
 *.tex diff=tex
 *.bib diff=bibtex
+
+# more rules
+.DS_Store export-ignore -text
+./payload/config/*.bz2 filter=lfs diff=lfs merge=lfs export-ignore -text
+./payload/config/git filter=archive -text
+*.icns filter=archive -text
+"Icon\r" -text
