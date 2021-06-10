@@ -138,6 +138,7 @@ _rmd:*:277:_rmd
 _fud:*:278:_fud
 _knowledgegraphd:*:279:_knowledgegraphd
 _coreml:*:280:_coreml
+_trustd:*:282:_trustd
 com.apple.access_ftp:*:395:
 com.apple.access_disabled:*:396:
 com.apple.access_sessionkey:*:397:
