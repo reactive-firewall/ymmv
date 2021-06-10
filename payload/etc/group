@@ -24,7 +24,7 @@ owner:*:10:
 everyone:*:12:
 _taskgated:*:13:_taskgated
 group:*:16:
-staff:*:20:root
+staff:*:20:root,admin
 _networkd:*:24:
 _installassistant:*:25:
 _lp:*:26:
@@ -84,7 +84,7 @@ _softwareupdate:*:200:_softwareupdate
 _guest:*:201:
 _coreaudiod:*:202:
 _screensaver:*:203:
-_developer:*:204:
+_developer:*:204:root,admin
 _locationd:*:205:
 _detachedsig:*:207:_locationd
 _trustevaluationagent:*:208:
