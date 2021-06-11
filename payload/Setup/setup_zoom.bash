@@ -32,7 +32,7 @@ if [[ ( $( codesign --verify --verbose=2 -R="anchor apple generic" --check-notar
 	echo "install successful" ;
 else
 	echo "install failed" ;
-	rm -fR ~/us.zoom.app 2>/dev/null || true
+	rm -fR ~/Applications/"zoom.us.app" 2>/dev/null || true
 	defaults delete us.zoom.xos 2>/dev/null || true ;
 	defaults delete ZoomChat 2>/dev/null || true ;
 	exit 3 ;
