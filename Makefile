@@ -100,7 +100,7 @@ ifeq "$(LOG)" "no"
 	QUIET=@
 endif
 
-.SUFFIXES: .zip .php .css .html .bash .sh .py .pyc .txt .js .plist .dmg
+.SUFFIXES: .zip .php .css .html .bash .sh .py .pyc .txt .js .plist .dmg rc
 
 PHONY: must_be_root install-tools-mac install-pf cleanup install-tools install-etc install-home uninstall build
 
@@ -283,12 +283,20 @@ test-style: cleanup
 
 cleanup:
 	$(QUIET)$(RM) tests/*~ 2>/dev/null || true
-	$(QUIET)$(RM) *.DS_Store 2>/dev/null || true
-	$(QUIET)$(RM) ./*/*.DS_Store 2>/dev/null || true
+	$(QUIET)$(RM) ./*/.DS_Store 2>/dev/null || true
+	$(QUIET)$(RM) ./*/*/.DS_Store 2>/dev/null || true
 	$(QUIET)$(RM) ./**/*.DS_Store 2>/dev/null || true
+	$(QUIET)$(RM) ./payload/*~ 2>/dev/null || true
+	$(QUIET)$(RM) ./payload/Setup/*~ 2>/dev/null || true
+	$(QUIET)$(RM) ./payload/bin/*~ 2>/dev/null || true
+	$(QUIET)$(RM) ./payload/config/*~ 2>/dev/null || true
+	$(QUIET)$(RM) ./payload/etc/*~ 2>/dev/null || true
 	$(QUIET)$(RM) ./*/*~ 2>/dev/null || true
+	$(QUIET)$(RM) ./**/*~ 2>/dev/null || true
+	$(QUIET)$(RM) ./*/*/*/*~ 2>/dev/null || true
 	$(QUIET)$(RM) ./*~ 2>/dev/null || true
 	$(QUIET)$(RM) ./.*~ 2>/dev/null || true
+	$(QUIET)$(RM) ./**/.*~ 2>/dev/null || true
 	$(QUIET)$(RMDIR) ./.tox/ 2>/dev/null || true
 
 clean: cleanup

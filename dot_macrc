@@ -2,7 +2,7 @@
 
 # Close any open System Preferences panes, to prevent them from overriding
 # settings we're about to change
-osascript -e 'tell application "System Preferences" to quit' || true ;
+#osascript -e 'tell application "System Preferences" to quit' || true ;
 
 export LANG=${LANG:-"en_US"}
 source ~/.bashrc 2>/dev/null || true
@@ -225,7 +225,6 @@ else
 	export USE_FANCY_GRAPHICS="${USE_FANCY_GRAPHICS:-NO}" ;
 	export USE_BLUETOOTH="${USE_BLUETOOTH:-YES}" ;
 fi
-
 
 #-----------------------------------------------------------#
 # To Be Deleted                                             #
