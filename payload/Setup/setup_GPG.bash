@@ -6,15 +6,17 @@ if [[ $( \uname -s ) == "Darwin" ]] ; then
 #curl -L --url https://developers.yubico.com/yubikey-manager-qt/Releases/yubikey-manager-qt-1.1.5-mac.pkg
 #sudo installer -store -pkg /Volumes/GPG_Suite/Install.pkg -target / ; wait ; sync ; wait ;
 #bash -c $(dirname $0)/setup_homebrew.bash
+hash -p $(dirname $0)/../bin/sud sud
 
 # this takes some time:
 rm -vf /tmp/GPG_Suite.dmg 2>/dev/null || true ; wait ;
-curl -fsSL --header "Dnt: 1" --tlsv1.2 --url https://releases.gpgtools.org/GPG_Suite-2020.2.dmg --out /tmp/GPG_Suite.dmg
-hdiutil attach /tmp/GPG_Suite.dmg -mountPoint /Volumes/GPG_Suite || exit 1
+sud https://releases.gpgtools.org/GPG_Suite-2021.1.dmg /tmp/GPG_Suite.dmg
+hdiutil attach /tmp/GPG_Suite.dmg -mountPoint /Volumes/GPG_Suite || exit 1 ;
 # must be admin user to install:
-sudo installer -pkg /Volumes/GPG_Suite/Install.pkg -target LocalSystem -lang en
+#installer -pkg /Volumes/GPG_Suite/Install.pkg -target LocalSystem -lang en
+osascript -e "do shell script \"installer -pkg /Volumes/GPG_Suite/Install.pkg -target LocalSystem -lang en\" with administrator privileges" || true ;
 wait ; sync ; wait ;
-hdiutil detach /Volumes/GPG_Suite || hdiutil detach /Volumes/GPG_Suite -force ; wait ;
+hdiutil detach /Volumes/GPG_Suite 2>/dev/null || hdiutil detach /Volumes/GPG_Suite -force ; wait ;
 
 fi
 fi
@@ -23,8 +25,10 @@ hash -p /usr/local/MacGPG2/bin/gpg2 gpg2
 # ensure the config files are created (done automatically by gpg2 when first run)
 gpg2 --list-keys ;
 
+if [[ ( -d ~/.gnupg/ ) ]] ; then
 #prefer SHA512 instead of SHA1
 if [[ ( -z $( grep -F "personal-digest-preferences SHA512" ~/.gnupg/gpg.conf ) ) ]] ; then
+echo "" >> ~/.gnupg/gpg.conf ;
 echo "personal-digest-preferences SHA512 SHA384 SHA256 SHA224" >> ~/.gnupg/gpg.conf ;
 fi
 if [[ ( -z $( grep -F "cert-digest-algo SHA512" ~/.gnupg/gpg.conf ) ) ]] ; then
@@ -60,3 +64,5 @@ echo "write-env-file" >> ~/.gnupg/gpg-agent.conf ;
 echo "" >> ~/.gnupg/gpg-agent.conf ;
 fi
 fi
+fi
+echo "Done. re-login to apply changes"
