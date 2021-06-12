@@ -43,7 +43,7 @@ OS_VERSION_MAJOR=$(echo $OS_VERSION | cut -d. -f 1-2 )
 #export USE_DEVELOPER_SETUP="YES"
 
 # Graphics mode
-# (USE "NO" if you’re on an older Mac that messes up the animation)
+# (USE "NO" if you're on an older Mac that messes up the animation)
 #export USE_FANCY_GRAPHICS="NO"
 #export USE_BLUETOOTH="YES"
 
