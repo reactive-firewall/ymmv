@@ -100,6 +100,7 @@ fi ;
 export -f getAppID
 
 hash -p /usr/sbin/spctl spctl
+hash -p /usr/bin/codesign codesign
 
 TEMP_APP_ID_VAR=$(getAppID "${@:1:$#}")
 if [[ ( $( spctl -vv --continue --no-cache -a "${@:1:$#}" 2>&1 | head -n 1 | cut -d: -f 2 | grep -coF "accepted" ) -gt 0 ) ]] ; then
@@ -110,13 +111,13 @@ echo "Adding new rule for ${TEMP_APP_ID_VAR:-${@:1:$#}} (block by default)" ;
 spctl --add --label "${TEMP_APP_SOURCE}" --priority 1.0 "${@:1:$#}" || echo "The application is STILL not added. (Would block if run as admin)" ; wait ;
 spctl --remove --label "${TEMP_APP_SOURCE}" --path "${@:1:$#}" 2>/dev/null >/dev/null || true ;
 spctl --disable --label "${TEMP_APP_SOURCE}" "${@:1:$#}" 2>/dev/null >/dev/null || true ;
-tagefile Quarantine "${@:1:$#}" 2>/dev/null || true ;
+tagfile Quarantine "${@:1:$#}" 2>/dev/null || true ;
 elif [[ ( $( codesign -vvvv --deep -R="anchor apple" "${@:1:$#}" 2>&1 | grep -coF "explicit requirement satisfied" ) -gt 0 ) ]] ; then
 echo "${TEMP_APP_ID_VAR:-${@:1:$#}} is codesigned by apple." ;
 tagfile Trust "${@:1:$#}" || true ;
 spctl --add --label "${TEMP_APP_SOURCE}" --priority 2.0 "${@:1:$#}" || echo "The application is STILL not added. (Would allow if run as admin)" ; wait ;
 spctl --enable --label "${TEMP_APP_SOURCE}" "${@:1:$#}" 2>/dev/null >/dev/null || true ;
-elif [[ ( $( codesign -vvvv --deep -R="anchor apple generic" "${@:1:$#}" 2>&1 | grep -coF "explicit requirement satisfied" ) -gt 0 ) ]] ; then
+elif [[ ( $( codesign --verify --verbose=2 -R="anchor apple generic" --check-notarization "${@:1:$#}" 2>&1 | grep -coF "explicit requirement satisfied" ) -gt 0 ) ]] ; then
 echo "${TEMP_APP_ID_VAR:-${@:1:$#}} seems to be codesigned." ;
 tagfile Trust "${@:1:$#}" || true ;
 spctl --add --label "${TEMP_APP_SOURCE}" --priority 1.0 "${@:1:$#}" || echo "The application is STILL not added. (Would allow if run as admin)" ; wait ;
@@ -127,7 +128,7 @@ TEMP_APP_SOURCE=$(spctl -vvvv --no-cache -a "${@:1:$#}" 2>&1 | tail -n 1 | cut -
 echo "Removing our rule for ${TEMP_APP_ID_VAR:-${@:1:$#}} (if any)" ;
 spctl --remove --label "${TEMP_APP_SOURCE}" --priority 1.0 --path "${@:1:$#}" || echo "No rules Removed. (Was there any?)" ; wait ;
 spctl --disable --label "${TEMP_APP_SOURCE}" "${@:1:$#}" 2>/dev/null >/dev/null || true ;
-tagefile Quarantine "${@:1:$#}" 2>/dev/null || true ;
+tagfile Quarantine "${@:1:$#}" 2>/dev/null || true ;
 else
 echo "Something very unlikly happened:"
 echo "Skipping path ${TEMP_APP_ID_VAR:-${@:1:$#}}: " $( spctl -vv --continue --no-cache -a "${@:1:$#}" 2>&1 | head -n 1 | cut -d: -f 2 ) ; wait ;
