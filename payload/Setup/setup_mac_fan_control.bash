@@ -12,8 +12,9 @@ if [[ ( $(mkdir -m 751 /tmp/stage ; wait ; unzip -q ~/Downloads/macsfancontrol.z
     echo "download successful";
 	mkdir -m 2775 /tmp/mac_fan_cntl/
     unzip -qo ~/Downloads/macsfancontrol.zip -d /tmp/mac_fan_cntl || exit 1
-	pkgbuild --analyze --root ~/Downloads/bnet_payload/ --filter Applications --filter .DS_Store --filter .fseventsd --filter ._.DS_Store --filter ./.Icon --filter ./._Icon --identifier ${MFC_APP_ID:-"????"} ~/Downloads/mfc_components.plist
-	pkgbuild --root /tmp/mac_fan_cntl/ --install-location /System/Volumes/Data/Applications/Utilities --filter Applications --filter .DS_Store --filter .fseventsd --filter ._.DS_Store --filter .Icon --filter ./._ --identifier ${MFC_APP_ID:-"????"} --component-plist ~/Downloads/mfc_components.plist /tmp/macs_fan_control_installer.pkg
+	MFC_APP_ID=$(dirname $0)/../bin/applist.bash com.crystalidea.macsfancontrol
+	pkgbuild --analyze --root /tmp/mac_fan_cntl/ --filter Applications --filter .DS_Store --filter .fseventsd --filter ._.DS_Store --filter ./.Icon --filter ./._Icon --identifier ${MFC_APP_ID:-"com.crystalidea.macsfancontrol"} ~/Downloads/mfc_components.plist
+	pkgbuild --root /tmp/mac_fan_cntl/ --install-location /System/Volumes/Data/Applications/Utilities --filter Applications --filter .DS_Store --filter .fseventsd --filter ._.DS_Store --filter .Icon --filter ./._ --version=1.5.9 --identifier ${MFC_APP_ID:-"com.crystalidea.macsfancontrol"} --component-plist ~/Downloads/mfc_components.plist /tmp/macs_fan_control_installer.pkg
 	wait ; sync ; wait ;
 	echo "build successful"
 	rm -f ~/Downloads/mfc_components.plist ; wait ;
