@@ -3,7 +3,7 @@
 hash -p $(dirname $0)/../bin/sud sud
 
 if [[ !( -r ~/Downloads/macsfancontrol.zip ) ]] ; then
-	sud https://crystalidea.com/downloads/macsfancontrol.zip ~/Downloads/macsfancontrol.zip || exit 1 ;
+	curl -LsSf --url https://crystalidea.com/downloads/macsfancontrol.zip -o ~/Downloads/macsfancontrol.zip || exit 1 ;
 fi ;
 wait ;
 if [[ ( $(mkdir -m 751 /tmp/stage ; wait ; unzip -q ~/Downloads/macsfancontrol.zip -d /tmp/stage/ ; wait ; codesign -vv -R="anchor apple generic" /tmp/stage/*.app 2>&1 3>&1 | grep -coF "explicit requirement satisfied" 2>/dev/null ; rm -fR /tmp/stage 2>/dev/null ) -gt 0 ) ]] ; then
