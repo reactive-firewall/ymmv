@@ -1,6 +1,6 @@
 #! /bin/bash
 
-hash -p $(dirname $0)/../bin/sud sud)
+hash -p $(dirname $0)/../bin/sud sud
 
 if [[ !( -r ~/Downloads/macsfancontrol.zip ) ]] ; then
 	sud https://crystalidea.com/downloads/macsfancontrol.zip ~/Downloads/macsfancontrol.zip || exit 1 ;
