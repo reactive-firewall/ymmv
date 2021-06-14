@@ -171,7 +171,7 @@ git-config: ~/.config/git/attributes
 	$(QUIET)$(WAIT)
 	$(QUIET)$(ECHO) "$@: installed"
 
-~/.config/git: ./payload/config/% ~/.config/
+~/.config/git: ./payload/config/git/ ~/.config/
 	$(QUIET)$(WAIT)
 	$(QUIET)$(MKDIR) $@ 2>/dev/null || true
 	$(QUIET)$(CHOWN) $(INST_USER_OWN) $@ 2>/dev/null || true
@@ -179,7 +179,7 @@ git-config: ~/.config/git/attributes
 	$(QUIET)$(WAIT)
 	$(QUIET)$(ECHO) "$@: Created."
 
-~/.config/nano: ./payload/config/% ~/.config/
+~/.config/nano: ./payload/config/nano/ ~/.config/
 	$(QUIET)$(WAIT)
 	$(QUIET)$(MKDIR) $@ 2>/dev/null || true
 	$(QUIET)$(CHOWN) $(INST_USER_OWN) $@ 2>/dev/null || true
