@@ -2064,9 +2064,9 @@ if [[ ("${USE_DEVELOPER_SETUP}" == "YES") ]] ; then
 # If not running interactively, don't do anything
 if [[ ( -t 0 ) ]] ; then
 echo "Developer Terminal detected. (Restart required)"
-echo "try: kill -3 -1 " ;
-# echo "try: # ps -o pid -o command -u $USER | grep -vF \"coreauthd\" | sed -E -e 's/^[[:space:]]+//g' | tr -s ' ' ' ' | cut -d\  -f 1 | xargs -L1 -I{} kill {}";
-#exit 0 ;
+echo "try: #kill -3 -1 " ;
+echo "try: #ps -o pid -o command -u $USER | grep -vF \"coreauthd\" | sed -E -e 's/^[[:space:]]+//g' | tr -s ' ' ' ' | cut -d\  -f 1 | xargs -L1 -I{} kill -3 {}";
+exit 0 ;
 fi
 fi
 
@@ -2075,7 +2075,7 @@ fi
 ###############################################################################
 
 #ps -o pid -o command -u $USER | grep -vF "coreauthd" | sed -E -e 's/^[[:space:]]+//g' | tr -s ' ' ' ' | cut -d\  -f 1 | xargs -L1 -I{} kill -3 {} 2>/dev/null || true ;
-kill -3 -1 ;
+kill -QUIT -1 ;
 
 echo "Done. Note that some of these changes require a logout/restart to take effect."
 
