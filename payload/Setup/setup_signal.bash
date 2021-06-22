@@ -2,20 +2,20 @@
 
 if [[ $( \uname -s ) == "Darwin" ]] ; then
 #sudo softwareupdate --install --recommended || true
-
+_TEMP_SIGNAL_BNDL_VERSION=5.6.0
 hash -p $(dirname $0)/../bin/sud sud
 #hash -p $(dirname $0)/../bin/applist.bash applist.bash
 
 # this takes some time:
-sud https://updates.signal.org/desktop/signal-desktop-mac-5.5.0.dmg /tmp/signal-desktop-mac.dmg || exit 1 ;
+sud https://updates.signal.org/desktop/signal-desktop-mac-${_TEMP_SIGNAL_BNDL_VERSION}.dmg /tmp/signal-desktop-mac.dmg || exit 1 ;
 # must be admin user to install:
 wait ; sync ; wait ;
 hdiutil attach /tmp/signal-desktop-mac.dmg -mountPoint /Volumes/signal-desktop-mac -noautoopen
 # must be admin user to install:
 pkgutil --check-signature /Volumes/signal-desktop-mac/Signal.app ;
 # ls -lap /Volumes/signal-desktop-mac/ ;
-pkgbuild --analyze --root /Volumes/signal-desktop-mac/ --filter Applications --filter .DS_Store --filter .background --filter .fseventsd --filter ._.DS_Store --filter ./.Icon --filter ./._Icon --identifier org.whispersystems.signal-desktop --version 5.5.0 /tmp/signal_components.plist
-pkgbuild --root /Volumes/signal-desktop-mac/ --install-location /System/Volumes/Data/Applications/ --filter Applications --filter .DS_Store --filter .background --filter .fseventsd --filter ._.DS_Store --filter .Icon --filter ./._ --identifier org.whispersystems.signal-desktop --version 5.5.0 --component-plist /tmp/signal_components.plist /tmp/signal_installer.pkg
+pkgbuild --analyze --root /Volumes/signal-desktop-mac/ --filter Applications --filter .DS_Store --filter .background --filter .fseventsd --filter ._.DS_Store --filter ./.Icon --filter ./._Icon --identifier org.whispersystems.signal-desktop --version ${_TEMP_SIGNAL_BNDL_VERSION} /tmp/signal_components.plist
+pkgbuild --root /Volumes/signal-desktop-mac/ --install-location /System/Volumes/Data/Applications/ --filter Applications --filter .DS_Store --filter .background --filter .fseventsd --filter ._.DS_Store --filter .Icon --filter ./._ --identifier org.whispersystems.signal-desktop --version ${_TEMP_SIGNAL_BNDL_VERSION} --component-plist /tmp/signal_components.plist /tmp/signal_installer.pkg
 wait ; sync ; wait ;
 hdiutil detach /Volumes/signal-desktop-mac || hdiutil detach /Volumes/signal-desktop-mac -force ; wait ;
 rm -f /tmp/signal_components.plist ; wait ;
