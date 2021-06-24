@@ -2,7 +2,7 @@
 
 if [[ $( \uname -s ) == "Darwin" ]] ; then
 #sudo softwareupdate --install --recommended || true
-_TEMP_SIGNAL_BNDL_VERSION=5.6.0
+_TEMP_SIGNAL_BNDL_VERSION=5.6.1
 hash -p $(dirname $0)/../bin/sud sud
 #hash -p $(dirname $0)/../bin/applist.bash applist.bash
 
