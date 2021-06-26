@@ -40,6 +40,8 @@ pathappend /usr/local/MacGPG2/bin
 # idea from https://rakhesh.com/mac/macos-launchctl-commands/
 export XPC_SERVICE_NAME=$(echo -n $(head -n 1 <(launchctl list 2>/dev/null | grep -F com.apple.Terminal. | tr -s '\t ' ' ' | cut -d\  -f 3-3)).$$ )
 
+export TMOUT=${TMOUT:-0}
+
 # enable this to force color use
 #export CAN_USE_COLOR_IN_ENVIORMENT=1 ;
 
