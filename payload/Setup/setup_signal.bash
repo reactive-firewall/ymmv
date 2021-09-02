@@ -2,9 +2,13 @@
 
 if [[ $( \uname -s ) == "Darwin" ]] ; then
 #sudo softwareupdate --install --recommended || true
-_TEMP_SIGNAL_BNDL_VERSION=5.6.2
 hash -p $(dirname $0)/../bin/sud sud
 #hash -p $(dirname $0)/../bin/applist.bash applist.bash
+
+echo "checking catalog"
+sud 'https://updates.signal.org/desktop/latest-mac.yml' /tmp/catalog.yml || exit 1;
+_TEMP_SIGNAL_BNDL_VERSION=$(grep -F "version" /tmp/catalog.yml | tr -s ' ' '\n' | tail -n 1 ) ;
+rm -f /tmp/catalog.yml 2>/dev/null || true
 
 # this takes some time:
 sud https://updates.signal.org/desktop/signal-desktop-mac-${_TEMP_SIGNAL_BNDL_VERSION}.dmg /tmp/signal-desktop-mac.dmg || exit 1 ;
