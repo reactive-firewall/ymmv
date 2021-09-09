@@ -85,11 +85,14 @@ fi
 
 # THIS IS THE ACTUAL TEST
 if [[ -f ../dot_bashrc ]] ; then
-	bash -c 'source ../dot_bashrc || false' || EXIT_CODE=1
+	bash --posix --norc -c 'source ../dot_bashrc || false' || EXIT_CODE=1
+	bash --norc -c 'source ../dot_bashrc || false' || EXIT_CODE=1
 elif [[ -f ./dot_bashrc ]] ; then
-	bash -c 'source ./dot_bashrc || false' || EXIT_CODE=1
+	bash --norc -c 'source ./dot_bashrc || false' || EXIT_CODE=1
+	bash --posix --norc -c 'source ./dot_bashrc || false' || EXIT_CODE=1
 elif [[ -f ./.bashrc ]] ; then
-	bash -c 'source ./.bashrc || false' || EXIT_CODE=1
+	bash --norc -c 'source ./dot_bashrc || false' || EXIT_CODE=1
+	bash --posix --norc -c 'source ./.bashrc || false' || EXIT_CODE=1
 else
 	echo "FAIL: missing bashrc config file"
 	EXIT_CODE=1

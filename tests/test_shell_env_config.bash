@@ -92,7 +92,7 @@ if [[ -f ../payload/etc/environment ]] ; then
 elif [[ -f ./payload/etc/environment ]] ; then
 	env -i bash --posix --norc -c 'source ./payload/etc/environment' || EXIT_CODE=1
 else
-	echo "FAIL: missing bash environment template file"
+	echo "FAIL: missing bash environment template files"
 	EXIT_CODE=1
 fi
 

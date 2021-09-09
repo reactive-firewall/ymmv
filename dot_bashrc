@@ -37,8 +37,10 @@ pathappend ${HOME}/bin
 pathappend /Applications/Docker.app/Contents/Resources/bin
 pathappend /usr/local/MacGPG2/bin
 
+if [[ ! ${POSIXLY_CORRECT} ]] ; then
 # idea from https://rakhesh.com/mac/macos-launchctl-commands/
-export XPC_SERVICE_NAME=$(echo -n $(head -n 1 <(launchctl list 2>/dev/null | grep -F com.apple.Terminal. | tr -s '\t ' ' ' | cut -d\  -f 3-3)).$$ )
+export XPC_SERVICE_NAME=$(echo -n $(head -n 1 <(launchctl list 2>/dev/null | grep -F com.apple.Terminal. 2>/dev/null | tr -s '\t ' ' ' 2>/dev/null | cut -d\  -f 3-3) 2>/dev/null ).$$ )
+fi
 
 export TMOUT=${TMOUT:-0}
 
