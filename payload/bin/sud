@@ -117,21 +117,21 @@ hash -p /usr/sbin/spctl spctl
 
 HEADER_HOST=$(echo "${THE_URL}" | grepdns -m\ 1 )
 
-HEADER_TYPE=$(\curl --user-agent "SUD/1.1" --url ${THE_URL} --retry 1 --show-error --max-redirs 0 --header "Host: ${HEADER_HOST}" --header "Dnt: 1" --header "Connection: close" -j -L --ipv4 -s -S -I | grep -oE "[Tt]{1}[y]{1}[p]{1}[e]{1}[:]{1}[[:space:]]+[[:print:]]+")
-HEADER_TYPE="${HEADER_TYPE:6}"
+HEADER_TYPE=$( (\curl --user-agent "SUD/1.1" --url ${THE_URL} --retry 1 --max-redirs 0 --header "Host: ${HEADER_HOST}" --header "Dnt: 1" --header "Connection: close" -j -L --ipv4 -s -S -I ; wait ) 2>/dev/null | grep -oE "[Tt]{1}[y]{1}[p]{1}[e]{1}[:]{1}[[:space:]]+[[:print:]]+")
+HEADER_TYPE="${HEADER_TYPE:6}" ; wait ;
 echo "URL: ${THE_URL}"
 echo "Host: ${HEADER_HOST}"
 echo "Accept: ${HEADER_TYPE}"
-\curl --user-agent "SUD/1.1" --url ${THE_URL} -o "${TEMP_FILE_CACHE}" --retry 1 --show-error --max-redirs 2 --header "Dnt: 1" --header "Connection: close" -j -L --ipv4 -s -S ; wait ;
+\curl --user-agent "SUD/1.1" --url ${THE_URL} -o "${TEMP_FILE_CACHE}" --retry 1 --show-error --max-redirs 2 --header "Accept: ${HEADER_TYPE}" --header "Dnt: 1" --header "Connection: close" -j -L --ipv4 -s -S ; wait ;
 
 if [[ !( -e "${TEMP_FILE_CACHE}" ) ]] ; then 
 echo "# FAILED" ;
 exit 0;
 else
-markfile ${THE_URL} "${TEMP_FILE_CACHE}" 2>/dev/null || true ;
+markfile "${THE_URL}" "${TEMP_FILE_CACHE}" 2>/dev/null || true ;
 datefile "${TEMP_FILE_CACHE}" || true ;
 tagfile Quarantine "${TEMP_FILE_CACHE}" 2>/dev/null || true ;
-spctl -v --type open -a "${TEMP_FILE_CACHE}" && tagfile Trust "${TEMP_FILE_CACHE}" || true;
+spctl -v -a --type open "${TEMP_FILE_CACHE}" 1>&2 && tagfile Trust "${TEMP_FILE_CACHE}" || true;
 if [[ ( -x $(command -v clamscan)) ]] ; then
 clamscan --no-summary -i -r --detect-pua=no --remove=yes --tempdir=/var/tmp "${TEMP_FILE_CACHE}"
 if [[ ( $? -gt 1 ) ]] ; then echo "### UNSAFE ###" && cleanup ; wait ; exit 1 ; fi ;
