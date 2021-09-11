@@ -41,7 +41,7 @@
 	loosecompression = 9
 	whitespace = space-before-tab,blank-at-eol,cr-at-eol
 	filemode = true
-        precomposeunicode = true
+	precomposeunicode = true
 	excludesfile = ~/.gitignore_global
 
 [checkout]
@@ -61,7 +61,7 @@
 	renameLimit = 127
 	algorithm = histogram
 	indentHeuristic = true
-	
+
 
 [fetch]
 	recurseSubmodules = true
@@ -110,13 +110,16 @@
 [filter "strings"]
 	clean = strings -- %f
 	smudge = strings -- %f
-	process = strings filter-process
 	required = true
 
 [filter "archive"]
-	clean = tar -xf %f.bz2 --no-same-owner --posix %f
-	smudge = tar -cf %f.bz2 --no-same-owner --bzip2 --posix %f
+	clean = cat $(dirname %f)".bz2" | tar -xOf - --no-same-owner %f
+	smudge = cat $(dirname %f)".bz2" | tar -cf - --no-same-owner --bzip2 --posix %f @-
 	required = true
+
+[diff "archive"]
+    textconv = cat $(dirname %f)".bz2" | tar -tvOf - --no-same-owner --posix %f
+    binary = true
 
 [diff "config"]
 	xfunction = "^(([[:alnum:][:punct:]]*){1}\\s*?[:=]{1}\\s*?){1}\\s*"
