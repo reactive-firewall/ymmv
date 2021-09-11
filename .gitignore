@@ -17,6 +17,7 @@ lib64/
 dot_gnupg/trustdb.gpg
 dot_gnupg/*.kbx
 payload/*Desktops/
+payload/config/git.bz2
 *.icns
 Icon*
 *.workflow
