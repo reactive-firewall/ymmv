@@ -113,12 +113,12 @@
 	required = true
 
 [filter "archive"]
-	clean = cat $(dirname %f)".bz2" | tar -xOf - --no-same-owner %f
-	smudge = cat $(dirname %f)".bz2" | tar -cf - --no-same-owner --bzip2 --posix %f @-
+	clean = cat $(dirname %f) 2>/dev/null | tar -xOf - --no-same-owner %f 2>/dev/null
+	smudge = cat $(dirname %f) 2>/dev/null | tar -cf - --no-same-owner --bzip2 --posix %f @-
 	required = true
 
 [diff "archive"]
-    textconv = cat $(dirname %f)".bz2" | tar -tvOf - --no-same-owner --posix %f
+    textconv = cat $(dirname %f) 2>/dev/null | tar -tvOf - --no-same-owner --posix %f
     binary = true
 
 [diff "config"]
