@@ -86,7 +86,7 @@
 
 # more rules
 .DS_Store export-ignore -text
-payload/config/*.bz2 filter=lfs diff=lfs merge=lfs export-ignore -text
+payload/config/*.bz2 export-ignore -text
 payload/config/git filter=archive diff=archive -text
 *.icns filter=archive -text
 "Icon\r" -text
