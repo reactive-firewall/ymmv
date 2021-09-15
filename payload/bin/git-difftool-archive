@@ -1,0 +1,3 @@
+#! /bin/bash
+
+tar -xf ${LOCAL} --no-same-owner --posix --to-stdout | git difftool --dirdiff $LOCAL $BASE
