@@ -511,10 +511,16 @@ if ! shopt -oq posix; then
     source ${HOMEBREW_PREFIX:-"${HOME}/homebrew"}/completions/bash/brew
   fi
 
+  if [ -r ${HOMEBREW_PREFIX:-"${HOME}/homebrew"}/completions/bash/ninja ]; then
+    source ${HOMEBREW_PREFIX:-"${HOME}/homebrew"}/completions/bash/ninja
+  fi
+
   if [ -d ${HOMEBREW_PREFIX:-"${HOME}/homebrew"}/share/bash-completion/completions/ ]; then
-    source ${HOMEBREW_PREFIX:-"${HOME}/homebrew"}/share/bash-completion/completions/cmake
-    source ${HOMEBREW_PREFIX:-"${HOME}/homebrew"}/share/bash-completion/completions/cpack
-    source ${HOMEBREW_PREFIX:-"${HOME}/homebrew"}/share/bash-completion/completions/ctest
+    for _TOOL_NAME in "cmake cpack ctest gsettings gapplication gresource gdbus gio" ; do
+      if [ -d ${HOMEBREW_PREFIX:-"${HOME}/homebrew"}/share/bash-completion/completions/${_TOOL_NAME} ]; then
+        source ${HOMEBREW_PREFIX:-"${HOME}/homebrew"}/share/bash-completion/completions/${_TOOL_NAME}
+      fi
+    done
   fi
 fi
 
