@@ -63,7 +63,6 @@
 	indentHeuristic = true
 	wsErrorHighlight = auto
 
-
 [fetch]
 	recurseSubmodules = true
 	output = full
@@ -128,8 +127,8 @@
 	required = true
 
 [diff "archive-entry"]
-    textconv = cat $(dirname %f) 2>/dev/null | tar -tvf - --no-same-owner --posix %f
-    binary = true
+	textconv = cat $(dirname %f) 2>/dev/null | tar -tvf - --no-same-owner --posix %f
+	binary = true
 
 [diff "config"]
 	xfunction = "^(([[:alnum:][:punct:]]*){1}\\s*?[:=]{1}\\s*?){1}\\s*"
