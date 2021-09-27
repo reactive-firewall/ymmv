@@ -5,6 +5,9 @@
 # as it is modified from versious projects and thus my contributions
 # are probably subject to GPL ... so assume this file is GPL covered.
 
+# ensure LC_TYPE is set early.
+export LC_CTYPE="${LC_CTYPE:-en_US}"
+
 # To enable the settings / commands in this file for login shells as well,
 # this file has to be sourced in /etc/profile.
 if [[ ( `umask` -le 27 ) ]] ; then umask 022 ; fi ;
