@@ -60,7 +60,7 @@
 #    even if the above stated remedy fails of its essential purpose.
 ################################################################################
 
-# version 20110720
+# version 20210927
 
 umask 137
 declare -r MINPARAMS=1
