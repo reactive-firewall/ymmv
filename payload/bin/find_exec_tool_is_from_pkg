@@ -60,87 +60,19 @@
 #    even if the above stated remedy fails of its essential purpose.
 ################################################################################
 
-THE_URL="${1}"
-
-PLIST_HEADER_STUB='<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"><plist version="1.0"><array><string>'
-PLIST_FOOTER_STUB="</string></array></plist>"
-
-PLIST_HEADER_STUB_D='<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"><plist version="1.0"><array><date>'
-PLIST_FOOTER_STUB_D="</date></array></plist>"
-
+THE_FILE="${@:1:$#}"
+hash -p /usr/sbin/pkgutil pkgutil
+hash grep
+hash cut
 umask 137
 
-function tagfile() {
-local AUDIT_FILETAGNAME="${1:-Flagged}"
-local AUDIT_FILEPATH="${2}"
-if [[ ( -e ${AUDIT_FILEPATH} ) ]] ; then xattr -w com.apple.metadata:_kMDItemUserTags "${PLIST_HEADER_STUB}${AUDIT_FILETAGNAME}${PLIST_FOOTER_STUB}" "${AUDIT_FILEPATH}" 2>/dev/null || true ; wait ; fi ;
-}
-
-export -f tagfile
-
-function markfile() {
-local AUDIT_FILETAGLOC="${1:-unknown}"
-local AUDIT_FILEPATH="${2}"
-if [[ ( -e ${AUDIT_FILEPATH} ) ]] ; then xattr -w com.apple.metadata:kMDItemWhereFroms "${PLIST_HEADER_STUB}blob:${AUDIT_FILETAGLOC}${PLIST_FOOTER_STUB}" "${AUDIT_FILEPATH}" 2>/dev/null || true ; wait ; fi ;
-}
-
-export -f markfile
-
-function datefile() {
-local AUDIT_FILETAGDATE=$(date "+%C%y-%m-%dT%H:%M:%SZ")
-local AUDIT_FILEPATH="${1}"
-if [[ ( -e ${AUDIT_FILEPATH} ) ]] ; then xattr -w com.apple.metadata:kMDItemDownloadedDate "${PLIST_HEADER_STUB_D}${AUDIT_FILETAGDATE}${PLIST_FOOTER_STUB_D}" "${AUDIT_FILEPATH}" 2>/dev/null || true ; wait ; fi ;
-}
-
-export -f datefile
-
-TEMP_FILE_CACHE="/var/tmp/safe_web_path_site_${GID:-x}_${RANDOM}.data"
-DEST_FILE_PATH="${2}"
-
-function cleanup() {
-	if [[ ( -e ${TEMP_FILE_CACHE} ) ]] ; then rm -f ${TEMP_FILE_CACHE} 2>/dev/null ; wait ; fi ;
-	if [[ ( -e "${TEMP_FILE_CACHE}" ) ]] ; then rm -f "${TEMP_FILE_CACHE}" 2>/dev/null ; wait ; fi ;
-	unset tagfile || true ;
-	unset PLIST_HEADER_STUB || true
-	unset PLIST_FOOTER_STUB || true
-	return
-}
-
-trap 'cleanup ; wait ; exit 1 ;' SIGKILL ;
-trap 'cleanup ; wait ; exit 1 ;' SIGQUIT ;
-trap 'cleanup ; wait ; exit 1 ;' SIGHUP ;
-trap 'cleanup ; wait ; exit 1 ;' SIGABRT ;
-trap 'cleanup ; wait ; exit 1 ;' SIGINT ;
-trap 'cleanup ; wait ; exit 1 ;' SIGTERM ;
-
-hash -p /usr/sbin/spctl spctl
-
-HEADER_HOST=$(echo "${THE_URL}" | grepdns -m\ 1 )
-
-HEADER_TYPE=$( (\curl --user-agent "SUD/1.1" --url ${THE_URL} --retry 1 --max-redirs 0 --header "Host: ${HEADER_HOST}" --header "Dnt: 1" --header "Connection: close" -j -L --ipv4 -s -S -I ; wait ) 2>/dev/null | grep -oE "[Tt]{1}[y]{1}[p]{1}[e]{1}[:]{1}[[:space:]]+[[:print:]]+")
-HEADER_TYPE="${HEADER_TYPE:6}" ; wait ;
-echo "URL: ${THE_URL}"
-echo "Host: ${HEADER_HOST}"
-echo "Accept: ${HEADER_TYPE}"
-\curl --user-agent "SUD/1.1" --url ${THE_URL} -o "${TEMP_FILE_CACHE}" --retry 1 --show-error --max-redirs 2 --header "Accept: ${HEADER_TYPE}" --header "Dnt: 1" --header "Connection: close" -j -L --ipv4 -s -S ; wait ;
-
-if [[ !( -e "${TEMP_FILE_CACHE}" ) ]] ; then 
-echo "# FAILED" ;
-exit 0;
+if [[ ( -e "${THE_FILE}" ) ]] ; then
+	TEMP_APP_SOURCE=$(pkgutil --file-info "${THE_FILE}" 2>/dev/null | grep -F "pkgid:" 2>/dev/null | cut -d: -f 2 2>/dev/null )
+	if [[ ( -n "$TEMP_APP_SOURCE" ) ]] ; then true ; else false ; fi
+	exit $? ;
 else
-markfile "${THE_URL}" "${TEMP_FILE_CACHE}" 2>/dev/null || true ;
-datefile "${TEMP_FILE_CACHE}" || true ;
-tagfile Quarantine "${TEMP_FILE_CACHE}" 2>/dev/null || true ;
-spctl -v -a --type open "${TEMP_FILE_CACHE}" 1>&2 && tagfile Trust "${TEMP_FILE_CACHE}" || true;
-if [[ ( -x $(command -v clamscan)) ]] ; then
-clamscan --no-summary -i -r --detect-pua=no --remove=yes --tempdir=/var/tmp "${TEMP_FILE_CACHE}"
-if [[ ( $? -gt 1 ) ]] ; then echo "### UNSAFE ###" && cleanup ; wait ; exit 1 ; fi ;
-clamscan --no-summary -r --detect-pua=yes --remove=no --tempdir=/var/tmp "${TEMP_FILE_CACHE}"
-fi ;
-mv -f "${TEMP_FILE_CACHE}" "${DEST_FILE_PATH}" ; sync ; wait ;
-tagfile Quarantine "${DEST_FILE_PATH}" || true ;
-datefile "${DEST_FILE_PATH}" || true ;
-markfile ${THE_URL} "${DEST_FILE_PATH}" || true ;
-fi ;
-
-exit 0
+	echo "$0: No such path: \'$THE_FILE\'" 1>&2 ;
+	false ;
+	exit $? ;
+fi
+exit 255 ;

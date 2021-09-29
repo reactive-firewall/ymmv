@@ -2,7 +2,7 @@
 
 # Close any open System Preferences panes, to prevent them from overriding
 # settings we're about to change
-osascript -e 'tell application "System Preferences" to quit' || true ;
+#osascript -e 'tell application "System Preferences" to quit' || true ;
 
 export LANG=${LANG:-"en_US"}
 source ~/.bashrc 2>/dev/null || true
@@ -41,9 +41,11 @@ OS_VERSION_MAJOR=$(echo $OS_VERSION | cut -d. -f 1-2 )
 
 # Developer mode
 #export USE_DEVELOPER_SETUP="YES"
+export USE_DEBUG_MODE="${USE_DEBUG_MODE:-NO}" ;
+
 
 # Graphics mode
-# (USE "NO" if you’re on an older Mac that messes up the animation)
+# (USE "NO" if you're on an older Mac that messes up the animation)
 #export USE_FANCY_GRAPHICS="NO"
 #export USE_BLUETOOTH="YES"
 
@@ -98,7 +100,7 @@ function WRITE() {
 		if [[ ("${USE_DEVELOPER_SETUP}" == "YES") ]] ; then
 			echo "    DEVELOPER OVERRIDE  (Admin Help You, You'll NEED it to recover!)" ;
 			${DEFAULTS} write "${1}" "${2:-}" "${@:3:$#}" || echo "args: \"${2:-}\" \"${@:3:$#}\"" ;
-			echo "    "
+			echo "    " ;
 		else
 			echo "    SKIPPING INSTEAD (safety)" ;
 		fi ;
@@ -108,7 +110,7 @@ function WRITE() {
 
 function DISABLE() {
 	DEFAULTS=$(command -v defaults)
-	if [[ ( $(${DEFAULTS} read "${1}" "${@:2:$#}" 2>/dev/null) -eq 1 ) ]] ; then
+	if [[ ( $(${DEFAULTS} read "${1}" "${@:2:$#}" 2>/dev/null) -ne 0 ) ]] ; then
 		echo "Disabling ${1} ${@:2:$#}" ;
 		${DEFAULTS} write "${1}" "${@:2:$#}" -bool NO ;
 	else
@@ -177,7 +179,7 @@ function ENFORCE_GRAPHICS_MODE() {
 function ENFORCE_DEV_MODE() {
 	LAST_ARG=$(($#-1))
 	if [[ ("${USE_DEVELOPER_SETUP}" == "YES") ]] ; then
-		echo "Optimizing for developer users"
+		echo "Optimizing for developer user"
 		if [[ ( "${@:$#:$#}" == "YES" ) ]] ; then
 			ENABLE "${@:1:$LAST_ARG}"
 		else
@@ -190,6 +192,23 @@ function ENFORCE_DEV_MODE() {
 		else
 			ENABLE "${@:1:$LAST_ARG}"
 		fi
+	fi
+	return $? ; # might not return the right code (might return result of if instead)
+}
+
+function ENFORCE_DEBUG_MODE() {
+	if [[ ("${USE_DEBUG_MODE}" == "YES") ]] ; then
+		echo "Optimizing Debug-Mode for developer user" ;
+		if [[ ( "${USE_DEVELOPER_SETUP}" == "YES" ) ]] ; then
+			ENABLE "${@:1:$#}"
+		else
+			echo "    Except you are NOT a developer user!" >&2 ;
+			echo "    Optimizing run-mode for normal user INSTEAD (safety)" ;
+			DISABLE "${@:1:$#}" ;
+		fi
+	else
+		echo "Optimizing run-mode for normal user"
+		DISABLE "${@:1:$#}"
 	fi
 	return $? ; # might not return the right code (might return result of if instead)
 }
@@ -210,7 +229,9 @@ if [[ ( -r "${HOME}/.UserPreferences" ) ]] ; then
 	source <(grep -oE "^(?:\s*)?[-0-9A-Z_]+[=]{1}.+$" "${HOME}/.UserPreferences" | sed -Ee 's/^[[:space:]]+//g' | grep -ovE "^WRITE" | grep -ovE "^DEFAULTS") || true
 	# loads ALLOWED user SETTINGS (IGNORES OTHER SHELL COMMANDS)
 	echo "dev mode is set to ${USE_DEVELOPER_SETUP}"
+	echo "Debug mode is set to ${USE_DEBUG_MODE:-unset}"
 	export USE_DEVELOPER_SETUP="${USE_DEVELOPER_SETUP:-NO}" ;
+	export USE_DEBUG_MODE="${USE_DEBUG_MODE:-NO}" ;
 	export CAL_UUID="${CAL_UUID:-${ZERO_UUID}}" ;
 	export USE_FANCY_GRAPHICS="${USE_FANCY_GRAPHICS:-NO}" ;
 	export USE_BLUETOOTH="${USE_BLUETOOTH:-YES}" ;
@@ -225,7 +246,6 @@ else
 	export USE_FANCY_GRAPHICS="${USE_FANCY_GRAPHICS:-NO}" ;
 	export USE_BLUETOOTH="${USE_BLUETOOTH:-YES}" ;
 fi
-
 
 #-----------------------------------------------------------#
 # To Be Deleted                                             #
@@ -263,8 +283,11 @@ for SOME_DOMAIN in AppStore appstore ; do
 
 	# WARNING: This section is required as is. DO NOT MODIFY.
 	#Some users might want these two disabled
-	for DEV_KEY in WebKitDeveloperExtras ShowDebugMenu ; do
+	for DEV_KEY in WebKitDeveloperExtras ; do
 		ENFORCE_DEV_MODE ${PPDOM}.${SOME_DOMAIN} ${DEV_KEY} YES
+	done ;
+	for DEBUG_KEY in ShowDebugMenu ; do
+		ENFORCE_DEBUG_MODE ${PPDOM}.${SOME_DOMAIN} ${DEBUG_KEY}
 	done ;
 
 	WRITE ${PPDOM}.${SOME_DOMAIN} AutoPlayVideoSetting -string off
@@ -324,7 +347,7 @@ for SOME_DOMAIN in NSGlobalDomain "Apple Global Domain" ; do
 	# Automatic show scrollbars
 	WRITE "${SOME_DOMAIN}" AppleShowScrollBars -string "Automatic"
 	# Possible values: `WhenScrolling`, `Automatic` and `Always`
-	
+
 	WRITE "${SOME_DOMAIN}" NSTableViewDefaultSizeMode -int 2
 
 	if [[ ("${USE_DEVELOPER_SETUP}" == "YES") ]] ; then
@@ -372,7 +395,7 @@ for SOME_DOMAIN in NSGlobalDomain "Apple Global Domain" ; do
 	# WARNING: This setting for com.apple.swipescrolldirection and AppleMetricUnits is required as is. DO NOT MODIFY.
 	# Disable smart quotes as they’re annoying when typing code
 	# Disable auto-correct
-	# Disable “natural” (Lion-style) scrolling
+	# Disable "Natural" (Lion-Style) Scrolling
 	for DISABLE_KEY in NSDocumentSaveNewDocumentsToCloud NSAutomaticCapitalizationEnabled NSAutomaticDashSubstitutionEnabled NSAutomaticPeriodSubstitutionEnabled NSAutomaticQuoteSubstitutionEnabled NSAutomaticSpellingCorrectionEnabled com.apple.swipescrolldirection AppleMetricUnits ; do
 		DISABLE "${SOME_DOMAIN}" ${DISABLE_KEY}
 	done ;
@@ -383,11 +406,6 @@ for SOME_DOMAIN in NSGlobalDomain "Apple Global Domain" ; do
 	# WARNING: This setting is required as is. DO NOT MODIFY.
 	ENABLE "${SOME_DOMAIN}" com.apple.trackpad.enableSecondaryClick
 
-	# WARNING: This section is required as is. DO NOT MODIFY.
-	# Set a blazingly fast keyboard repeat rate
-	WRITE "${SOME_DOMAIN}" KeyRepeat -int 1
-	WRITE "${SOME_DOMAIN}" InitialKeyRepeat -int 10
-
 	WRITE "${SOME_DOMAIN}" AppleLanguages -array "${LANG}" "${LANG:0:2}"
 	WRITE "${SOME_DOMAIN}" NSLinguisticDataAssetsRequested -array "${LANG}" "${LANG:0:2}"
 	WRITE "${SOME_DOMAIN}" NSLinguisticDataAssetsRequestTime -date "${CURRENT_DATE_TIME}"
@@ -395,7 +413,6 @@ for SOME_DOMAIN in NSGlobalDomain "Apple Global Domain" ; do
 
 	# WARNING: This setting is required as is. DO NOT MODIFY.
 	WRITE "${SOME_DOMAIN}" AppleMeasurementUnits -string "Inches"
-
 	WRITE "${SOME_DOMAIN}" AppleTemperatureUnit -string "Fahrenheit"
 
 	# Enable subpixel font rendering on non-Apple LCDs (requires restart)
@@ -412,9 +429,6 @@ for SOME_DOMAIN in NSGlobalDomain "Apple Global Domain" ; do
 	done ;
 
 	# DEV MODE
-	# Display ASCII control characters using caret notation in standard text views
-	# Try e.g. `cd /tmp; unidecode "\x{0000}" > cc.txt; open -e cc.txt`
-	#add NSTextShowsControlCharacters to DEV_KEYs
 
 	# Disable automatic termination of inactive apps
 	#add NSDisableAutomaticTermination to DEV_KEYs
@@ -427,6 +441,13 @@ for SOME_DOMAIN in NSGlobalDomain "Apple Global Domain" ; do
 	# WARNING: This setting is required as is. DO NOT MODIFY.
 	for DEV_KEY in WebKitDeveloperExtras ; do
 		ENFORCE_DEV_MODE "${SOME_DOMAIN}" ${DEV_KEY} YES
+	done ;
+
+	# WARNING: This setting is required as is. DO NOT MODIFY.
+	# Display ASCII control characters using caret notation in standard text views
+	# Try e.g. `cd /tmp; unidecode "\x{0000}" > cc.txt; open -e cc.txt`
+	for DEV_KEY in NSTextShowsControlCharacters ; do
+		ENFORCE_DEBUG_MODE "${SOME_DOMAIN}" ${DEBUG_KEY}
 	done ;
 
 	# WARNING: This setting for ApplePressAndHoldEnabled is required as is. DO NOT MODIFY.
@@ -517,10 +538,10 @@ WRITE ${PPDOM}.finder FXInfoPanesExpanded -dict \
 
 
 WRITE ${PPDOM}.finder "NSToolbar Configuration Browser" -dict \
-         "TB Default Item Identifiers" '( "com.apple.finder.BACK", NSToolbarSpaceItem, "com.apple.finder.PATH", NSToolbarFlexibleSpaceItem, "com.apple.finder.ACTN", NSToolbarFlexibleSpaceItem, "com.apple.finder.SWCH", "com.apple.finder.ARNG", "com.apple.finder.SHAR", NSToolbarFlexibleSpaceItem, "com.apple.finder.INFO", "com.apple.finder.SRCH", "com.apple.finder.EJCT" )' \
+	"TB Default Item Identifiers" '( "com.apple.finder.BACK", NSToolbarSpaceItem, "com.apple.finder.PATH", NSToolbarFlexibleSpaceItem, "com.apple.finder.ACTN", NSToolbarFlexibleSpaceItem, "com.apple.finder.SWCH", "com.apple.finder.ARNG", "com.apple.finder.SHAR", NSToolbarFlexibleSpaceItem, "com.apple.finder.INFO", "com.apple.finder.SRCH", "com.apple.finder.EJCT" )' \
 	"TB Display Mode" -int 2 \
-        "TB Icon Size Mode" -int 1 \
-        "TB Is Shown" -bool YES \
+	"TB Icon Size Mode" -int 1 \
+	"TB Is Shown" -bool YES \
 	"TB Item Identifiers" '( "com.apple.finder.BACK", NSToolbarSpaceItem, "com.apple.finder.PATH", NSToolbarFlexibleSpaceItem, "com.apple.finder.ACTN", NSToolbarFlexibleSpaceItem, "com.apple.finder.SWCH", "com.apple.finder.ARNG", "com.apple.finder.SHAR", NSToolbarFlexibleSpaceItem, "com.apple.finder.INFO", "com.apple.finder.SRCH", "com.apple.finder.EJCT" )' \
 	"TB Size Mode" -int 1
 
@@ -741,7 +762,7 @@ WRITE ${PPDOM}.Preferences.Extensions.QuickLook displayOrder -array "com.apple.r
 WRITE ${PPDOM}.Preferences.Extensions.ServicesWithUI displayOrder -array "com.apple.MarkupUI.Markup"
 
 WRITE ${PPDOM}.Preferences.Extensions.ShareMenu displayOrder -array "com.apple.Notes.SharingExtension" "com.apple.share.AirDrop.send" "com.apple.share.System.add-to-safari-reading-list" "com.apple.reminders.sharingextension" "com.apple.share.Mail.compose" "com.apple.messages.ShareExtension" "com.apple.share.System.add-to-iphoto" "com.apple.share.CloudSharing.invite" "com.apple.iBooksX.SharingExtension"
- 
+
 #-----------------------------------------------------------#
 # preferences.screentime                                    #
 #-----------------------------------------------------------#
@@ -839,9 +860,13 @@ for ENABLE_KEY in BrowseAllInterfaces ; do
 done ;
 
 if [[ ("${USE_BLUETOOTH}" == "YES") ]] ; then
-for DISABLE_KEY in DisableAirDrop ; do
-	DISABLE ${PPDOM}.NetworkBrowser ${DISABLE_KEY}
-done ;
+	for DISABLE_KEY in DisableAirDrop ; do
+		DISABLE ${PPDOM}.NetworkBrowser ${DISABLE_KEY}
+	done ;
+else
+	for ENABLE_KEY in DisableAirDrop ; do
+		ENABLE ${PPDOM}.NetworkBrowser ${ENABLE_KEY}
+	done ;
 fi
 
 #-----------------------------------------------------------#
@@ -861,8 +886,12 @@ for DISABLE_KEY in AlwaysRestoreSessionAtLaunch AutoFillCreditCardData AutoFillF
 done ;
 
 # WARNING: This section except for IncludeInternalDebugMenu is required as is. DO NOT MODIFY.
-for ENABLE_KEY in IncludeDevelopMenu IncludeInternalDebugMenu ShowFullURLInSmartSearchField WebKitDeveloperExtrasEnabledPreferenceKey com.apple.Safari.ContentPageGroupIdentifier.WebKit2DeveloperExtrasEnabled ; do
+for ENABLE_KEY in IncludeDevelopMenu ShowFullURLInSmartSearchField ; do
 	ENFORCE_DEV_MODE ${PPDOM}.Safari ${ENABLE_KEY} YES
+done ;
+
+for ENABLE_DEBUG_KEY in IncludeInternalDebugMenu WebKitDeveloperExtrasEnabledPreferenceKey com.apple.Safari.ContentPageGroupIdentifier.WebKit2DeveloperExtrasEnabled ; do
+	ENFORCE_DEBUG_MODE ${PPDOM}.Safari ${ENABLE_DEBUG_KEY}
 done ;
 
 # WARNING: This setting is required as is. DO NOT MODIFY.
@@ -911,7 +940,7 @@ WRITE ${PPDOM}.Safari HistoryAgeInDaysLimit -int 8
 # WRITE com.apple.Safari DebugSnapshotsUpdatePolicy -int 2
 
 #Some users want this setting
-DELETE ${PPDOM}.Safari IncludeInternalDebugMenu 2>/dev/null || true
+#DELETE ${PPDOM}.Safari IncludeInternalDebugMenu 2>/dev/null || true
 
 #-----------------------------------------------------------#
 # SafariBookmarksSyncAgent                                  #
@@ -1014,7 +1043,7 @@ DISABLE ${PPDOM}.FaceTime kPromptEnableReadRecipts
 # iChat                                                     #
 #-----------------------------------------------------------#
 
-#ENABLE ${PPDOM}.iChat NotifyAboutMessagesFromUnknownContacts 
+#ENABLE ${PPDOM}.iChat NotifyAboutMessagesFromUnknownContacts
 
 #-----------------------------------------------------------#
 # iChat.inputLine                                           #
@@ -1169,8 +1198,8 @@ for SZ_KEY in NSNavPanelExpandedSizeForOpenMode NSNavPanelExpandedSizeForSaveMod
         WRITE ${PPDOM}.TextEdit ${SZ_KEY} -string "{1024, 512}"
 done ;
 
-for INT_KEY in NSFontSize PlainTextEncodingForWrite ; do
-	WRITE ${PPDOM}.TextEdit ${INT_KEY} -int 4
+for INT_KEY in NSFontSize ; do
+	WRITE ${PPDOM}.TextEdit ${INT_KEY} -int 14
 done ;
 
 # WARNING: This setting is required as is. DO NOT MODIFY.
@@ -1424,7 +1453,7 @@ WRITE ${PPDOM}.photos.shareddefaults CPLDefaultDownload -string Default
 
 for ENABLE_KEY in AMSDidRetrieveDeviceOffers AMSDidRetrieveDeviceOffersEligibility AMSDidRetrieveTVOffers ; do
 	ENABLE ${PPDOM}.AppleMediaServices.notbackedup ${ENABLE_KEY}
-done ; 
+done ;
 
 #-----------------------------------------------------------#
 # screencapture                                             #
@@ -1483,7 +1512,7 @@ WRITE ${PPDOM}.Classroom classroomRoles -array instructor
 
 for BAD_KEY in MGRecentDocumentURLBookmarks NSNavLastUserSetHideExtensionButtonState NSNavPanelExpandedSizeForSaveMode "NSWindow Frame NSNavPanelAutosaveName" ; do
 	DELETE ${PPDOM}.QuickTimePlayerX "${BAD_KEY}" 2>/dev/null || true ;
-done ; 
+done ;
 
 $MKDIR ~/Movies/QuickTime 2>/dev/null || true
 
@@ -1899,10 +1928,8 @@ fi
 # routined                                                  #
 #-----------------------------------------------------------#
 
-if [[ ("${USE_DEVELOPER_SETUP}" == "YES") ]] ; then
+if [[ ("${USE_DEBUG_SETUP}" == "YES") ]] ; then
 	WRITE ${PPDOM}.routined RTDefaultsABTestDeviceSeed -string "95AF5924-8EA6-45C4-A8E4-0253618C7B24"
-else
-	WRITE ${PPDOM}.routined RTDefaultsABTestDeviceSeed -string $(uuidgen)
 fi
 
 #-----------------------------------------------------------#
@@ -2037,7 +2064,8 @@ if [[ ("${USE_DEVELOPER_SETUP}" == "YES") ]] ; then
 # If not running interactively, don't do anything
 if [[ ( -t 0 ) ]] ; then
 echo "Developer Terminal detected. (Restart required)"
-echo "try: # ps -o pid -o command -u $USER | grep -vF \"coreauthd\" | sed -E -e 's/^[[:space:]]+//g' | tr -s ' ' ' ' | cut -d\  -f 1 | xargs -L1 -I{} kill {}";
+echo "try: #kill -3 -1 " ;
+echo "try: #ps -o pid -o command -u $USER | grep -vF \"coreauthd\" | sed -E -e 's/^[[:space:]]+//g' | tr -s ' ' ' ' | cut -d\  -f 1 | xargs -L1 -I{} kill -3 {}";
 exit 0 ;
 fi
 fi
@@ -2046,39 +2074,8 @@ fi
 # Kill affected applications                                                  #
 ###############################################################################
 
-for app in "Activity Monitor" \
-	"App Store" \
-	"Address Book" \
-	"AirPlayUIAgent" \
-	"Calendar" \
-	"cfprefsd" \
-	"Contacts" \
-	"Calendar" \
-	"iCal" \
-	"Google Chrome Canary" \
-	"Google Chrome" \
-	"Keynote" \
-	"Mail" \
-	"Messages" \
-	"Opera" \
-	"Photos" \
-	"Pages" \
-	"Steam" \
-	"Numbers" \
-	"Music" \
-	"Safari" \
-	"Zoom" \
-	"SizeUp" \
-	"Spectacle" \
-	"TextEdit" \
-	"Transmission" \
-	"Tweetbot" \
-	"Twitter"; do
-	(sleep 1 && killall "${app}" >/dev/null || echo "failed to kill ${app:-unknown}") &
-done
-wait ;
-
-ps -o pid -o command -u $USER | grep -vF "coreauthd" | sed -E -e 's/^[[:space:]]+//g' | tr -s ' ' ' ' | cut -d\  -f 1 | xargs -L1 -I{} kill {} 2>/dev/null || true ;
+#ps -o pid -o command -u $USER | grep -vF "coreauthd" | sed -E -e 's/^[[:space:]]+//g' | tr -s ' ' ' ' | cut -d\  -f 1 | xargs -L1 -I{} kill -3 {} 2>/dev/null || true ;
+kill -QUIT -1 ;
 
 echo "Done. Note that some of these changes require a logout/restart to take effect."
 

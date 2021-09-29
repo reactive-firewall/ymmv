@@ -41,8 +41,20 @@ ifeq "$(RM)" ""
 	RM=rm -f
 endif
 
+ifeq "$(CHMOD)" ""
+	CHMOD=xcrun chmod -v
+endif
+
+ifeq "$(CHOWN)" ""
+	CHOWN=xcrun chown -v
+endif
+
 ifeq "$(CP)" ""
 	CP=cp -n
+endif
+
+ifeq "$(MKDIR)" ""
+	MKDIR=xcrun mkdir -m 0755
 endif
 
 ifeq "$(RMDIR)" ""
@@ -50,30 +62,33 @@ ifeq "$(RMDIR)" ""
 endif
 
 ifeq "$(INSTALL)" ""
-	INSTALL=`which install`
+	INSTALL=xcrun install -M
 	ifeq "$(INST_OWN)" ""
-		INST_OWN=-C -o root -g staff
+		USER=`id -u`
+	endif
+	ifeq "$(INST_OWN)" ""
+		INST_OWN=-g `id -g` -o 0
 	endif
 	ifeq "$(INST_USER_OWN)" ""
-		INST_USER_OWN=-C -o $(USER) -g staff
+		INST_USER_OWN=-g `id -g` -o $(USER)
 	endif
 	ifeq "$(INST_TOOL_OWN)" ""
-		INST_USER_OWN=-C -o root -g admin
+		INST_USER_OWN=-o 0 -g 80
 	endif
 	ifeq "$(INST_OPTS)" ""
-		INST_OPTS=-m 751
+		INST_OPTS=-m 0751
 	endif
 	ifeq "$(INST_TOOL_OPTS)" ""
-		INST_TOOL_OPTS=-m 755
+		INST_TOOL_OPTS=-m 0755
 	endif
 	ifeq "$(INST_FILE_OPTS)" ""
-		INST_FILE_OPTS=-m 640
+		INST_FILE_OPTS=-m 0640
 	endif
 	ifeq "$(INST_CONFIG_OPTS)" ""
-		INST_CONFIG_OPTS=-m 644
+		INST_CONFIG_OPTS=-m 0644
 	endif
 	ifeq "$(INST_DIR_OPTS)" ""
-		INST_DIR_OPTS=$(INST_TOOL_OPTS) -d
+		INST_DIR_OPTS=-d
 	endif
 endif
 
@@ -85,7 +100,7 @@ ifeq "$(LOG)" "no"
 	QUIET=@
 endif
 
-.SUFFIXES: .zip .php .css .html .bash .sh .py .pyc .txt .js .plist .dmg
+.SUFFIXES: .zip .php .css .html .bash .sh .py .pyc .txt .js .plist .dmg rc
 
 PHONY: must_be_root install-tools-mac install-pf cleanup install-tools install-etc install-home uninstall build
 
@@ -126,45 +141,65 @@ install-home: ~/.bashrc ~/.profile ~/.bash_profile ~/.bash_aliases ~/.bash_histo
 install-better-home: install-home ~/.nofinger nano-config git-config
 	$(QUIET)$(ECHO) "$@: Configured."
 
-nano-config: nano-config-dir ~/.config/nano/nanorc ~/.config/nano/nano_syntax
+nano-config: ~/.config/nano/nanorc ~/.config/nano/nano_syntax
 	$(QUIET)$(WAIT)
 	$(QUIET)$(ECHO) "User nano env: Configured."
 
-git-config: git-config-dir ~/.config/git/attributes
+git-config: ~/.config/git/attributes
 	$(QUIET)$(WAIT)
 	$(QUIET)$(ECHO) "User Git: Configured."
 
 ~/.config/: ./payload/config/
-	$(QUIET)$(INSTALL) $(INST_USER_OWN) $(INST_DIR_OPTS) ~/.config/ 2>/dev/null || true
+	$(QUIET)$(MKDIR) $@ 2>/dev/null || true
+	$(QUIET)$(CHOWN) $(INST_USER_OWN) $@ 2>/dev/null || true
+	$(QUIET)$(CHMOD) $(INST_OPTS) $@ 2>/dev/null || true
 	$(QUIET)$(WAIT)
 
-~/.config/%: ./payload/config/$(%F) ~/.config/
+~/.config/git/%: ./payload/config/git/% ~/.config/git/
 	$(QUIET)$(WAIT)
-	$(QUIET)$(INSTALL) $(INST_USER_OWN) $(INST_CONFIG_OPTS) $< $@ 2>/dev/null || true
+	$(QUIET)$(INSTALL) $< $@ 2>/dev/null || true
+	$(QUIET)$(CHOWN) $(INST_USER_OWN) $@ 2>/dev/null || true
+	$(QUIET)$(CHMOD) $(INST_CONFIG_OPTS) $@ 2>/dev/null || true
 	$(QUIET)$(WAIT)
-	$(QUIET)$(ECHO) "$@: installed."
+	$(QUIET)$(ECHO) "$@: installed"
 
-~/.config/%: ./payload/config/$(%D)/$(%F) ~/.config/$(%D)
+~/.config/nano/%: ./payload/config/nano/% ~/.config/nano/
 	$(QUIET)$(WAIT)
-	$(QUIET)$(INSTALL) $(INST_USER_OWN) $(INST_CONFIG_OPTS) $< $@ 2>/dev/null || true
+	$(QUIET)$(INSTALL) $< $@ 2>/dev/null || true
+	$(QUIET)$(CHOWN) $(INST_USER_OWN) $@ 2>/dev/null || true
+	$(QUIET)$(CHMOD) $(INST_CONFIG_OPTS) $@ 2>/dev/null || true
 	$(QUIET)$(WAIT)
-	$(QUIET)$(ECHO) "$@: installed."
+	$(QUIET)$(ECHO) "$@: installed"
 
-%-config-dir: ./payload/config/%/ ~/.config/
+~/.config/git: ./payload/config/git/ ~/.config/
 	$(QUIET)$(WAIT)
-	$(QUIET)$(INSTALL) $(INST_USER_OWN) $(INST_DIR_OPTS) $@ 2>/dev/null || true
+	$(QUIET)$(MKDIR) $@ 2>/dev/null || true
+	$(QUIET)$(CHOWN) $(INST_USER_OWN) $@ 2>/dev/null || true
+	$(QUIET)$(CHMOD) $(INST_TOOL_OPTS) $@ 2>/dev/null || true
 	$(QUIET)$(WAIT)
-	$(QUIET)$(ECHO) "$@: installed."
+	$(QUIET)$(ECHO) "$@: Created."
+
+~/.config/nano: ./payload/config/nano/ ~/.config/
+	$(QUIET)$(WAIT)
+	$(QUIET)$(MKDIR) $@ 2>/dev/null || true
+	$(QUIET)$(CHOWN) $(INST_USER_OWN) $@ 2>/dev/null || true
+	$(QUIET)$(CHMOD) $(INST_TOOL_OPTS) $@ 2>/dev/null || true
+	$(QUIET)$(WAIT)
+	$(QUIET)$(ECHO) "$@: Created."
 
 ~/.%rc: ./dot_%rc
 	$(QUIET)$(WAIT)
-	$(QUIET)$(INSTALL) $(INST_USER_OWN) $(INST_TOOL_OPTS) $< $@ 2>/dev/null || true
+	$(QUIET)$(INSTALL) $< $@ 2>/dev/null || true
+	$(QUIET)$(CHOWN) $(INST_USER_OWN) $@ 2>/dev/null || true
+	$(QUIET)$(CHMOD) $(INST_TOOL_OPTS) $@ 2>/dev/null || true
 	$(QUIET)$(WAIT)
 	$(QUIET)$(ECHO) "$@: installed."
 
 ~/.%: ./dot_%
 	$(QUIET)$(WAIT)
-	$(QUIET)$(INSTALL) $(INST_USER_OWN) $(INST_FILE_OPTS) $< $@ 2>/dev/null || true
+	$(QUIET)$(INSTALL) $< $@ 2>/dev/null || true
+	$(QUIET)$(CHOWN) $(INST_USER_OWN) $@ 2>/dev/null || true
+	$(QUIET)$(CHMOD) $(INST_FILE_OPTS) $@ 2>/dev/null || true
 	$(QUIET)$(WAIT)
 	$(QUIET)$(ECHO) "$@: installed."
 
@@ -248,12 +283,20 @@ test-style: cleanup
 
 cleanup:
 	$(QUIET)$(RM) tests/*~ 2>/dev/null || true
-	$(QUIET)$(RM) *.DS_Store 2>/dev/null || true
-	$(QUIET)$(RM) ./*/*.DS_Store 2>/dev/null || true
+	$(QUIET)$(RM) ./*/.DS_Store 2>/dev/null || true
+	$(QUIET)$(RM) ./*/*/.DS_Store 2>/dev/null || true
 	$(QUIET)$(RM) ./**/*.DS_Store 2>/dev/null || true
+	$(QUIET)$(RM) ./payload/*~ 2>/dev/null || true
+	$(QUIET)$(RM) ./payload/Setup/*~ 2>/dev/null || true
+	$(QUIET)$(RM) ./payload/bin/*~ 2>/dev/null || true
+	$(QUIET)$(RM) ./payload/config/*~ 2>/dev/null || true
+	$(QUIET)$(RM) ./payload/etc/*~ 2>/dev/null || true
 	$(QUIET)$(RM) ./*/*~ 2>/dev/null || true
+	$(QUIET)$(RM) ./**/*~ 2>/dev/null || true
+	$(QUIET)$(RM) ./*/*/*/*~ 2>/dev/null || true
 	$(QUIET)$(RM) ./*~ 2>/dev/null || true
 	$(QUIET)$(RM) ./.*~ 2>/dev/null || true
+	$(QUIET)$(RM) ./**/.*~ 2>/dev/null || true
 	$(QUIET)$(RMDIR) ./.tox/ 2>/dev/null || true
 
 clean: cleanup
@@ -264,5 +307,6 @@ must_be_root:
 	if test $$runner != "root" ; then echo "You are not root." ; exit 1 ; fi
 
 %:
-	$(QUIET)$(ECHO) "No Rule Found For $@" ; $(WAIT) ;
+	$(QUIET)$(ECHO) "No Rule Found For $@" ;
+	$(QUIET)$(WAIT) ;
 

@@ -100,36 +100,42 @@ fi ;
 export -f getAppID
 
 hash -p /usr/sbin/spctl spctl
+hash -p /usr/bin/codesign codesign
 
-TEMP_APP_ID_VAR=$(getAppID "${@:1:$#}")
-if [[ ( $( spctl -vv --continue --no-cache -a "${@:1:$#}" 2>&1 | head -n 1 | cut -d: -f 2 | grep -coF "accepted" ) -gt 0 ) ]] ; then
-TEMP_APP_SOURCE=$(spctl -vvvv --continue --no-cache -a "${@:1:$#}" 2>&1 | tail -n 1 | cut -d\= -f 2)
+TEMP_APP_ID_VAR=$(getAppID "${THE_FILE}")
+if [[ ( $( spctl -vv --continue --no-cache -a "${THE_FILE}" 2>&1 | head -n 1 | cut -d: -f 2 | grep -coF "accepted" ) -gt 0 ) ]] ; then
+TEMP_APP_SOURCE=$(spctl -vvvv --continue --no-cache -a "${THE_FILE}" 2>&1 | tail -n 1 | cut -d\= -f 2)
 # need to check codesigned
 if [[ ( $( codesign -vvvv --deep -R="anchor apple or anchor apple generic" "${@:1:$#}" 2>&1 | grep -coF "failed" ) -gt 0 ) ]] ; then
-echo "Adding new rule for ${TEMP_APP_ID_VAR:-${@:1:$#}} (block by default)" ;
-spctl --add --label "${TEMP_APP_SOURCE}" --priority 1.0 "${@:1:$#}" || echo "The application is STILL not added. (Would block if run as admin)" ; wait ;
-spctl --remove --label "${TEMP_APP_SOURCE}" --path "${@:1:$#}" 2>/dev/null >/dev/null || true ;
-spctl --disable --label "${TEMP_APP_SOURCE}" "${@:1:$#}" 2>/dev/null >/dev/null || true ;
-tagefile Quarantine "${@:1:$#}" 2>/dev/null || true ;
-elif [[ ( $( codesign -vvvv --deep -R="anchor apple" "${@:1:$#}" 2>&1 | grep -coF "explicit requirement satisfied" ) -gt 0 ) ]] ; then
-echo "${TEMP_APP_ID_VAR:-${@:1:$#}} is codesigned by apple." ;
-tagfile Trust "${@:1:$#}" || true ;
-spctl --add --label "${TEMP_APP_SOURCE}" --priority 2.0 "${@:1:$#}" || echo "The application is STILL not added. (Would allow if run as admin)" ; wait ;
-spctl --enable --label "${TEMP_APP_SOURCE}" "${@:1:$#}" 2>/dev/null >/dev/null || true ;
-elif [[ ( $( codesign -vvvv --deep -R="anchor apple generic" "${@:1:$#}" 2>&1 | grep -coF "explicit requirement satisfied" ) -gt 0 ) ]] ; then
-echo "${TEMP_APP_ID_VAR:-${@:1:$#}} seems to be codesigned." ;
-tagfile Trust "${@:1:$#}" || true ;
-spctl --add --label "${TEMP_APP_SOURCE}" --priority 1.0 "${@:1:$#}" || echo "The application is STILL not added. (Would allow if run as admin)" ; wait ;
+echo "Adding new rule for ${TEMP_APP_ID_VAR:-${THE_FILE}} (block by default)" ;
+spctl --add --label "${TEMP_APP_SOURCE}" --priority 1.0 "${THE_FILE}" || echo "The application is STILL not added. (Would block if run as admin)" ; wait ;
+spctl --remove --label "${TEMP_APP_SOURCE}" --path "${THE_FILE}" 2>/dev/null >/dev/null || true ;
+spctl --disable --label "${TEMP_APP_SOURCE}" "${THE_FILE}" 2>/dev/null >/dev/null || true ;
+tagfile Quarantine "${THE_FILE}" 2>/dev/null || true ;
+chmod -ux-gx-ox "${THE_FILE}" 2>/dev/null || true ;
+chmod +a "guest deny read" "${THE_FILE}" 2>/dev/null || true ;
+chmod +a "admin allow readattr,write-security" "${THE_FILE}" 2>/dev/null || true ;
+chmod +ai "admin allow read,write" "${THE_FILE}" 2>/dev/null || true ;
+chmod +ai "others allow read" "${THE_FILE}" 2>/dev/null || true ;
+elif [[ ( $( codesign -vvvv --deep -R="anchor apple" "${THE_FILE}" 2>&1 | grep -coF "explicit requirement satisfied" ) -gt 0 ) ]] ; then
+echo "${TEMP_APP_ID_VAR:-${THE_FILE}} is codesigned by apple." ;
+tagfile Trust "${THE_FILE}" || true ;
+spctl --add --label "${TEMP_APP_SOURCE}" --priority 2.0 "${THE_FILE}" || echo "The application is STILL not added. (Would allow if run as admin)" ; wait ;
+spctl --enable --label "${TEMP_APP_SOURCE}" "${THE_FILE}" 2>/dev/null >/dev/null || true ;
+elif [[ ( $( codesign --verify --verbose=2 -R="anchor apple generic" --check-notarization "${THE_FILE}" 2>&1 | grep -coF "explicit requirement satisfied" ) -gt 0 ) ]] ; then
+echo "${TEMP_APP_ID_VAR:-${THE_FILE}} seems to be codesigned." ;
+tagfile Trust "${THE_FILE}" || true ;
+spctl --add --label "${TEMP_APP_SOURCE}" --priority 1.0 "${THE_FILE}" || echo "The application is STILL not added. (Would allow if run as admin)" ; wait ;
 fi ;
-elif [[ ( $( spctl -vv --continue --no-cache -a "${@:1:$#}" 2>&1 | head -n 1 | cut -d: -f 2 | grep -coF "rejected" ) -gt 0 ) ]] ; then
-TEMP_APP_SOURCE=$(spctl -vvvv --no-cache -a "${@:1:$#}" 2>&1 | tail -n 1 | cut -d\= -f 2)
-#echo "Enforcing rule for ${TEMP_APP_ID_VAR:-${@:1:$#}} (block by default)" ;
-echo "Removing our rule for ${TEMP_APP_ID_VAR:-${@:1:$#}} (if any)" ;
-spctl --remove --label "${TEMP_APP_SOURCE}" --priority 1.0 --path "${@:1:$#}" || echo "No rules Removed. (Was there any?)" ; wait ;
-spctl --disable --label "${TEMP_APP_SOURCE}" "${@:1:$#}" 2>/dev/null >/dev/null || true ;
-tagefile Quarantine "${@:1:$#}" 2>/dev/null || true ;
+elif [[ ( $( spctl -vv --continue --no-cache -a "${THE_FILE}" 2>&1 | head -n 1 | cut -d: -f 2 | grep -coF "rejected" ) -gt 0 ) ]] ; then
+TEMP_APP_SOURCE=$(spctl -vvvv --no-cache -a "${THE_FILE}" 2>&1 | tail -n 1 | cut -d\= -f 2)
+#echo "Enforcing rule for ${TEMP_APP_ID_VAR:-${THE_FILE}} (block by default)" ;
+echo "Removing our rule for ${TEMP_APP_ID_VAR:-${THE_FILE}} (if any)" ;
+spctl --remove --label "${TEMP_APP_SOURCE}" --priority 1.0 --path "${THE_FILE}" || echo "No rules Removed. (Was there any?)" ; wait ;
+spctl --disable --label "${TEMP_APP_SOURCE}" "${THE_FILE}" 2>/dev/null >/dev/null || true ;
+tagfile Quarantine "${THE_FILE}" 2>/dev/null || true ;
 else
 echo "Something very unlikly happened:"
-echo "Skipping path ${TEMP_APP_ID_VAR:-${@:1:$#}}: " $( spctl -vv --continue --no-cache -a "${@:1:$#}" 2>&1 | head -n 1 | cut -d: -f 2 ) ; wait ;
+echo "Skipping path ${TEMP_APP_ID_VAR:-${THE_FILE}}: " $( spctl -vv --continue --no-cache -a "${THE_FILE}" 2>&1 | head -n 1 | cut -d: -f 2 ) ; wait ;
 fi
 exit 0 ;

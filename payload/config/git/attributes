@@ -1,0 +1,92 @@
+###############################
+# Git Line Endings            #
+###############################
+
+# Set default behaviour to automatically normalize line endings.
+* text=auto
+
+# Force batch scripts to always use CRLF line endings so that if a repo is accessed
+# in Windows via a file share from Linux, the scripts will work.
+*.{cmd,[cC][mM][dD]} text eol=crlf
+*.{bat,[bB][aA][tT]} text eol=crlf
+
+# Force bash scripts to always use LF line endings so that if a repo is accessed
+# in Unix via a file share from Windows, the scripts will work.
+*.sh text eol=lf diff=shell
+*.bash text eol=lf diff=shell
+
+###############################
+# Git Large File System (LFS) #
+###############################
+
+# Archives
+*.7z filter=lfs diff=lfs merge=lfs -text
+*.br filter=lfs diff=lfs merge=lfs -text
+*.gz filter=lfs diff=lfs merge=lfs -text
+*.tar filter=lfs diff=lfs merge=lfs -text
+*.zip filter=lfs diff=lfs merge=lfs -text
+
+# Documents
+*.pdf filter=lfs diff=lfs merge=lfs -text
+
+# Images
+*.gif filter=lfs diff=lfs merge=lfs -text
+*.ico filter=lfs diff=lfs merge=lfs -text
+*.jpg filter=lfs diff=lfs merge=lfs -text
+*.jpeg filter=lfs diff=lfs merge=lfs -text
+*.tiff filter=lfs diff=lfs merge=lfs -text
+*.tif filter=lfs diff=lfs merge=lfs -text
+*.png filter=lfs diff=lfs merge=lfs -text
+*.psd filter=lfs diff=lfs merge=lfs -text
+*.webp filter=lfs diff=lfs merge=lfs -text
+
+# Fonts
+*.woff2 filter=lfs diff=lfs merge=lfs -text
+*.ttf filter=lfs diff=lfs merge=lfs -text
+*.otf filter=lfs diff=lfs merge=lfs -text
+
+# Other
+*.exe filter=lfs diff=lfs merge=lfs -text
+*.app filter=lfs diff=lfs merge=lfs -text
+
+# see https://gist.github.com/tekin/12500956bd56784728e490d8cef9cb81#file-gitattributes
+# Configure custom hunk header patterns for some built-in languages and file formats
+*.c diff=cpp
+*.h diff=cpp
+*.c++ diff=cpp
+*.h++ diff=cpp
+*.cpp diff=cpp
+*.hpp diff=cpp
+*.cc diff=cpp
+*.hh diff=cpp
+*.m diff=objc
+*.mm diff=objc
+*.cs diff=csharp
+*.css diff=css
+*.html diff=html
+*.xhtml diff=html
+*.ex diff=elixir
+*.exs diff=elixir
+*.go diff=golang
+*.php diff=php
+*.pl diff=perl
+*.py diff=python
+*.pyc export-ignore diff=python -text
+*.md diff=markdown
+*.rb diff=ruby
+*.rake diff=ruby
+*.rs diff=rust
+*.lisp diff=lisp
+*.el diff=lisp
+
+# see https://gist.github.com/ruediger/5647207#file-attributes
+*.f diff=fortran
+*.tex diff=tex
+*.bib diff=bibtex
+
+# more rules
+.DS_Store export-ignore -text
+payload/config/*.bz2 export-ignore -text
+payload/config/git filter=archive diff=archive -text
+*.icns filter=archive -text
+"Icon\r" -text
