@@ -1,0 +1,10 @@
+@define-color theme_base_color #ffffff;
+@define-color theme_bg_color #3e3e3e;
+@define-color theme_selected_bg_color #d986d9;
+@define-color theme_text_color #0a0a0a;
+@define-color theme_fg_color #e3e3e3;
+@define-color theme_selected_fg_color #1cc31c;
+
+* {
+	font:	Roboto Light 12;
+}

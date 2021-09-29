@@ -5,6 +5,9 @@
 # as it is modified from versious projects and thus my contributions
 # are probably subject to GPL ... so assume this file is GPL covered.
 
+# ensure LC_TYPE is set early.
+export LC_CTYPE="${LC_CTYPE:-en_US}"
+
 # To enable the settings / commands in this file for login shells as well,
 # this file has to be sourced in /etc/profile.
 if [[ ( `umask` -le 27 ) ]] ; then umask 022 ; fi ;
@@ -255,6 +258,10 @@ declare WHITE=${WHITE:='\e[1;37m'};
 declare On_Black=${On_Black:='\e[40m'};
 declare On_White=${On_White:='\e[47m'};
 
+# ANSI/VT100 Control sequences for colored error logs.
+declare -r error_badge=$"${RED}${On_Black}ERR!${NC}" ;
+declare -r tick_symbol=$"${GREEN}\\xE2\\x9C\\x94${NC}" ;
+
 declare NC=$'\e[0m' ;            # No Color
 declare UNDERLINE='\e[4;1m' ;   # Underline
 # --> Nice. Has the same effect as using "ansi.sys" in DOS.
@@ -283,6 +290,8 @@ export On_Black ;
 export black ;
 export BLACK ;
 export NC ;
+export error_badge ;
+export tick_symbol ;
 
 ALERT="${WHITE}${On_Red}" ; # Bold White on red background
 
@@ -517,7 +526,7 @@ if ! shopt -oq posix; then
 
   if [ -d ${HOMEBREW_PREFIX:-"${HOME}/homebrew"}/share/bash-completion/completions/ ]; then
     for _TOOL_NAME in "cmake cpack ctest gsettings gapplication gresource gdbus gio" ; do
-      if [ -d ${HOMEBREW_PREFIX:-"${HOME}/homebrew"}/share/bash-completion/completions/${_TOOL_NAME} ]; then
+      if [[ ( -d ${HOMEBREW_PREFIX:-"${HOME}/homebrew"}/share/bash-completion/completions/${_TOOL_NAME} ) ]]; then
         source ${HOMEBREW_PREFIX:-"${HOME}/homebrew"}/share/bash-completion/completions/${_TOOL_NAME}
       fi
     done
