@@ -171,6 +171,54 @@ git-config: ~/.config/git/attributes
 	$(QUIET)$(WAIT)
 	$(QUIET)$(ECHO) "$@: installed"
 
+~/.config/lxterminal/%: ./payload/config/lxterminal/% ~/.config/lxterminal/
+	$(QUIET)$(WAIT)
+	$(QUIET)$(INSTALL) $< $@ 2>/dev/null || true
+	$(QUIET)$(CHOWN) $(INST_USER_OWN) $@ 2>/dev/null || true
+	$(QUIET)$(CHMOD) $(INST_CONFIG_OPTS) $@ 2>/dev/null || true
+	$(QUIET)$(WAIT)
+	$(QUIET)$(ECHO) "$@: installed"
+
+~/.config/lxsession/LXDE-pi/%: ./payload/config/lxsession/% ~/.config/lxsession/LXDE-pi/
+	$(QUIET)$(WAIT)
+	$(QUIET)$(INSTALL) $< $@ 2>/dev/null || true
+	$(QUIET)$(CHOWN) $(INST_USER_OWN) $@ 2>/dev/null || true
+	$(QUIET)$(CHMOD) $(INST_CONFIG_OPTS) $@ 2>/dev/null || true
+	$(QUIET)$(WAIT)
+	$(QUIET)$(ECHO) "$@: installed"
+
+~/.config/pcmanfm/LXDE-pi/%: ./payload/config/pcmanfm/% ~/.config/pcmanfm/LXDE-pi/
+	$(QUIET)$(WAIT)
+	$(QUIET)$(INSTALL) $< $@ 2>/dev/null || true
+	$(QUIET)$(CHOWN) $(INST_USER_OWN) $@ 2>/dev/null || true
+	$(QUIET)$(CHMOD) $(INST_CONFIG_OPTS) $@ 2>/dev/null || true
+	$(QUIET)$(WAIT)
+	$(QUIET)$(ECHO) "$@: installed"
+
+~/.config/lxpanel/%: ./payload/config/lxpanel/% ~/.config/lxpanel
+	$(QUIET)$(WAIT)
+	$(QUIET)$(INSTALL) $< $@ 2>/dev/null || true
+	$(QUIET)$(CHOWN) $(INST_USER_OWN) $@ 2>/dev/null || true
+	$(QUIET)$(CHMOD) $(INST_CONFIG_OPTS) $@ 2>/dev/null || true
+	$(QUIET)$(WAIT)
+	$(QUIET)$(ECHO) "$@: installed"
+
+~/.config/lxpanel/LXDE-pi/%: ./payload/config/lxpanel/LXDE-pi/% ~/.config/lxpanel/LXDE-pi
+	$(QUIET)$(WAIT)
+	$(QUIET)$(INSTALL) $< $@ 2>/dev/null || true
+	$(QUIET)$(CHOWN) $(INST_USER_OWN) $@ 2>/dev/null || true
+	$(QUIET)$(CHMOD) $(INST_CONFIG_OPTS) $@ 2>/dev/null || true
+	$(QUIET)$(WAIT)
+	$(QUIET)$(ECHO) "$@: installed"
+
+~/.config/lxpanel/LXDE-pi/panels/%: ./payload/config/lxpanel/LXDE-pi/panels/% ~/.config/lxpanel/LXDE-pi/panels
+	$(QUIET)$(WAIT)
+	$(QUIET)$(INSTALL) $< $@ 2>/dev/null || true
+	$(QUIET)$(CHOWN) $(INST_USER_OWN) $@ 2>/dev/null || true
+	$(QUIET)$(CHMOD) $(INST_CONFIG_OPTS) $@ 2>/dev/null || true
+	$(QUIET)$(WAIT)
+	$(QUIET)$(ECHO) "$@: installed"
+
 ~/.config/git: ./payload/config/git/ ~/.config/
 	$(QUIET)$(WAIT)
 	$(QUIET)$(MKDIR) $@ 2>/dev/null || true
@@ -184,6 +232,60 @@ git-config: ~/.config/git/attributes
 	$(QUIET)$(MKDIR) $@ 2>/dev/null || true
 	$(QUIET)$(CHOWN) $(INST_USER_OWN) $@ 2>/dev/null || true
 	$(QUIET)$(CHMOD) $(INST_TOOL_OPTS) $@ 2>/dev/null || true
+	$(QUIET)$(WAIT)
+	$(QUIET)$(ECHO) "$@: Created."
+
+~/.config/lxpanel/LXDE-pi/panels: ./payload/config/lxpanel/LXDE-pi/panels ~/.config/lxpanel/LXDE-pi
+	$(QUIET)$(WAIT)
+	$(QUIET)$(MKDIR) $@ 2>/dev/null || true
+	$(QUIET)$(CHOWN) $(INST_USER_OWN) $@ 2>/dev/null || true
+	$(QUIET)$(CHMOD) $(INST_TOOL_OPTS) $@ 2>/dev/null || true
+	$(QUIET)$(WAIT)
+	$(QUIET)$(ECHO) "$@: Created."
+
+~/.config/lxpanel/LXDE-pi: ./payload/config/lxpanel/LXDE-pi/ ~/.config/lxpanel
+	$(QUIET)$(WAIT)
+	$(QUIET)$(MKDIR) $@ 2>/dev/null || true
+	$(QUIET)$(CHOWN) $(INST_USER_OWN) $@ 2>/dev/null || true
+	$(QUIET)$(CHMOD) $(INST_TOOL_OPTS) $@ 2>/dev/null || true
+	$(QUIET)$(WAIT)
+	$(QUIET)$(ECHO) "$@: Created."
+
+~/.config/lxpanel: ./payload/config/lxpanel ~/.config/lxpanel
+	$(QUIET)$(WAIT)
+	$(QUIET)$(MKDIR) $@ 2>/dev/null || true
+	$(QUIET)$(CHOWN) $(INST_USER_OWN) $@ 2>/dev/null || true
+	$(QUIET)$(CHMOD) $(INST_TOOL_OPTS) $@ 2>/dev/null || true
+	$(QUIET)$(WAIT)
+	$(QUIET)$(ECHO) "$@: Created."
+
+~/.config/lxterminal: ./payload/config/lxterminal ~/.config/lxpanel
+	$(QUIET)$(WAIT)
+	$(QUIET)$(MKDIR) $@ 2>/dev/null || true
+	$(QUIET)$(CHOWN) $(INST_USER_OWN) $@ 2>/dev/null || true
+	$(QUIET)$(CHMOD) $(INST_TOOL_OPTS) $@ 2>/dev/null || true
+	$(QUIET)$(WAIT)
+	$(QUIET)$(ECHO) "$@: Created."
+
+~/.config/lxsession/LXDE-pi: ./payload/config/lxsession/ ~/.config/
+	$(QUIET)$(WAIT)
+	$(QUIET)$(MKDIR) ~/.config/lxsession/ 2>/dev/null || true
+	$(QUIET)$(CHOWN) $(INST_USER_OWN) ~/.config/lxsession 2>/dev/null || true
+	$(QUIET)$(CHMOD) $(INST_TOOL_OPTS) ~/.config/lxsession 2>/dev/null || true
+	$(QUIET)$(MKDIR) ~/.config/lxsession/LXDE-pi 2>/dev/null || true
+	$(QUIET)$(CHOWN) $(INST_USER_OWN) ~/.config/lxsession/LXDE-pi 2>/dev/null || true
+	$(QUIET)$(CHMOD) $(INST_TOOL_OPTS) ~/.config/lxsession/LXDE-pi 2>/dev/null || true
+	$(QUIET)$(WAIT)
+	$(QUIET)$(ECHO) "$@: Created."
+
+~/.config/pcmanfm/LXDE-pi: ./payload/config/pcmanfm/ ~/.config/
+	$(QUIET)$(WAIT)
+	$(QUIET)$(MKDIR) ~/.config/pcmanfm/ 2>/dev/null || true
+	$(QUIET)$(CHOWN) $(INST_USER_OWN) ~/.config/pcmanfm 2>/dev/null || true
+	$(QUIET)$(CHMOD) $(INST_TOOL_OPTS) ~/.config/pcmanfm 2>/dev/null || true
+	$(QUIET)$(MKDIR) ~/.config/pcmanfm/LXDE-pi 2>/dev/null || true
+	$(QUIET)$(CHOWN) $(INST_USER_OWN) ~/.config/pcmanfm/LXDE-pi 2>/dev/null || true
+	$(QUIET)$(CHMOD) $(INST_TOOL_OPTS) ~/.config/pcmanfm/LXDE-pi 2>/dev/null || true
 	$(QUIET)$(WAIT)
 	$(QUIET)$(ECHO) "$@: Created."
 
