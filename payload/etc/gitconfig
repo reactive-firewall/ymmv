@@ -61,7 +61,7 @@
 	renameLimit = 127
 	algorithm = histogram
 	indentHeuristic = true
-	wsErrorHighlight = auto
+	wsErrorHighlight = old,new
 
 
 [fetch]
