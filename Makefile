@@ -385,6 +385,7 @@ test-style: cleanup
 
 cleanup:
 	$(QUIET)$(RM) tests/*~ 2>/dev/null || true
+	$(QUIET)$(RM) ./.git/*~ 2>/dev/null || true
 	$(QUIET)$(RM) ./*/.DS_Store 2>/dev/null || true
 	$(QUIET)$(RM) ./*/*/.DS_Store 2>/dev/null || true
 	$(QUIET)$(RM) ./**/*.DS_Store 2>/dev/null || true
