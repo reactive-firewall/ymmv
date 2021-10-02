@@ -60,12 +60,14 @@
 #    even if the above stated remedy fails of its essential purpose.
 ################################################################################
 
-# version 20210927
+# version 20211001
 
 umask 137
+hash readlink
+
 declare -r MINPARAMS=1
 declare -i IS_SINGLE_MODE=0;
-declare -ir MYVERSION=20110720;
+declare -ir MYVERSION=20211001;
 
 if [[ $# -gt "$MINPARAMS" ]] ; then
 while [ $# -gt $MINPARAMS ]; do    # Until you run out of parameters . . .
@@ -74,50 +76,54 @@ case "$1" in
   -s|-1|--single) IS_SINGLE_MODE=1 ;;
   -v|--verbose) IS_VERBOSE_MODE=1 ;;
   -V|--version) echo "${MYVERSION}" ; exit 0 ;;
-  -*) \logger -t "Resolve Path Utility" -i -s -p "local2.error" "\"${1}\" Argument Unrecognized!." 1>&2 || exit 1 ;;
+  -*) echo "$0: \"${1}\" Argument Unrecognized!." 1>&2 || exit 126 ;;
 esac
 shift       # Check next set of parameters.
 done
 fi
 
 if [[ $# -eq 0 ]] ; then
-"${0}" "${PWD}" ; exit 0 ;
+	"${0}" "${PWD}" ; exit 0 ;
 elif [[ $# -eq 1 ]] ; then
-if [[ -h "${1}" ]] ; then "${0}" $(\readlink -n "${1}") ; wait ; exit 0 ; fi
-if [[ -e "${PWD}/${1}" ]] && [[ "${1}" -ef "${PWD}/${1}" ]] ; then
+	if [[ -L "${1}" ]] ; then "${0}" $(readlink -n "${1}") ; wait ; exit 0 ; fi
+	if [[ -e "${PWD}/${1}" ]] && [[ "${1}" -ef "${PWD}/${1}" ]] ; then
 
-\echo "${PWD}/${1}" ;
+		echo "${PWD}/${1}" | tr -s '/' ;
 
-elif [[ -e "${1}" ]] ; then
-\echo "${1}" ;
+	elif [[ -e "${1}" ]] ; then
+		echo "${1}" | tr -s '/' ;
 
-elif [[ -e "${PWD}/${1}" ]] ; then
+	elif [[ -e "${PWD}/${1}" ]] ; then
 
-\echo "${PWD}/${1}" ;
+		echo "${PWD}/${1}" | tr -s '/' ;
 
-fi # full path
-wait ; 
+	fi # full path
+	wait ;
 
-if [[ -d "${1}" ]] && [[ ( $IS_SINGLE_MODE -eq 0 ) ]]; then
-for FILE in $(ls -1 "${1}")
-do
-if [[ -e "${1}/${FILE}" ]] || [[ -h "${1}/${FILE}" ]] ; then
-"${0}" "${1}/${FILE}" ; wait ;
-else
-if [[ -n "${LEADINGWORDS}" ]] && [[ "${LEADINGWORDS}" != "" ]] ; then
-LEADINGWORDS="${LEADINGWORDS} ${FILE}"
-if [[ -e "${1}/${LEADINGWORDS}" ]] || [[ -h "${1}/${LEADINGWORDS}" ]] ; then
-"${0}" "${1}/${LEADINGWORDS}" ; wait ;
-LEADINGWORDS="" #clean up
-unset LEADINGWORDS;
-fi #end if file with spaces in name is there
-else
-LEADINGWORDS="${FILE}"
-fi #end else
-fi #end if file is not there
+	if [[ -d "${1}" ]] && [[ ( $IS_SINGLE_MODE -eq 0 ) ]]; then
+		for FILE in $(ls -1 "${1}" | tr -s '/') ; do
+			if [[ -e "${1}/${FILE}" ]] || [[ -L "${1}/${FILE}" ]] ; then
+				"${0}" "${1}/${FILE}" ; wait ;
+			else
+				if [[ -n "${LEADINGWORDS}" ]] && [[ "${LEADINGWORDS}" != "" ]] ; then
+					LEADINGWORDS="${LEADINGWORDS} ${FILE}"
+					if [[ -e "${1}/${LEADINGWORDS}" ]] || [[ -L "${1}/${LEADINGWORDS}" ]] ; then
+						"${0}" "${1}/${LEADINGWORDS}" ; wait ;
+						LEADINGWORDS="" #clean up
+						unset LEADINGWORDS;
+					fi #end if file with spaces in name is there
+				else
+					LEADINGWORDS="${FILE}"
+				fi #end else
+			fi #end if file is not there
 
-done
-fi #end if folder
-
+		done
+	elif [[ -d "${1}" ]] && [[ "${1}" -ef "${1}/" ]] ; then
+		exit 0 ; # already reported
+	elif [[ -d "${1}" ]] ; then # different (likly unreadable) directory
+		echo "${1}" | tr -s '/' ; exit 0 ;
+	elif [[ -n $(readlink -n "${1}") ]] ; then
+		echo $(readlink -n "${1}") | tr -s '/' ; exit 0 ;
+	fi #end if folder
 fi
 exit 0;
