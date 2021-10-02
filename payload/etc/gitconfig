@@ -63,7 +63,7 @@
 	context = 6
 	renames = copies
 	renameLimit = 127
-	algorithm = histogram
+	algorithm = minimal
 	indentHeuristic = true
 	wsErrorHighlight = old,new
 
