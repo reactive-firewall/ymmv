@@ -26,7 +26,7 @@ rm -f /tmp/signal_components.plist ; wait ;
 osascript -e "do shell script \"installer -pkg /tmp/signal_installer.pkg -target LocalSystem -lang en\" with administrator privileges" || true ;
 rm -f /tmp/signal_installer.pkg ; wait ;
 rm -f /tmp/signal-desktop-mac.dmg ; wait ;
-if [[ ( $( codesign --verify --verbose=2 -R="anchor apple generic" --check-notarization /Applications/"Signal.app" 2>&1 3>&1 | grep -coF "explicit requirement satisfied" 2>/dev/null ; wait ) -gt 0 ) ]] ; then
+if [[ ( $( codesign --verify --deep --verbose=2 -R="anchor apple generic" --check-notarization /Applications/"Signal.app" 2>&1 3>&1 | grep -coF "explicit requirement satisfied" 2>/dev/null ; wait ) -gt 0 ) ]] ; then
 	echo "Install Successful" ;
 else
 	echo "Install Failed" ;

@@ -60,16 +60,7 @@
 #    even if the above stated remedy fails of its essential purpose.
 ################################################################################
 
-function getAppID() {
-if [[ ( $(head <(mdls -name kMDItemCFBundleIdentifier -raw "${@:1:$#}") 2>/dev/null | grep -Foc "(null)" 2>/dev/null ) -eq 0 ) ]] ; then
-head <(mdls -name kMDItemCFBundleIdentifier -raw "${@:1:$#}")
-else
-command grep -F "." <( grep -Fv "plist version" <(grep -Ee "([[:alnum:]]+[\.]+[[:print:]]+)*?" <(grep -A 1 -F "CFBundleIdentifier" <(plutil -convert xml1 -o - -- "${@:1:$#}/Contents/Info.plist" 2>/dev/null) 2>/dev/null | tail -n 1 ) ) | tr -s '><' '>' | sed -e 's/string>//g' | cut -d \> -f 2 2>/dev/null ) 2>/dev/null ;
-fi ;
-}
+THE_PROFILE_RULES="$TMPDIR/firewall.stub"
+THE_OLD_PROFILE="$TMPDIR/Firewall Config.mobileconfig"
 
-TEMP_APP_ID_VAR=$(getAppID "${@:1:$#}")
-
-echo "${TEMP_APP_ID_VAR:-${@:1:$#}}"
-
-exit 0 ;
+grep -A 3 -B 2 -F -f <(sort -u -t'.' <(head -n 99999999 ${THE_PROFILE_RULES} | sed -E -e 's/^.*$/\t\t\t\t&/g') | grep -vF -f <(sort -u -t'.' <(head -n 40000 ${THE_OLD_PROFILE}) ) - ) <(head -n 99999999 ${THE_PROFILE_RULES} | sed -E -e 's/^.*$/\t\t\t\t&/g') | sed -E -e 's/^--$//g' | grep -oE '^.+$'

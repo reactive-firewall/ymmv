@@ -60,16 +60,72 @@
 #    even if the above stated remedy fails of its essential purpose.
 ################################################################################
 
-function getAppID() {
-if [[ ( $(head <(mdls -name kMDItemCFBundleIdentifier -raw "${@:1:$#}") 2>/dev/null | grep -Foc "(null)" 2>/dev/null ) -eq 0 ) ]] ; then
-head <(mdls -name kMDItemCFBundleIdentifier -raw "${@:1:$#}")
+ulimit -t 600
+PATH="/bin:/sbin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin"
+umask 137
+
+LOCK_FILE="/tmp/plist_test_script_lock"
+EXIT_CODE=0
+
+test -x $(command -v xmllint) || exit 126 ;
+
+if [[ ( $(shlock -f ${LOCK_FILE} -p $$ ) -eq 0 ) ]] ; then
+        trap 'rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 1 ;' SIGHUP || EXIT_CODE=3
+        trap 'rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 1 ;' SIGTERM || EXIT_CODE=4
+        trap 'rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 1 ;' SIGQUIT || EXIT_CODE=5
+        trap 'rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 1 ;' SIGSTOP || EXIT_CODE=7
+        trap 'rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 1 ;' SIGINT || EXIT_CODE=8
+        trap 'rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 1 ;' SIGABRT || EXIT_CODE=9
+        trap 'rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit ${EXIT_CODE} ;' EXIT || EXIT_CODE=1
 else
-command grep -F "." <( grep -Fv "plist version" <(grep -Ee "([[:alnum:]]+[\.]+[[:print:]]+)*?" <(grep -A 1 -F "CFBundleIdentifier" <(plutil -convert xml1 -o - -- "${@:1:$#}/Contents/Info.plist" 2>/dev/null) 2>/dev/null | tail -n 1 ) ) | tr -s '><' '>' | sed -e 's/string>//g' | cut -d \> -f 2 2>/dev/null ) 2>/dev/null ;
-fi ;
-}
+        echo Test already in progress by `head ${LOCK_FILE}` ;
+        false ;
+        exit 255 ;
+fi
 
-TEMP_APP_ID_VAR=$(getAppID "${@:1:$#}")
+# this is how test files are found:
 
-echo "${TEMP_APP_ID_VAR:-${@:1:$#}}"
+# THIS IS THE ACTUAL TEST
+_TEST_ROOT_DIR="./payload" ;
+if [[ -d ../payload ]] ; then
+	_TEST_ROOT_DIR="../payload" ;
+elif [[ -d ./payload ]] ; then
+	_TEST_ROOT_DIR="./payload" ;
+else
+	echo "FAIL: missing valid app or file"
+	EXIT_CODE=1
+fi
 
-exit 0 ;
+for _TEST_DOC in $(find ${_TEST_ROOT_DIR} \( -iname '*.plist' -o -iname "*.mobileconfig" \) -a -print0 | xargs -0 -L1 -I{} git ls-files  "\"{}\"" ; wait ;) ; do
+	plutil -lint -- "${_TEST_DOC}" 2>&1 || EXIT_CODE=$? ;
+	if [[ (${EXIT_CODE} -ne 0) ]] ; then
+		echo "SKIP: ${_TEST_DOC} is not a valid plist" ;
+	fi
+	xmllint --noout --valid <(plutil -convert xml1 -o - -- "${_TEST_DOC}" ) 1>/dev/null 2>&1 || EXIT_CODE=$? ;
+	if [[ ( ${EXIT_CODE} -ne 0 ) ]] ; then
+		case "$EXIT_CODE" in
+			1) echo "SKIP: Unclassified issue with '${_TEST_DOC}'" ;;
+			2|3|4) echo "FAIL: '${_TEST_DOC}' is invalid." ;;
+			*) echo "SKIP: Can't check ${_TEST_DOC}" ;;
+		esac
+	fi
+done
+
+for _TEST_DOC in $(find ${_TEST_ROOT_DIR} -type f -iname '*.xml' -print0 | xargs -0 -L1 -I{} git ls-files  "\"{}\"" ; wait ;) ; do
+	xmllint --noout --valid "${_TEST_DOC}" 1>/dev/null 2>&1 || EXIT_CODE=$?
+	if [[ ( ${EXIT_CODE} -ne 0 ) ]] ; then
+		case "$EXIT_CODE" in
+			1) echo "SKIP: Unclassified issue with '${_TEST_DOC}'" ;;
+			2|3|4) echo "FAIL: '${_TEST_DOC}' is invalid." ;;
+			*) echo "SKIP: Can't check ${_TEST_DOC}" ;;
+		esac
+	fi
+done
+
+unset _TEST_ROOT_DIR 2>/dev/null || true ;
+unset _TEST_DOC 2>/dev/null || true ;
+
+rm -f ${LOCK_FILE} 2>/dev/null > /dev/null || true ; wait ;
+
+# goodbye
+exit ${EXIT_CODE:-255} ;

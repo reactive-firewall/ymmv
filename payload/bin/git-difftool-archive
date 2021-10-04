@@ -1,3 +1,45 @@
 #! /bin/bash
 
-tar -xf ${LOCAL} --no-same-owner --posix --to-stdout | git difftool --dirdiff $LOCAL $BASE
+GIT_DIFF_TOOL_FSCK_ALL=`git config --bool --default true --get 'diff.archive.fsck'`
+GIT_DIFF_TOOL_FSCK_TAR=`git config --bool --default ${GIT_DIFF_TOOL_FSCK_ALL} --get 'diff.archive.tar.fsck'`
+
+if [[ !( $GIT_DIFF_TOOL_FSCK_TAR ) ]] ; then
+#echo "${LOCAL}"
+tar -tf ${LOCAL} >/dev/null || exit 125 ;
+#echo "${REMOTE}"
+tar -tf ${REMOTE} >/dev/null || exit 125 ;
+fi
+
+declare -i GIT_DIFF_TOOL_FNAMES_BUFFER_LEN=`git config --int --default 512 --get 'diff.archive.filename-buffer-len'`
+declare -i GIT_DIFF_TOOL_CONTEXT=`git config --int --default 3 --get 'diff.context'`
+
+# caveat: can not be overridden with git_config_count like stuff...
+# colors (only old,new,meta,func, and context are supported)
+if [[ ( $(git config --get-colorbool color.diff `test -t 0` ) ) ]] ; then
+gitdiffoldcolor=$(git config --get-color color.diff.old "default") ;
+gitdiffnewcolor=$(git config --get-color color.diff.new "default") ;
+gitdiffmetacolor=$(git config --get-color color.diff.meta "default") ;
+gitdifffunccolor=$(git config --get-color color.diff.func "default") ;
+gitdiffcontextcolor=$(git config --get-color color.diff.context "default") ;
+fi
+gitdiffcoloroff=$(git config --get-color "" "reset") ;
+
+function diffcore_tool_archive() {
+	local BASE_FILE="${1}"
+	local THIER_FILE="${2}"
+	local MERGE_FILE="${3:-${2}}"
+	echo "diff --git a/${BASE_FILE} b/${THIER_FILE}" | tr -s '/' ;
+	echo "old mode 000000" ;
+	echo "new mode 100644" ;
+	echo -n "index 4b825dc642cb6eb9a060e54bf8d69288fbee4904..";
+	cat <"${BASE_FILE}" | git hash-object -t blob --literally --stdin -- ;
+	diff -pdNU ${GIT_DIFF_TOOL_CONTEXT:-3} --label "a/${BASE_FILE}" --label "b/${BASE_FILE}" "${BASE_FILE}" "${THIER_FILE}" ; wait ;
+	echo "" ;
+}
+export -f diffcore_tool_archive
+
+#cat <(cat <(tar -tf ${LOCAL} 2>/dev/null ) <(tar -tf ${REMOTE} 2>/dev/null ) | sort -t '/' -u | grep -vE "^.*[/.]+$" | xargs -L1 -I{} -R6 -S${GIT_DIFF_TOOL_FNAMES_BUFFER_LEN} echo "diff -pdNU ${GIT_DIFF_TOOL_CONTEXT:-3} --label '{}' --label '{}' <(tar -xOf "${LOCAL}" '{}' 2>/dev/null ; wait ) <(tar -xOf "${REMOTE}" '{}' 2>/dev/null ; wait ) ; wait ;" ) 2>/dev/null | bash -s ; wait ;
+cat <(cat <(tar -tf ${LOCAL} 2>/dev/null ) <(tar -tf ${REMOTE} 2>/dev/null ) | sort -t '/' -u | grep -vE "^.*[/.]+$" | xargs -L1 -I{} -R6 -S${GIT_DIFF_TOOL_FNAMES_BUFFER_LEN} echo "diffcore_tool_archive <(tar -xOf "${LOCAL}" '{}' 2>/dev/null ; wait ) <(tar -xOf "${REMOTE}" '{}' 2>/dev/null ; wait ) '{}' ; wait ;" ) 2>/dev/null | bash -s ; wait ;
+#cat <(cat <(tar -tf ${LOCAL} 2>/dev/null ) <(tar -tf ${REMOTE} 2>/dev/null ) | sort -t '/' -u | grep -vE "^.*[/.]+$" | xargs -L1 -I{} -R6 -S${GIT_DIFF_TOOL_FNAMES_BUFFER_LEN} echo "diff -pdNU ${GIT_DIFF_TOOL_CONTEXT:-3} --label '{}' --label '{}' <(tar -xOf "${LOCAL}" '{}' 2>/dev/null ; wait ) <(tar -xOf "${REMOTE}" '{}' 2>/dev/null ; wait ) ; wait ;" ) 2>/dev/null | bash -s ; wait ;
+echo ""
+exit 0 ;

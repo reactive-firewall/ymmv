@@ -60,16 +60,42 @@
 #    even if the above stated remedy fails of its essential purpose.
 ################################################################################
 
-function getAppID() {
-if [[ ( $(head <(mdls -name kMDItemCFBundleIdentifier -raw "${@:1:$#}") 2>/dev/null | grep -Foc "(null)" 2>/dev/null ) -eq 0 ) ]] ; then
-head <(mdls -name kMDItemCFBundleIdentifier -raw "${@:1:$#}")
+EXIT_CODE=0
+
+ulimit -t 600
+PATH="/bin:/sbin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin"
+umask 137
+
+LOCK_FILE="/tmp/pf_config_test_script_lock"
+EXIT_CODE=0
+
+if [[ ( $(shlock -f ${LOCK_FILE} -p $$ ) -eq 0 ) ]] ; then
+        trap 'rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 1 ;' SIGHUP || EXIT_CODE=3
+        trap 'rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 1 ;' SIGTERM || EXIT_CODE=4
+        trap 'rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 1 ;' SIGQUIT || EXIT_CODE=5
+        trap 'rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 1 ;' SIGSTOP || EXIT_CODE=7
+        trap 'rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 1 ;' SIGINT || EXIT_CODE=8
+        trap 'rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 1 ;' SIGABRT || EXIT_CODE=9
+        trap 'rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit ${EXIT_CODE} ;' EXIT || EXIT_CODE=1
 else
-command grep -F "." <( grep -Fv "plist version" <(grep -Ee "([[:alnum:]]+[\.]+[[:print:]]+)*?" <(grep -A 1 -F "CFBundleIdentifier" <(plutil -convert xml1 -o - -- "${@:1:$#}/Contents/Info.plist" 2>/dev/null) 2>/dev/null | tail -n 1 ) ) | tr -s '><' '>' | sed -e 's/string>//g' | cut -d \> -f 2 2>/dev/null ) 2>/dev/null ;
-fi ;
-}
+        echo Test already in progress by `head ${LOCK_FILE}` ;
+        false ;
+        exit 255 ;
+fi
 
-TEMP_APP_ID_VAR=$(getAppID "${@:1:$#}")
+# THIS IS THE ACTUAL TEST
+if [[ -f ../payload/etc/pf.anchors/local.user ]] ; then
+	pfctl -nf ../payload/etc/pf.anchors/local.user 1>/dev/null 2>&1 || EXIT_CODE=1
+elif [[ -f ./payload/etc/pf.anchors/local.user ]] ; then
+	pfctl -nf ./payload/etc/pf.anchors/local.user 1>/dev/null 2>&1 || EXIT_CODE=1
+elif [[ -f ./payload/etc/pf.conf ]] ; then
+	pfctl -nf ./payload/etc/pf.conf 1>/dev/null 2>&1 || EXIT_CODE=1
+else
+	echo "FAIL: missing valid PF firewall rules or config file"
+	EXIT_CODE=1
+fi
 
-echo "${TEMP_APP_ID_VAR:-${@:1:$#}}"
+rm -f ${LOCK_FILE} 2>/dev/null > /dev/null || true ; wait ;
 
-exit 0 ;
+# goodbye
+exit ${EXIT_CODE:-255} ;
