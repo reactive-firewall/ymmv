@@ -64,7 +64,7 @@ function getAppID() {
 if [[ ( $(head <(mdls -name kMDItemCFBundleIdentifier -raw "${@:1:$#}") 2>/dev/null | grep -Foc "(null)" 2>/dev/null ) -eq 0 ) ]] ; then
 head <(mdls -name kMDItemCFBundleIdentifier -raw "${@:1:$#}")
 else
-command grep -F "." <( grep -Fv "plist version" <(grep -Ee "([[:alnum:]]+[\.]+[[:print:]]+)*?" <(grep -A 1 -F "CFBundleIdentifier" <(strings "${@:1:$#}/Contents/Info.plist" 2>/dev/null) 2>/dev/null | tail -n 1 ) ) | tr -s '><' '>' | sed -e 's/string>//g' | cut -d \> -f 2 2>/dev/null ) 2>/dev/null ;
+command grep -F "." <( grep -Fv "plist version" <(grep -Ee "([[:alnum:]]+[\.]+[[:print:]]+)*?" <(grep -A 1 -F "CFBundleIdentifier" <(plutil -convert xml1 -o - -- "${@:1:$#}/Contents/Info.plist" 2>/dev/null) 2>/dev/null | tail -n 1 ) ) | tr -s '><' '>' | sed -e 's/string>//g' | cut -d \> -f 2 2>/dev/null ) 2>/dev/null ;
 fi ;
 }
 
