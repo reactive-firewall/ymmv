@@ -297,6 +297,15 @@ git-config: ~/.config/git/attributes
 	$(QUIET)$(WAIT)
 	$(QUIET)$(ECHO) "$@: installed."
 
+~/.bash_aliases: ./dot_bash_aliases
+	$(QUIET)$(WAIT)
+	$(QUIET)$(CP) $@ $@.previous 2>/dev/null || true
+	$(QUIET)$(INSTALL) $< $@ 2>/dev/null || true
+	$(QUIET)$(CHOWN) $(INST_USER_OWN) $@ 2>/dev/null || true
+	$(QUIET)$(CHMOD) $(INST_FILE_OPTS) $@ 2>/dev/null || true
+	$(QUIET)$(WAIT)
+	$(QUIET)$(ECHO) "$@: installed."
+
 ~/.%: ./dot_%
 	$(QUIET)$(WAIT)
 	$(QUIET)$(INSTALL) $< $@ 2>/dev/null || true
