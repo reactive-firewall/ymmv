@@ -7,29 +7,35 @@
 
 # To enable the settings / commands in this file for login shells as well,
 # this file has to be sourced in /etc/profile.
-if [[ ( `umask` -le 27 ) ]] ; then umask 022 ; fi ;
+if [[ ( `umask` -lt 27 ) ]] ; then umask 022 ; fi ;
 
 # configure paths
 function pathappend() {
-  for ARG in "$@" ; do
-    if [[ -d "$ARG" ]] && [[ ":$PATH:" != *":$ARG:"* ]] ; then
-        PATH="${PATH:+"$PATH:"}$ARG" ;
-	export PATH ;
+  for PATH_ARG in "$@" ; do
+    if [[ -d "$PATH_ARG" ]] && [[ ":$PATH:" != *":$PATH_ARG:"* ]] ; then
+        PATH="${PATH:+"$PATH:"}$PATH_ARG" ;
+    export PATH ;
     fi
   done
+  unset PATH_ARG 2>/dev/null || true ;
 }
 
 function manappend() {
-  for ARG in "$@" ; do
-    if [[ -d "$ARG" ]] && [[ ":$MANPATH:" != *":$ARG:"* ]] ; then
-        MANPATH="${MANPATH:+"$MANPATH:"}$ARG" ;
-	export MANPATH ;
+  for MAN_ARG in "$@" ; do
+    if [[ -d "$MAN_ARG" ]] && [[ ":$MANPATH:" != *":$MAN_ARG:"* ]] ; then
+        MANPATH="${MANPATH:+"$MANPATH:"}$MAN_ARG" ;
+    export MANPATH ;
     fi
   done
+  unset MAN_ARG 2>/dev/null || true ;
 }
 
-# make less more friendly for non-text input files, see lesspipe(1)
-[ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
+if [[ $( \uname -s ) == "Darwin" ]] ; then
+	export BASH_SILENCE_DEPRECATION_WARNING=1
+else
+	# make less more friendly for non-text input files, see lesspipe(1)
+	[ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
+fi
 
 pathappend /Applications/Docker.app/Contents/Resources/bin
 pathappend /usr/local/MacGPG2/bin
@@ -37,14 +43,11 @@ pathappend /usr/local/MacGPG2/bin
 # enable this to force color use
 #export CAN_USE_COLOR_IN_ENVIORMENT=1 ;
 
-if [[ $( \uname -s ) == "Darwin" ]] ; then
-	export BASH_SILENCE_DEPRECATION_WARNING=1
-fi
-
 if [[ ( -r /etc/environment ) ]] ; then
 	if [[ ( ${FORCE_RELOAD_BASH_ENV:-2} -ge 1 ) ]] ; then
 		source /etc/environment ;
 		export FORCE_RELOAD_BASH_ENV=0;
+		[ -r "/etc/bashrc_$TERM_PROGRAM" ] && . "/etc/bashrc_$TERM_PROGRAM"
 	fi
 fi
 
@@ -161,8 +164,6 @@ manappend /usr/share/man
 manappend /usr/local/share/man
 manappend /usr/local/MacGPG2/share/man
 export MANPATH
-
-
 
 # if the command-not-found package is installed, use it
 if [ -x /usr/lib/command-not-found -o -x /usr/share/command-not-found/command-not-found ]; then
