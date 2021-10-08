@@ -95,6 +95,16 @@ else
 	EXIT_CODE=1
 fi
 
+if [[ -f ../payload/etc/gitconfig ]] ; then
+	git config -f ../payload/etc/gitconfig --list --name-only 1>/dev/null 2>&1 || EXIT_CODE=1
+elif [[ -f ./payload/etc/gitconfig ]] ; then
+	git config -f ./payload/etc/gitconfig --list --name-only 1>/dev/null 2>&1 || EXIT_CODE=1
+else
+	echo "FAIL: missing global git config template"
+	EXIT_CODE=1
+fi
+
+
 rm -f ${LOCK_FILE} 2>/dev/null > /dev/null || true ; wait ;
 
 # goodbye
