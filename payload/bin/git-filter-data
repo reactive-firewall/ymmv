@@ -92,25 +92,25 @@ function cleanup() {
 	unset IS_VERBOSE_MODE || true ;
 	rm -f "${_GIT_TOOL_BUFFER}" 2>/dev/null || true ;
 	rm -f "${LOCK_FILE}" 2>/dev/null || true ; wait ;
-    unset _GIT_TOOL_BUFFER || true ;
-    unset LOCK_FILE || true ;
-    return
+	unset _GIT_TOOL_BUFFER || true ;
+	unset LOCK_FILE || true ;
+	return
 }
 
 export -f cleanup ;
 
 if [[ ( $(shlock -f ${LOCK_FILE} -p $$ ) -eq 0 ) ]] ; then
-        trap 'cleanup || true ;' SIGHUP || EXIT_CODE=3
-        trap 'cleanup || true ;' SIGTERM || EXIT_CODE=4
-        trap 'cleanup || true ;' SIGQUIT || EXIT_CODE=5
-        trap 'cleanup || true ;' SIGSTOP || EXIT_CODE=7
-        trap 'cleanup || true ;' SIGINT || EXIT_CODE=8
-        trap 'cleanup || true ;' SIGABRT || EXIT_CODE=9
-        trap 'cleanup || true ; exit ${EXIT_CODE:-255} ;' EXIT || EXIT_CODE=1
+	trap 'cleanup || true ;' SIGHUP || EXIT_CODE=3
+	trap 'cleanup || true ;' SIGTERM || EXIT_CODE=4
+	trap 'cleanup || true ;' SIGQUIT || EXIT_CODE=5
+	trap 'cleanup || true ;' SIGSTOP || EXIT_CODE=7
+	trap 'cleanup || true ;' SIGINT || EXIT_CODE=8
+	trap 'cleanup || true ;' SIGABRT || EXIT_CODE=9
+	trap 'cleanup || true ; exit ${EXIT_CODE:-255} ;' EXIT || EXIT_CODE=1
 else
-        echo Test already in progress by `head ${LOCK_FILE}` ;
-        false ;
-        exit 255 ;
+	echo Test already in progress by `head ${LOCK_FILE}` ;
+	false ;
+	exit 255 ;
 fi
 
 cat </dev/stdin >"${_GIT_TOOL_BUFFER}" 2>/dev/null ; wait ;
