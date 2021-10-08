@@ -76,7 +76,7 @@ case "$1" in
   -s|-1|--single) IS_SINGLE_MODE=1 ;;
   -v|--verbose) IS_VERBOSE_MODE=1 ;;
   -V|--version) echo "${MYVERSION}" ; exit 0 ;;
-  -*) echo "$0: \"${1}\" Argument Unrecognized!." 1>&2 || exit 126 ;;
+  -*) echo "$0: \"${1}\" Argument Unrecognized!" 1>&2 || exit 126 ;;
 esac
 shift       # Check next set of parameters.
 done
@@ -85,18 +85,13 @@ fi
 if [[ $# -eq 0 ]] ; then
 	"${0}" "${PWD}" ; exit 0 ;
 elif [[ $# -eq 1 ]] ; then
-	if [[ -L "${1}" ]] ; then "${0}" $(readlink -n "${1}") ; wait ; exit 0 ; fi
+	if [[ -L "${1}" ]] && [[ -e $(readlink -n "${1}") ]] ; then "${0}" $(readlink -n "${1}") ; wait ; exit 0 ; fi
 	if [[ -e "${PWD}/${1}" ]] && [[ "${1}" -ef "${PWD}/${1}" ]] ; then
-
 		echo "${PWD}/${1}" | tr -s '/' ;
-
 	elif [[ -e "${1}" ]] ; then
 		echo "${1}" | tr -s '/' ;
-
 	elif [[ -e "${PWD}/${1}" ]] ; then
-
 		echo "${PWD}/${1}" | tr -s '/' ;
-
 	fi # full path
 	wait ;
 
@@ -122,6 +117,8 @@ elif [[ $# -eq 1 ]] ; then
 		exit 0 ; # already reported
 	elif [[ -d "${1}" ]] ; then # different (likly unreadable) directory
 		echo "${1}" | tr -s '/' ; exit 0 ;
+	elif [[ -e $(dirname "${1}")/$(readlink -n "${1}") ]] && [[ -n $(readlink -n "${1}") ]]; then
+		echo $(dirname "${1}")/$(readlink -n "${1}") | tr -s '/' ; exit 0 ;
 	elif [[ -n $(readlink -n "${1}") ]] ; then
 		echo $(readlink -n "${1}") | tr -s '/' ; exit 0 ;
 	fi #end if folder
