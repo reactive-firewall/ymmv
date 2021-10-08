@@ -101,6 +101,21 @@ color brightyellow "^@@.*"
 color brightyellow "^\\ No newline at end of file$"
 color magenta "^diff.*"
 
+## used by dot_macrc
+syntax "UserPreferences" "\.UserPreferences$"
+color green "#.*$"
+color red "^[^#]+.*$"
+color brightyellow "^(\s*)?[-0-9A-Z_]+[=]{1}.+$"
+color yellow "^(\s*)?(DELETE){1}(\s*)+.+$"
+color brightgreen "^(\s*)?(ENABLE){1}(\s*)+.+$"
+color brightyellow "^(\s*)?(DISABLE){1}(\s*)+.+$"
+color cyan "^(\s*)?(WRITE){1}(\s*)+.+$"
+color cyan "^(\s*)?(ENFORCE_GRAPHICS_MODE){1}(\s*)+.+$"
+color blue "^(\s*)?(ENFORCE_DEV_MODE){1}(\s*)+.+$"
+color magenta "^(\s*)?[-0-9A-Z_]+[=]{1}"
+color magenta "^(\s*)?(DELETE|WRITE|ENABLE|DISABLE|ENFORCE_DEV_MODE|ENFORCE_GRAPHICS_MODE){1}(\s*){1}"
+color red "^\S+\s+[-0-9A-Z_]+(\s*)?[=]{1}.+$"
+
 ## Markdown source code
 syntax "Markdown" "\.(md|mkd|mkdn|markdown)$"
 # Tables (Github extension)
