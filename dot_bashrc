@@ -357,13 +357,13 @@ XLOAD=$(( 400*${NCPU:-1} ))        # Xlarge load
 function load()
 {
   if [[ ( `uname -s` == "Darwin" ) ]] ; then
-    local SYSLOAD=$(uptime | cut -d: -f4 | cut -d\  -f2 | tr -d '.')
+    local SYSLOAD=$(uptime | cut -d: -f3-4 | cut -d\  -f2 | tr -d '.' | head -n 1)
     # System load of the current host.
     echo -n $((10#$SYSLOAD))       # Convert to decimal.
   else
     local SYSLOAD=$(cut -d\  -f1 /proc/loadavg | tr -d '.')
     # System load of the current host.
-    echo $((10#$SYSLOAD))       # Convert to decimal.
+    echo -n $((10#$SYSLOAD))       # Convert to decimal.
   fi
 }
 
