@@ -38,7 +38,7 @@ ifeq "$(WAIT)" ""
 endif
 
 ifeq "$(RM)" ""
-	RM=rm -f
+	RM=command -pv rm -f
 endif
 
 ifeq "$(CHMOD)" ""
@@ -50,7 +50,7 @@ ifeq "$(CHOWN)" ""
 endif
 
 ifeq "$(CP)" ""
-	CP=cp -n
+	CP=command -pv cp -n
 endif
 
 ifeq "$(MKDIR)" ""
@@ -58,7 +58,7 @@ ifeq "$(MKDIR)" ""
 endif
 
 ifeq "$(RMDIR)" ""
-	RMDIR=$(RM)R
+	RMDIR=$(RM)dR
 endif
 
 ifeq "$(INSTALL)" ""
@@ -120,12 +120,13 @@ install-etc: must_be_root /etc/ /etc/gitconfig /etc/environment /etc/bashrc
 	$(QUIET)$(ECHO) "$@: Done."
 
 install-pf: must_be_root /etc/ /etc/pf.conf /etc/pf.anchors/local.user
-	$(QUIET)$(ALFW) --setglobalstate on
-	$(QUIET)$(ALFW) --setloggingmode on
-	$(QUIET)$(ALFW) --setstealthmode on
-	$(QUIET)$(ALFW) --setallowsigned on
-	$(QUIET)$(ALFW) --setallowsignedapp off || true
+	$(QUIET)$(ALFW) --setglobalstate on || exit 126 ;
+	$(QUIET)$(ALFW) --setloggingmode on || true
+	$(QUIET)$(ALFW) --setstealthmode on || true
+	$(QUIET)$(ALFW) --setallowsigned on || true
+	$(QUIET)$(ALFW) --setallowsignedapp off || exit 126 ;
 	$(QUIET)pkill -HUP socketfilterfw || true ;
+	$(QUIET)pfctl -ef /etc/pf.conf || true ;
 	$(QUIET)$(WAIT)
 	$(QUIET)$(ECHO) "$@: Restart Required."
 
@@ -135,10 +136,10 @@ install-tools: must_be_root /usr/local/bin/ /usr/local/bin/grepip /usr/local/bin
 install-tools-mac: must_be_root /usr/local/bin/ /usr/local/bin/sud /usr/local/bin/auditALFW /usr/local/bin/auditGK install-pf
 	$(QUIET)$(ECHO) "$@: Done."
 
-install-home: ~/.bashrc ~/.profile ~/.bash_profile ~/.bash_aliases ~/.bash_history ~/.plan ~/.tcshrc ~/.cshrc
+install-home: ~/.bashrc ~/.profile ~/.bash_profile ~/.bash_aliases ~/.bash_history ~/.tcshrc ~/.cshrc
 	$(QUIET)$(ECHO) "$@: Configured."
 
-install-better-home: install-home ~/.nofinger nano-config git-config
+install-better-home: install-home ~/.nofinger ~/.plan nano-config git-config
 	$(QUIET)$(ECHO) "$@: Configured."
 
 nano-config: ~/.config/nano/nanorc ~/.config/nano/nano_syntax
@@ -228,6 +229,14 @@ git-config: ~/.config/git/attributes
 	$(QUIET)$(ECHO) "$@: Created."
 
 ~/.config/nano: ./payload/config/nano/ ~/.config/
+	$(QUIET)$(WAIT)
+	$(QUIET)$(MKDIR) $@ 2>/dev/null || true
+	$(QUIET)$(CHOWN) $(INST_USER_OWN) $@ 2>/dev/null || true
+	$(QUIET)$(CHMOD) $(INST_TOOL_OPTS) $@ 2>/dev/null || true
+	$(QUIET)$(WAIT)
+	$(QUIET)$(ECHO) "$@: Created."
+
+~/.config/completions: ./payload/config/completions/ ~/.config/
 	$(QUIET)$(WAIT)
 	$(QUIET)$(MKDIR) $@ 2>/dev/null || true
 	$(QUIET)$(CHOWN) $(INST_USER_OWN) $@ 2>/dev/null || true
@@ -359,6 +368,10 @@ uninstall-home: uninstall-dot-bash_aliases uninstall-dot-bash_profile uninstall-
 	$(QUIET)$(WAIT)
 	$(QUIET)$(ECHO) "$@: Done."
 
+uninstall-better-home: uninstall-dot-nofinger uninstall-dot-plan uninstall-dot-config uninstall-home
+	$(QUIET)$(WAIT)
+	$(QUIET)$(ECHO) "$@: Done."
+
 uninstall-tools: uninstall-tools-grepip uninstall-tools-grepCIDR uninstall-tools-grepdns uninstall-tools-Tar_it uninstall-tools-sud
 	$(QUIET)$(WAIT)
 	$(QUIET)$(ECHO) "$@: Done."
@@ -368,8 +381,20 @@ uninstall-tools-%: /usr/local/bin/% must_be_root /usr/local/bin/
 	$(QUIET)$(WAIT)
 	$(QUIET)$(ECHO) "$<: Removed. ( $@ )"
 
+uninstall-dot-config-%: ~/.config/%
+	$(QUIET)$(RMDIR) $< 2>/dev/null || true
+	$(QUIET)$(RM) $< 2>/dev/null || true
+	$(QUIET)$(WAIT)
+	$(QUIET)$(ECHO) "$<: Removed. ( $@ )"
+
+uninstall-dot-config: ~/.config/ uninstall-dot-config-nano uninstall-dot-config-completions uninstall-dot-config-nano uninstall-config-git
+	$(QUIET)$(RMDIR) $< 2>/dev/null || true
+	$(QUIET)$(WAIT)
+	$(QUIET)$(ECHO) "$<: Removed. ( $@ )"
+
 uninstall-dot-%: ~/.%
 	$(QUIET)$(RM) $< 2>/dev/null || true
+	$(QUIET)$(RM) $<~ 2>/dev/null || true
 	$(QUIET)$(WAIT)
 	$(QUIET)$(ECHO) "$<: Removed. ( $@ )"
 
@@ -378,7 +403,7 @@ uninstall: uninstall-etc uninstall-tools
 	$(QUIET)$(WAIT)
 	$(QUIET)$(ECHO) "$@: Done."
 
-purge: clean uninstall
+purge: clean uninstall-better-home uninstall
 	$(QUIET)$(ECHO) "$@: Done."
 
 test: cleanup
@@ -399,7 +424,7 @@ cleanup:
 	$(QUIET)$(RM) ./*/*/.DS_Store 2>/dev/null || true
 	$(QUIET)$(RM) ./**/*.DS_Store 2>/dev/null || true
 	$(QUIET)$(RM) ./payload/*~ 2>/dev/null || true
-	$(QUIET)$(RM) ./payload/Setup/*~ 2>/dev/null || true
+	$(QUIET)$(RM) ./payload/**/*~ 2>/dev/null || true
 	$(QUIET)$(RM) ./payload/bin/*~ 2>/dev/null || true
 	$(QUIET)$(RM) ./payload/config/*~ 2>/dev/null || true
 	$(QUIET)$(RM) ./payload/etc/*~ 2>/dev/null || true
@@ -416,7 +441,7 @@ clean: cleanup
 
 must_be_root:
 	$(QUIET)runner=`whoami` ; \
-	if test $$runner != "root" ; then echo "You are not root." ; exit 1 ; fi
+	if test $$runner != "root" ; then echo "You are not root." ; exit 126 ; fi
 
 %:
 	$(QUIET)$(ECHO) "No Rule Found For $@" ;

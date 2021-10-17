@@ -1,0 +1,42 @@
+# more bash completion for make(1)                             -*- shell-script -*-
+
+_make_ymmv()
+{
+	local cur prev words cword
+	if type -t _init_completion >/dev/null; then
+		_init_completion -n = || return
+	else
+		# manual initialization for older bash completion versions
+		COMPREPLY=()
+		cur="${COMP_WORDS[COMP_CWORD]}"
+		prev="${COMP_WORDS[COMP_CWORD-1]}"
+    fi
+
+	test -r ./Makefile || return ;
+
+	case "$prev" in
+		-f|-C)
+			_filedir '@(make)'
+			return
+			;;
+		-*)
+			# argument required but no completions available
+			return
+			;;
+		*)
+			COMPREPLY=( $( compgen -W '$( grep -oEe "^(?:([^[:space:]%]+)+(?:[\:]{1}.*))$" ./Makefile | cut -d: -f -1 )' -- "$cur" ) )
+			return
+			;;
+	esac
+
+	if [[ "$cur" == -* ]]; then
+		COMPREPLY=( $(compgen -W '$( _parse_help "$1" --help )' -- ${cur}) )
+		[[ $COMPREPLY == *= ]] && compopt -o nospace
+		[[ $COMPREPLY ]] && return
+	fi
+
+	_make
+} &&
+complete -F _make_ymmv make
+
+# ex: ts=4 sw=4 et filetype=sh
