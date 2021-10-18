@@ -60,7 +60,11 @@
 #    even if the above stated remedy fails of its essential purpose.
 ################################################################################
 
-THE_PROFILE_RULES="$TMPDIR/firewall.stub"
-THE_OLD_PROFILE="$TMPDIR/Firewall Config.mobileconfig"
+THE_FILE_BUFFER_SIZE=999999
+THE_PROFILE_RULES="${TMPDIR}/firewall.stub"
+THE_OLD_PROFILE="${TMPDIR}/Firewall Config.mobileconfig"
+TAB_CHAR=$(printf '\t')
 
-grep -A 3 -B 2 -F -f <(sort -u -t'.' <(head -n 99999999 ${THE_PROFILE_RULES} | sed -E -e 's/^.*$/\t\t\t\t&/g') | grep -vF -f <(sort -u -t'.' <(head -n 40000 ${THE_OLD_PROFILE}) ) - ) <(head -n 99999999 ${THE_PROFILE_RULES} | sed -E -e 's/^.*$/\t\t\t\t&/g') | sed -E -e 's/^--$//g' | grep -oE '^.+$'
+builtin echo "$TAB_CHAR$TAB_CHAR$TAB_CHAR<array>"
+grep -A 3 -B 2 -F -f <(sort -u -t'.' <(head -n $THE_FILE_BUFFER_SIZE "${THE_PROFILE_RULES}" | sed -E -e 's/^.*$/\t\t\t\t&/g') | grep -vF -f <(sort -u -t'.' <(head -n $THE_FILE_BUFFER_SIZE "${THE_OLD_PROFILE}") ) - ) <(head -n $THE_FILE_BUFFER_SIZE "${THE_PROFILE_RULES}" | sed -E -e 's/^.*$/\t\t\t\t&/g') | sed -E -e 's/^--$//g' | grep -oE '^.+$'
+builtin echo "$TAB_CHAR$TAB_CHAR$TAB_CHAR</array>"
