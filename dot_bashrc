@@ -1,70 +1,47 @@
+#===============================================================
+#
+# ALIASES AND FUNCTIONS
+#
+# Arguably, some functions defined here are quite big.
+# If you want to make this file smaller, these functions can
+# be converted into scripts and removed from here.
+#
+# Many functions were taken (almost) straight from the bash-2.04
+# examples.
+#
+#===============================================================
+#-------------------------------------------------------------
+# Script configuration (if any)
+#-------------------------------------------------------------
+
+declare -x USE_COLOR_IN_ENVIORMENT=0;
+
+#-------------------------------------------------------------
+# Source global definitions (if any)
+#-------------------------------------------------------------
+
+# echo "loading ..."
+
+if [[ -f /etc/bashrc ]]; then
+      . /etc/bashrc   # --> Read /etc/bashrc, if present.
+fi
+
+if [[ -d "${HOME}"/.bin/ ]]; then
+        alias mybin='$HOME/bin/bin'	  # --> add my own bin to path,
+        PATH=/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:${HOME}/.bin:/opt/local/bin         #if present.
+fi
+
+#TMPDIR=${HOME}
+
 # System-wide .bashrc file for interactive bash(1) shells.
-
-
-# This file is NOT PART of YMMV's MIT LICENSE CONTENT 
-# as it is modified from versious projects and thus my contributions
-# are probably subject to GPL ... so assume this file is GPL covered.
-
-# ensure LC_TYPE is set early.
-export LC_CTYPE="${LC_CTYPE:-en_US}"
 
 # To enable the settings / commands in this file for login shells as well,
 # this file has to be sourced in /etc/profile.
 if [[ ( `umask` -le 27 ) ]] ; then umask 022 ; fi ;
-
-# configure paths
-function pathappend() {
-  for PATH_ARG in "$@" ; do
-    if [[ -d "$PATH_ARG" ]] && [[ ":$PATH:" != *":$PATH_ARG:"* ]] ; then
-        PATH="${PATH:+"$PATH:"}$PATH_ARG" ;
-	export PATH ;
-    fi
-  done
-  unset PATH_ARG 2>/dev/null || true ;
-}
-
-function manappend() {
-  for MAN_ARG in "$@" ; do
-    if [[ -d "$MAN_ARG" ]] && [[ ":$MANPATH:" != *":$MAN_ARG:"* ]] ; then
-        MANPATH="${MANPATH:+"$MANPATH:"}$MAN_ARG" ;
-	export MANPATH ;
-    fi
-  done
-  unset MAN_ARG 2>/dev/null || true ;
-}
-
-
-pathappend ${HOME}/homebrew/sbin
-pathappend ${HOME}/homebrew/bin
-pathappend ${HOME}/bin
-pathappend /Applications/Docker.app/Contents/Resources/bin
-pathappend /usr/local/MacGPG2/bin
-
-if [[ ! ${POSIXLY_CORRECT} ]] ; then
-# idea from https://rakhesh.com/mac/macos-launchctl-commands/
-export XPC_SERVICE_NAME=$(echo -n $(head -n 1 <(launchctl list 2>/dev/null | grep -F com.apple.Terminal. 2>/dev/null | tr -s '\t ' ' ' 2>/dev/null | cut -d\  -f 3-3) 2>/dev/null ).$$ )
-fi
-
-export TMOUT=${TMOUT:-0}
-
-# enable this to force color use
-#export CAN_USE_COLOR_IN_ENVIORMENT=1 ;
-
-if [[ $( command uname -s ) == "Darwin" ]] ; then
-	export BASH_SILENCE_DEPRECATION_WARNING=1
-fi
-
-if [[ ( -r /etc/environment ) ]] ; then
-	if [[ ( ${FORCE_RELOAD_BASH_ENV:-2} -ge 1 ) ]] ; then
-		source /etc/environment ;
-		export FORCE_RELOAD_BASH_ENV=0;
-	fi
-fi
-
-# harden homebrew
-export HOMEBREW_NO_ANALYTICS=1 ;
-export HOMEBREW_NO_INSECURE_REDIRECT=1 ;
-export HOMEBREW_CASK_OPTS=--require-sha ;
+# If not running interactively, don't do anything
+[ -z "$PS1" ] && return
+umask 027
+export CAN_USE_COLOR_IN_ENVIORMENT=1 ;
 
 #--------------------------------------------------------------
 #  Automatic setting of $DISPLAY (if not set already).
@@ -79,7 +56,7 @@ function get_xserver ()
 {
     case $TERM in
         xterm*color)
-            XSERVER=$(who am i | grep -oE "([12]?[0-9]?[0-9]{1}[\.]{1}){3}([12]?[0-9]?[0-9]{1}){1}" | head -n 1 ) ;
+            XSERVER=$(who am i | awk '{print $NF}' | tr -d ')''(' ) ;
             # Ane-Pieter Wieringa suggests the following alternative:
             #  I_AM=$(who am i)
             #  SERVER=${I_AM#*(}
@@ -87,13 +64,13 @@ function get_xserver ()
             XSERVER=${XSERVER%%:*} ;
             CAN_USE_COLOR_IN_ENVIORMENT=1 ;
             ;;
-        xterm*)
-            XSERVER=$(who am i | awk '{print $NF}' | tr -d ')''(' ) ;
+        xterm)
+            XSERVER=$(who am i | awk '{print $NF}' | tr -d ')''(' )
             # Ane-Pieter Wieringa suggests the following alternative:
             #  I_AM=$(who am i)
             #  SERVER=${I_AM#*(}
             #  SERVER=${SERVER%*)}
-            XSERVER=${XSERVER%%:*} ;
+            XSERVER=${XSERVER%%:*}
             ;;
         aterm | rxvt)
             # Find some code that works here. ...
@@ -101,67 +78,22 @@ function get_xserver ()
     esac
 }
 
-if [ -z ${DISPLAY:-""} ]; then
+if [ -z ${DISPLAY:=""} ]; then
     get_xserver
-    if [[ -z ${XSERVER}  || ${XSERVER} == $(hostname) || ${XSERVER} == "unix" ]]; then
-          DISPLAY="${HOSTNAME:-127.0.0.1}:0.0"          # Display on local host.
+    if [[ -z ${XSERVER}  || ${XSERVER} == $(hostname) ||
+       ${XSERVER} == "unix" ]]; then
+          DISPLAY=":0.0"          # Display on local host.
     else
-       DISPLAY=${XSERVER:-127.0.0.1}:0.0     # Display on remote host.
+       DISPLAY=${XSERVER}:0.0     # Display on remote host.
     fi
 fi
 
 
 
-declare USE_COLOR_IN_ENVIORMENT="${USE_COLOR_IN_ENVIORMENT:-${CAN_USE_COLOR_IN_ENVIORMENT:-0}}" ;
+declare USE_COLOR_IN_ENVIORMENT="${USE_COLOR_IN_ENVIORMENT:-${CAN_USE_COLOR_IN_ENVIORMENT:=0}}" ;
 
 export DISPLAY ;
 export USE_COLOR_IN_ENVIORMENT ;
-export TZ='America/Los_Angeles' ;
-
-#-------------------------------------------------------------
-# GPG Setup
-#-------------------------------------------------------------
-if [[ !( $(shopt -q login_shell) ) ]] ; then
-# ensure that the gpg agent is working with bash env
-if [[ ( -f "${HOME}/.gpg-agent-info" ) ]] && [[ !( $( \uname -s ) == "Darwin" ) ]] ; then
-	# load current GPG/SSH helper agents info
-        source "${HOME}/.gpg-agent-info" ;
-	# setup the GPG/SSH environment to use helper agents (i.e make sub-shells work too)
-        export GPG_AGENT_INFO ;
-        export SSH_AUTH_SOCK ;
-        export SSH_AGENT_PID ;
-	# setup the GPG PID to use the current agent (i.e make sub-shells work too)
-        export GPG_AGENT_PID=$(echo "${GPG_AGENT_INFO}" | cut -d : -f 2 ) ;
-else
-	# close any stale helper agents
-	# need to add loop while more than one
-        pkill -15 gpg-agent 2>/dev/null || true ;
-        pkill -9 ssh-agent 2>/dev/null || true ;
- 	# Launch new helper agent
-	if [[ $( \uname -s ) == "Darwin" ]] && [[ -x /usr/local/MacGPG2/bin/gpg-agent  ]] ; then
-		eval $(/usr/local/MacGPG2/bin/gpg-agent --enable-ssh-support --ssh-fingerprint-digest SHA256 --homedir=${HOME}/.gnupg/ --daemon -s )
-		unset SSH_AGENT_PID
-		if [ "${gnupg_SSH_AUTH_SOCK_by:-0}" -ne $$ ]; then
-			export SSH_AUTH_SOCK="$(gpgconf --list-dirs agent-ssh-socket)"
-		else
-			export SSH_AUTH_SOCK=${SSH_AUTH_SOCK} ;
-		fi
-	elif [[ ( -x $(command -v gpg-agent) ) ]] ; then
-		eval $(gpg-agent -s --enable-ssh-support --daemon --write-env-file )
-	# if your implementation is missing --write-env-file, and does not create the .gpg-agent-info file uncomment the following
-	#       echo "GPG_AGENT_INFO=${GPG_AGENT_INFO} ; export GPG_AGENT_INFO" > "${HOME}/.gpg-agent-info"
-	#       echo "SSH_AUTH_SOCK=${SSH_AUTH_SOCK} ; export SSH_AUTH_SOCK" >> "${HOME}/.gpg-agent-info"
-	#       echo "SSH_AGENT_PID=${SSH_AGENT_PID} ; export SSH_AGENT_PID" >> "${HOME}/.gpg-agent-info"
-	#       echo "GPG_AGENT_PID=$(echo "${GPG_AGENT_INFO}" | cut -d : -f 2 ) ; export GPG_AGENT_PID" >> "${HOME}/.gpg-agent-info"
-	fi
-	export GPG_AGENT_PID=$(pgrep -nf "gpg-agent" | tail -n 1) ;
-	export SSH_AGENT_PID=${GPG_AGENT_PID:-${SSH_AGENT_PID}} ;
-	if [[ -e ${HOME}/.gnupg/.S.gpg-agent ]] ; then
-		export GPG_AGENT_INFO="${HOME}/.gnupg/.S.gpg-agent:${GPG_AGENT_PID}:1" ;
-	fi
-fi
-export GPG_TTY=$(tty)
-fi
 
 #-------------------------------------------------------------
 # Some settings
@@ -175,7 +107,6 @@ ulimit -S -c 0      # Don't want coredumps.
 set -o notify
 set -o noclobber
 set -o ignoreeof
-#shopt -uo history
 
 
 # Enable options:
@@ -186,12 +117,11 @@ shopt -s checkwinsize
 shopt -s sourcepath
 shopt -s no_empty_cmd_completion
 shopt -s cmdhist
-shopt -s histappend
-shopt -s histverify
+shopt -s histappend histverify
 shopt -s extglob       # Necessary for programmable completion.
 shopt -s hostcomplete
 shopt -s interactive_comments
-shopt -s huponexit
+#shopt -s huponexit
 
 
 # Disable options:
@@ -199,13 +129,9 @@ shopt -u mailwarn
 unset MAILCHECK        # Don't want my shell to warn me of incoming mail.
 #
 
-# not portable on all systems
-export HISTFILE=${HISTFILE:-"${HOME}/.bash_history"}
-
-
 # don't put duplicate lines in the history. See bash(1) for more options
 # ... or force ignoredups and ignorespace
-HISTCONTROL=ignoreboth
+HISTCONTROL=ignoredups:ignorespace
 
 # for setting history length see HISTSIZE and HISTFILESIZE in bash(1)
 HISTSIZE=1000
@@ -215,55 +141,44 @@ HISTFILESIZE=2000
 # update the values of LINES and COLUMNS.
 shopt -s checkwinsize
 
-# If not running interactively, don't do anything
-#[ $(shopt -q login_shell) ] && return
-
-[ -z "$PS1" ] && return
-
-umask 027
-
 #-------------------------------------------------------------
 # Greeting, motd etc...
 #-------------------------------------------------------------
 # Define some colors first:
 
 # <=---------- Red ----------=>
-declare red=${red:='\e[0;31m'};
-declare RED=${RED:='\e[1;31m'};
-declare On_Red=${On_Red:='\e[41m'};
+declare red=${red:="\E[0;31m"};
+declare RED=${RED:="\E[1;31m"};
+declare On_Red=${On_Red:="\E[41m"};
 # <=--------- Green ---------=>
-declare green=${green:='\e[0;32m'};
-declare GREEN=${GREEN:='\e[1;32m'};
-declare On_Green=${On_Green:='\e[42m'};
+declare green=${green:="\E[0;32m"};
+declare GREEN=${GREEN:="\E[1;32m"};
+declare On_Green=${On_Green:="\E[42m"};
 # <=-------- Yellow ---------=>
-declare yellow=${yellow:='\e[0;33m'};
-declare YELLOW=${YELLOW:='\e[1;33m'};
-declare On_Yellow=${On_Yellow:='\e[43m'};
+declare yellow=${yellow:="\E[0;33m"};
+declare YELLOW=${YELLOW:="\E[1;33m"};
+declare On_Yellow=${On_Yellow:="\E[43m"};
 # <=--------- Blue ----------=>
-declare blue=${blue:='\e[0;34m'};
-declare BLUE=${BLUE:='\e[1;34m'};
-declare On_Blue=${On_Blue:='\e[44m'};
-declare cyan=${cyan:='\e[0;36m'};
-declare CYAN=${CYAN:='\e[1;36m'};
-declare On_Cyan=${On_Cyan:='\e[46m'};
+declare blue=${blue:="\E[0;34m"};
+declare BLUE=${BLUE:="\E[1;34m"};
+declare On_Blue=${On_Blue:="\E[44m"};
+declare cyan=${cyan:="\E[0;36m"};
+declare CYAN=${CYAN:="\E[1;36m"};
+declare On_Cyan=${On_Cyan:="\E[46m"};
 # <=-------- Megenta --------=>
-declare megenta=${megenta:='\e[0;35m'};
-declare MEGENTA=${MEGENTA:='\e[1;35m'};
-declare On_Megenta=${On_Megenta:='\e[45m'};
+declare megenta=${megenta:="\E[0;35m"};
+declare MEGENTA=${MEGENTA:="\E[1;35m"};
+declare On_Megenta=${On_Megenta:="\E[45m"};
 # <=----- Black & White -----=>
-declare black=${black:='\e[0;30m'};
-declare white=${white:='\e[0;37m'};
-declare WHITE=${WHITE:='\e[1;37m'};
+declare black=${black:="\E[0;30m"};
+declare white=${white:="\E[0;37m"};
+declare WHITE=${WHITE:="\E[1;37m"};
 # Background
-declare On_Black=${On_Black:='\e[40m'};
-declare On_White=${On_White:='\e[47m'};
+declare On_Black=${On_Black:="\E[40m"};
+declare On_White=${On_White:="\E[47m"};
 
-# ANSI/VT100 Control sequences for colored error logs.
-declare -r error_badge=$"${RED}${On_Black}ERR!${NC}" ;
-declare -r tick_symbol=$"${GREEN}\\xE2\\x9C\\x94${NC}" ;
-
-declare NC=$'\e[0m' ;            # No Color
-declare UNDERLINE='\e[4;1m' ;   # Underline
+declare NC="\e[0m" ;            # No Color
+declare UNDERLINE="\E[4;1m" ;   # Underline
 # --> Nice. Has the same effect as using "ansi.sys" in DOS.
 
 
@@ -290,8 +205,6 @@ export On_Black ;
 export black ;
 export BLACK ;
 export NC ;
-export error_badge ;
-export tick_symbol ;
 
 ALERT="${WHITE}${On_Red}" ; # Bold White on red background
 
@@ -315,7 +228,7 @@ else
 
 function _exit()              # Function to run upon exit of shell.
 {
-    echo "Goodbye ${LOGNAME}" ;
+    echo "Goodbye ${LOGNAME}"
 }
 
 fi
@@ -327,111 +240,100 @@ if [[ $USE_COLOR_IN_ENVIORMENT -ge 1 ]] ; then
 
 # Test connection type:
 if [ -n "${SSH_CONNECTION}" ]; then
-    CNX=${BLUE}        # Connected on remote machine, via ssh (good).
+    CNX=${green}        # Connected on remote machine, via ssh (good).
 elif [[ "${DISPLAY%%:0*}" != "" ]]; then
     CNX=${ALERT}        # Connected on remote machine, not via ssh (bad).
 else
-    CNX=${WHITE}        # Connected on local machine.
+    CNX=${BLUE}        # Connected on local machine.
 fi
 
 # Test user type:
 if [[ ${USER} == "root" ]]; then
     SU=${RED}           # User is root.
 elif [[ ${USER} != $(logname) ]]; then
-    SU=${yellow}          # User is not login user.
+    SU=${red}          # User is not login user.
 else
     SU=${NC}         # User is normal (well ... most of us are).
 fi
 
-NCPU=1
-if [[ ( `uname -s` == "Darwin" ) ]] ; then
-NCPU=$(sysctl -n hw.ncpu 2>/dev/null)
-else
-NCPU=$(grep -c 'processor' /proc/cpuinfo 2>/dev/null)    # Number of CPUs
-fi
-SLOAD=$(( 100*${NCPU:-1} ))        # Small load
-MLOAD=$(( 200*${NCPU:-1} ))        # Medium load
-XLOAD=$(( 400*${NCPU:-1} ))        # Xlarge load
+declare -i NCPU=4
+SLOAD=400        # Small load
+MLOAD=800        # Medium load
+XLOAD=1600        # Xlarge load
 
 # Returns system load as percentage, i.e., '40' rather than '0.40)'.
 function load()
 {
-  if [[ ( `uname -s` == "Darwin" ) ]] ; then
-    local SYSLOAD=$(uptime | cut -d: -f3-4 | cut -d\  -f2 | tr -d '.' | head -n 1)
+    local SYSLOAD=$(top -l 1 2>&1 | grep -m 1 -E --color=no "^[Load]{4}[[:space:]]+[A]{1}[v]{1}[g]{1}" | cut -d " " -f3 | tr -d '.,')
     # System load of the current host.
-    echo -n $((10#$SYSLOAD))       # Convert to decimal.
-  else
-    local SYSLOAD=$(cut -d\  -f1 /proc/loadavg | tr -d '.')
-    # System load of the current host.
-    echo -n $((10#$SYSLOAD))       # Convert to decimal.
-  fi
+    echo $((10#$SYSLOAD))       # Convert to decimal.
 }
 
 # Returns a color indicating system load.
 function load_color()
 {
-	local SYSLOAD=$(load)
-	if [ ${SYSLOAD} -gt ${XLOAD} ]; then
-		echo -en "${ALERT}" ;
-	elif [ ${SYSLOAD} -gt ${MLOAD} ]; then
-		echo -en "${red}" ;
-	elif [ ${SYSLOAD} -gt ${SLOAD} ]; then
-		echo -en "${RED}" ;
-	else
-		echo -en "${green}" ;
-	fi
+    local SYSLOAD=$(load)
+    if [ ${SYSLOAD} -gt ${XLOAD} ]; then
+        echo -en "${ALERT}" ;
+    elif [ ${SYSLOAD} -gt ${MLOAD} ]; then
+        echo -en "${red}" ;
+    elif [ ${SYSLOAD} -gt ${SLOAD} ]; then
+        echo -en "${RED}" ;
+    else
+        echo -en "${WHITE}" ;
+    fi
 }
 
 # Returns a color according to free disk space in $PWD.
 function disk_color()
 {
-	if [ ! -w "${PWD}" ] ; then
-		echo -en "${red}" ;
-		# No 'write' privilege in the current directory.
-	elif [ -s "${PWD}" ] ; then
-		local used=$(command df -P "$PWD" | awk 'END {print $5} {sub(/%/,"")}' | grep -oE "\d+" | tail -n +1 )
-		if [ ${used} -gt 95 ]; then
-			echo -en "${ALERT}" ;           # Disk almost full (>95%).
-		elif [ ${used} -gt 90 ]; then
-			echo -en "${RED}" ;            # Free disk space almost gone.
-		elif [ ${used} -gt 80 ]; then
-			echo -en "${yellow}" ;            # Free disk space rather low.
-		else
-			echo -en "${GREEN}" ;           # Free disk space is ok.
-		fi ;
-	else
-		echo -en "${green}" ;
-		# Current directory is size '0' (like /proc, /sys etc).
-	fi ;
+    if [ ! -w "${PWD}" ] ; then
+        echo -en "${red}" ;
+        # No 'write' privilege in the current directory.
+    elif [ -s "${PWD}" ] ; then
+        local used=$(command df -P "$PWD" |
+                   awk 'END {print $5} {sub(/%/,"")}')
+        if [ ${used} -gt 95 ]; then
+            echo -en "${ALERT}" ;           # Disk almost full (>95%).
+        elif [ ${used} -gt 90 ]; then
+            echo -en "${RED}" ;            # Free disk space almost gone.
+        else
+            echo -en "${GREEN}" ;           # Free disk space is ok.
+        fi
+    else
+        echo -en "${green}" ;
+        # Current directory is size '0' (like /proc, /sys etc).
+    fi
 }
 
 # Returns a color according to running/suspended jobs.
 function job_color()
 {
-	if [ $(jobs -s | wc -l) -gt "0" ]; then
-		echo -en "${RED}" ;
-	elif [ $(jobs -r | wc -l) -gt "0" ] ; then
-		echo -en "${CYAN}" ;
-	fi
+    if [ $(jobs -s | wc -l) -gt "0" ]; then
+        echo -en "${RED}" ;
+    elif [ $(jobs -r | wc -l) -gt "0" ] ; then
+        echo -en "${CYAN}" ;
+    fi
 }
 
 # Adds some text in the terminal frame (if applicable).
 
+
 # Now we construct the prompt.
-PROMPT_COMMAND="${PROMPT_COMMAND:+$PROMPT_COMMAND; }history -a"
+PROMPT_COMMAND="history -a"
 case ${TERM} in
   *term | *term-*color | rxvt | linux)
-        PS1="\["$(load_color)"\][\A\[${NC}\] "
+        PS1="\[\$(load_color)\][\A\[${NC}\] "
         # Time of day (with load info):
-        PS1="\["$(load_color)"\][\A\[${NC}\] "
+        PS1="\[\$(load_color)\][\A\[${NC}\] "
         # User@Host (with connection type info):
         PS1=${PS1}"\[${SU}\]\u\[${NC}\]@\[${CNX}\]\h\[${NC}\] "
         # PWD (with 'disk space' info):
-        PS1=${PS1}"\["$(disk_color)"\]\W]\[${NC}\] "
+        PS1=${PS1}"\[\$(disk_color)\]\W]\[${NC}\] "
         # Prompt (with 'job' info):
-        PS1=${PS1}"\["$(job_color)"\]>\[${NC}\] "
+        PS1=${PS1}"\[\$(job_color)\]>\[${NC}\] "
         # Set title of current xterm:
-        PS1=${PS1}'\[\e]0;[\u@\h] \w\a\]' ;
+        PS1=${PS1}"\[\E]0;[\u@\h] \w\a\]" ;
         ;;
     *)
         PS1="(\A \u@\h \W) > " # --> PS1="(\A \u@\h \w) > " ;
@@ -439,41 +341,37 @@ case ${TERM} in
         ;;
 esac
 
-	export HISTTIMEFORMAT="[%y/%m/%d %H:%M:%S] ";
+	export HISTTIMEFORMAT="$(echo -e ${CYAN})[%d/%m %H:%M:%S]$(echo -e ${NC}) " ;
 
 #-------------------------------------------------------------
 # Tailoring 'less'
 #-------------------------------------------------------------
 
 alias more='less'
+export PAGER=less
 export LESSCHARSET='utf-8'
-if [[ ( -x /usr/bin/lesspipe.sh ) ]] ; then
 export LESSOPEN='|/usr/bin/lesspipe.sh %s 2>&-' ;
                 # Use this if lesspipe.sh exists.
-fi ;
 export LESS="-i -w  -z-4 -g -h30 -M -X -F -R -P%t?f%f " ;
 # LESS man page colors (makes Man pages more readable).
-export LESS_TERMCAP_mb=$'\e[01;31m'
-export LESS_TERMCAP_md=$'\e[01;31m'
-export LESS_TERMCAP_me=$'\e[0m'
-export LESS_TERMCAP_se=$'\e[0m'
-export LESS_TERMCAP_so=$'\e[01;44;33m'
-export LESS_TERMCAP_ue=$'\e[0m'
-export LESS_TERMCAP_us=$'\e[01;32m'
-export PAGER=less
+export LESS_TERMCAP_mb=$'\E[01;31m'
+export LESS_TERMCAP_md=$'\E[01;31m'
+export LESS_TERMCAP_me=$'\E[0m'
+export LESS_TERMCAP_se=$'\E[0m'
+export LESS_TERMCAP_so=$'\E[01;44;33m'
+export LESS_TERMCAP_ue=$'\E[0m'
+export LESS_TERMCAP_us=$'\E[01;32m'
 
 else
 	alias more='less'
 	export PAGER=less
 	export LESSCHARSET='utf-8'
-	if [[ ( -x /usr/bin/lesspipe.sh ) ]] ; then
-		export LESSOPEN='|/usr/bin/lesspipe.sh %s 2>&-'
-		# Use this if lesspipe.sh exists.
-	fi ;
+	export LESSOPEN='|/usr/bin/lesspipe.sh %s 2>&-'
+                # Use this if lesspipe.sh exists.
 	export LESS='-i -d -w  -z-4 -g -h30 -m -X -F -R -P%t?f%f '
 
 	PS1="\A \u@\h \W --> " ;
-	export HISTTIMEFORMAT="[%y/%m/%d %H:%M:%S] " ;
+	export HISTTIMEFORMAT="[%d/%m %H:%M:%S] " ;
 
 fi
 
@@ -500,47 +398,30 @@ export HISTIGNORE="&:bg:fg:ll:h" ;
 #    ;;
 #esac
 
-if [[ ( -r ${HOME}/.bash_aliases ) ]]; then
-	source ${HOME}/.bash_aliases || true ;
-fi
-
 # enable bash completion in interactive shells
-if ! shopt -oq posix; then
-  if [ -f /usr/share/bash-completion/bash_completion ]; then
-    source /usr/share/bash-completion/bash_completion
-  elif [ -f /etc/bash_completion ]; then
-    source /etc/bash_completion
-  fi
-
-  if [ -r ${HOMEBREW_PREFIX:-"${HOME}/homebrew"}/etc/bash_completion ]; then
-    source ${HOMEBREW_PREFIX:-"${HOME}/homebrew"}/etc/bash_completion
-  fi
-
-  if [ -r ${HOMEBREW_PREFIX:-"${HOME}/homebrew"}/completions/bash/brew ]; then
-    source ${HOMEBREW_PREFIX:-"${HOME}/homebrew"}/completions/bash/brew
-  fi
-
-  if [ -r ${HOMEBREW_PREFIX:-"${HOME}/homebrew"}/completions/bash/ninja ]; then
-    source ${HOMEBREW_PREFIX:-"${HOME}/homebrew"}/completions/bash/ninja
-  fi
-
-  if [ -d ${HOMEBREW_PREFIX:-"${HOME}/homebrew"}/share/bash-completion/completions/ ]; then
-    for _TOOL_NAME in "cmake cpack ctest gsettings gapplication gresource gdbus gio" ; do
-      if [[ ( -d ${HOMEBREW_PREFIX:-"${HOME}/homebrew"}/share/bash-completion/completions/${_TOOL_NAME} ) ]]; then
-        source ${HOMEBREW_PREFIX:-"${HOME}/homebrew"}/share/bash-completion/completions/${_TOOL_NAME}
-      fi
-    done
-  fi
-fi
+#if ! shopt -oq posix; then
+#  if [ -f /usr/share/bash-completion/bash_completion ]; then
+#    . /usr/share/bash-completion/bash_completion
+#  elif [ -f /etc/bash_completion ]; then
+#    . /etc/bash_completion
+#  fi
+#fi
 
 # set up man page search
-manappend /usr/share/man
-manappend /usr/local/share/man
-manappend ${HOME}/.lib/doc/man
-manappend /usr/local/MacGPG2/share/man
-manappend ${HOMEBREW_PREFIX:-"${HOME}/homebrew"}/share/man
-manappend ${HOMEBREW_PREFIX:-"${HOME}/homebrew"}/manpages
-export MANPATH
+declare -x MANPATH="${MANPATH:-/usr/share/man:/usr/local/share/man}:${HOME}/.lib/doc/man"
+
+# sudo hint
+if [ ! -e "$HOME/.sudo_as_admin_successful" ] && [ ! -e "$HOME/.hushlogin" ] ; then
+    case " $(groups) " in *\ admin\ *)
+    if [ -x /usr/bin/sudo ]; then
+	cat <<-EOF
+	To run a command as administrator (user "root"), use "sudo <command>".
+	See "man sudo_root" for details.
+	
+	EOF
+    fi
+    esac
+fi
 
 # if the command-not-found package is installed, use it
 if [ -x /usr/lib/command-not-found -o -x /usr/share/command-not-found/command-not-found ]; then
@@ -559,12 +440,6 @@ if [ -x /usr/lib/command-not-found -o -x /usr/share/command-not-found/command-no
 	}
 fi
 
-
-# This file is NOT PART of YMMV's MIT LICENSE CONTENT 
-# as it is modified from versious projects and thus my contributions
-# are probably subject to GPL ... so assume this file is GPL covered.
-
-shopt -s interactive_comments
-
-# this line must be last to avoid history of this file overwriting
-shopt -so history
+if [[ ( -r ~/.bash_env ) ]] ; then
+	. ~/.bash_env ;
+fi
