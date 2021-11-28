@@ -1,0 +1,25 @@
+# Bash log in file
+#
+#
+# this file can be used to auto log user login or other startup tasks
+# for example:
+#
+# define log file
+LOGFILE="${HOME:-.}/worklog.log"
+#
+# auto log usage
+if [[ -f ${LOGFILE} ]] ; then
+	echo -n "Logged In " >> ${LOGFILE} 2>&1
+	date >> ${LOGFILE}
+	echo -n " on " >> ${LOGFILE} 2>&1
+	hostname >> ${LOGFILE} 2>&1
+	echo -n " with ip " >> ${LOGFILE} 2>&1
+	ping -c 1 $(hostname) | grep -m 1 -oE "[0-9]+[.]{1}[0-9]+[.]{1}[0-9]+[.]{1}[0-9]+" >> ${LOGFILE} 2>&1
+	echo "" >> ${LOGFILE} 2>&1
+else
+	mkdir -p `dirname ${LOGFILE}`
+	touch -am ${LOGFILE}
+	echo -n "Worklog File Created " >> ${LOGFILE}
+	date >> ${LOGFILE}
+	echo ""  >> ${LOGFILE}
+fi
