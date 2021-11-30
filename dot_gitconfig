@@ -4,10 +4,6 @@
 	extraHeader = DNT: 1
 	cookieFile = ~/Library/Caches/git_http_cookies
 
-[user]
-	name = reactive-firewall
-	email = reactive-firewall@users.noreply.github.com
-
 [core]
 	protectNTFS = true
 	protectHFS = true
@@ -82,10 +78,3 @@
 
 [i18n]
 	logOutputEncoding = utf-8
-
-[diff "config"]
-	xfunction = "^(([[:alnum:][:punct:]]*){1}\\s*?[:=]{1}\\s*?){1}\\s*"
-
-[diff "makefile"]
-	xfunction = "^(([[:alnum:][:punct:]]+){1}:{1}){1}\\s*?"
-	wordRegex = "([\\"\\']+[^\\'\\"]*?[\\'\\"]+)+|([$]?[(]+[^\\(\\)]*?[\\)]+)|(([[:alnum:]]|[^\\$\\"\\'\\(\\)[:space:][:cntrl:]])+)*|[[:space:]]+"
