@@ -1,8 +1,8 @@
 [http]
 	sslVerify = true
-	sslVersion = tlsv1.2
+	sslVersion = tlsv1.3
 	extraHeader = DNT: 1
-	cookieFile = ~/.git_http_cookies
+	cookieFile = ~/Library/Caches/git_http_cookies
 
 [user]
 	name = reactive-firewall
@@ -20,6 +20,7 @@
 	compression = 9
 	filemode = true
 	precomposeunicode = true
+	notesRef = refs/notes/commits
 
 [commit]
 	status = true
@@ -67,6 +68,8 @@
 [notes]
 	mergeStrategy = cat_sort_uniq
 	rewriteMode = cat_sort_uniq
+	displayRef = refs/notes/tagpacks/*
+	displayRef = refs/notes/autolog/*
 
 [rebase]
 	stat = true
@@ -79,3 +82,10 @@
 
 [i18n]
 	logOutputEncoding = utf-8
+
+[diff "config"]
+	xfunction = "^(([[:alnum:][:punct:]]*){1}\\s*?[:=]{1}\\s*?){1}\\s*"
+
+[diff "makefile"]
+	xfunction = "^(([[:alnum:][:punct:]]+){1}:{1}){1}\\s*?"
+	wordRegex = "([\\"\\']+[^\\'\\"]*?[\\'\\"]+)+|([$]?[(]+[^\\(\\)]*?[\\)]+)|(([[:alnum:]]|[^\\$\\"\\'\\(\\)[:space:][:cntrl:]])+)*|[[:space:]]+"
