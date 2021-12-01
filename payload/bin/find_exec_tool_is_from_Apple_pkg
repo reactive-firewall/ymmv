@@ -65,7 +65,7 @@
 
 
 # to check though:
-diff -q <(tail -n 42 "$0" | head -n 40 | shasum -a 384 -t -) <(tail -n 1 "$0")
+diff -q <(tail -n 62 "$0" | head -n 60 | shasum -a 384 -t -) <(tail -n 1 "$0")
 
 THE_FILE="${@:1:$#}"
 hash -p $(dirname "${0}")/find_exec_tool_is_from_pkg find_exec_tool_is_from_pkg
@@ -77,6 +77,25 @@ umask 137
 declare -r CHECK_LINE_A=$"Status: signed by a certificate trusted by macOS" ;
 declare -r CHECK_LINE_B=$"B0 B1 73 0E CB C7 FF 45 05 14 2C 49 F1 29 5E 6E DA 6B CA ED 7E 2C" ;
 declare -r CHECK_LINE_C=$"68 C5 BE 91 B5 A1 10 01 F0 24" ;
+declare -r INSECURE_TEMP_PATH=$(getconf DARWIN_USER_TEMP_DIR)/$(openssl rand -base64 42 | tr -d ' ' | tr -s '/' '_' ; wait ;)
+
+function _cleanup() {
+    unset CHECK_LINE_A || true ;
+    unset CHECK_LINE_B || true ;
+    unset CHECK_LINE_C || true ;
+	rm -qf "${INSECURE_TEMP_PATH}" 2>/dev/null || true ;
+    unset INSECURE_TEMP_PATH || true ;
+    unset THE_FILE || true ;
+    return
+}
+
+trap 'cleanup ; wait ; exit 1 ;' SIGKILL ;
+trap 'cleanup ; wait ; exit 1 ;' SIGQUIT ;
+trap 'cleanup ; wait ; exit 1 ;' SIGHUP ;
+trap 'cleanup ; wait ; exit 1 ;' SIGABRT ;
+trap 'cleanup ; wait ; exit 1 ;' SIGINT ;
+trap 'cleanup ; wait ; exit 1 ;' SIGTERM ;
+
 
 if [[ ( $( find_exec_tool_is_from_pkg "${THE_FILE}" ) -eq $(true) ) ]] ; then
 	TEMP_APP_TRUST=$(pkgutil --check-signature "${THE_FILE}" 2>/dev/null | tee ${INSECURE_TEMP_PATH} | grep -F "$CHECK_LINE_A" 2>/dev/null )
@@ -105,4 +124,4 @@ fi
 exit 255 ;
 
 # This file's code hash:
-c6e4aeb82a123010d20914eea09897f21c6bff215255b2531f075befe54df0451571597eb4654482b690a85d22334dbc  -
+3028e3a26e5b7aea4a55b7eb1b09974d2c61114931e914528759cdd9b3cb51ccc057e0324201a8f663432f607ae8d4a5  -

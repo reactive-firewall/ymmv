@@ -68,7 +68,8 @@ echo -n "	<string>"
 head <(mdls -name kMDItemCFBundleIdentifier -raw "${@:1:$#}")
 echo "</string>"
 else
-tail -n 1 <(grep -A 1 -F "CFBundleIdentifier" "${@:1:$#}/Contents/Info.plist" 2>/dev/null )  2>/dev/null ;
+hash -p $(dirname $0)/../bin/applist.bash applist.bash
+echo "	<string>"$(applist.bash "${@:1:$#}" 2>/dev/null ; wait ;)"</string>"
 fi ;
 echo "	<key>Allowed</key>"
 echo "	<false/>"

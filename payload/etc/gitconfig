@@ -44,6 +44,10 @@
 	precomposeunicode = true
 	excludesfile = ~/.gitignore_global
 
+[hooks]
+	allowcolor = true
+	forcecommittest = true
+
 [checkout]
 	defaultRemote = origin
 
@@ -59,7 +63,7 @@
 	context = 6
 	renames = copies
 	renameLimit = 127
-	algorithm = histogram
+	algorithm = minimal
 	indentHeuristic = true
 	wsErrorHighlight = old,new
 
@@ -119,7 +123,7 @@
 	required = true
 
 [diff "archive"]
-	textconv = tar -tvf -
+	textconv = tar -tvf - %f 2>/dev/null
 	binary = true
 
 [filter "archive-entry"]

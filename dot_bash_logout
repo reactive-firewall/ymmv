@@ -1,0 +1,51 @@
+# Bash log out file
+# .bash_logout
+#
+# users can change this file and the .bash_login file as needed
+#
+# For example:
+#
+#
+# define log files
+LOGFILE="${HOME:-}/.lib/logs/log.log"
+HISTFILE="${HOME:-}/.bash_history"
+#
+#############
+# log usage #
+#############
+if [[ -f "${LOGFILE}" ]] ; then
+	echo -n "Logged out at " >> "${LOGFILE}" 2>&1
+	date >> "${LOGFILE}"
+	echo "" >> "${LOGFILE}"
+else
+	mkdir -p $(dirname "${LOGFILE}") ; \wait ;
+	touch -am "${LOGFILE}"
+	echo -n "Log File Created " >> "${LOGFILE}"
+	date >> "${LOGFILE}"
+	echo ""  >> "${LOGFILE}"
+fi
+
+#######################################
+# determine if history file is around #
+#######################################
+
+if [[ -f "${HISTFILE}" ]] ; then
+	echo "History:" >> "${LOGFILE}" 2>&1
+	HISTORY_COUNT=$(echo -n $(( $( wc -l .bash_history | grep -oE "[0-9]+" ) -5 )) )
+	tail -n ${HISTORY_COUNT} "${HISTFILE}" >> "${LOGFILE}" 2>&1
+	echo "" >> "${LOGFILE}"
+	echo "Running cleanup" >>"${LOGFILE}"
+fi
+# mkdir -p `dirname "${HISTFILE}"`
+wait
+rm -f "${HISTFILE}" >> "${LOGFILE}" 2>&1 ; wait ;
+touch -am "${HISTFILE}" && chmod 640 "${HISTFILE}"
+echo -n "History File Created " > "${HISTFILE}"
+wait
+date >> "${HISTFILE}"
+echo ""  >> "${HISTFILE}"
+echo "ls -a -G -p -l" >> "${HISTFILE}"
+echo "# add common command here" >> "${HISTFILE}"
+echo "" >> "${HISTFILE}"
+sync ; wait;
+exit 0;

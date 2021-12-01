@@ -1,0 +1,7 @@
+echo "loaded \"~/.bash_login\""
+
+# login file
+
+if [ -e ~/.login ] ; then
+    . ~/.login
+fi

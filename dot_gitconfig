@@ -18,6 +18,8 @@
 	pager = less
 	safecrlf = true
 	compression = 9
+	filemode = true
+	precomposeunicode = true
 
 [commit]
 	status = true

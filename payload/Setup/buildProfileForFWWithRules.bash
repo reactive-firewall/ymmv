@@ -60,52 +60,11 @@
 #    even if the above stated remedy fails of its essential purpose.
 ################################################################################
 
-EXIT_CODE=0
+THE_FILE_BUFFER_SIZE=999999
+THE_PROFILE_RULES="${TMPDIR}/firewall.stub"
+THE_OLD_PROFILE="${TMPDIR}/Firewall Config.mobileconfig"
+TAB_CHAR=$(printf '\t')
 
-ulimit -t 600
-PATH="/bin:/sbin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin"
-umask 137
-
-LOCK_FILE="/tmp/git_config_test_script_lock"
-EXIT_CODE=0
-
-if [[ ( $(shlock -f ${LOCK_FILE} -p $$ ) -eq 0 ) ]] ; then
-        trap 'rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 1 ;' SIGHUP || EXIT_CODE=3
-        trap 'rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 1 ;' SIGTERM || EXIT_CODE=4
-        trap 'rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 1 ;' SIGQUIT || EXIT_CODE=5
-        trap 'rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 1 ;' SIGSTOP || EXIT_CODE=7
-        trap 'rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 1 ;' SIGINT || EXIT_CODE=8
-        trap 'rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 1 ;' SIGABRT || EXIT_CODE=9
-        trap 'rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit ${EXIT_CODE} ;' EXIT || EXIT_CODE=1
-else
-        echo Test already in progress by `head ${LOCK_FILE}` ;
-        false ;
-        exit 255 ;
-fi
-
-# THIS IS THE ACTUAL TEST
-if [[ -f ../dot_gitconfig ]] ; then
-	git config -f ../dot_gitconfig --list --name-only 1>/dev/null 2>&1 || EXIT_CODE=1
-elif [[ -f ./dot_gitconfig ]] ; then
-	git config -f ./dot_gitconfig --list --name-only 1>/dev/null 2>&1 || EXIT_CODE=1
-elif [[ -f ./.git/config ]] ; then
-	git config -f ./.git/config --list --name-only 1>/dev/null 2>&1 || EXIT_CODE=1
-else
-	echo "FAIL: missing git config file"
-	EXIT_CODE=1
-fi
-
-if [[ -f ../payload/etc/gitconfig ]] ; then
-	git config -f ../payload/etc/gitconfig --list --name-only 1>/dev/null 2>&1 || EXIT_CODE=1
-elif [[ -f ./payload/etc/gitconfig ]] ; then
-	git config -f ./payload/etc/gitconfig --list --name-only 1>/dev/null 2>&1 || EXIT_CODE=1
-else
-	echo "FAIL: missing global git config template"
-	EXIT_CODE=1
-fi
-
-
-rm -f ${LOCK_FILE} 2>/dev/null > /dev/null || true ; wait ;
-
-# goodbye
-exit ${EXIT_CODE:-255} ;
+builtin echo "$TAB_CHAR$TAB_CHAR$TAB_CHAR<array>"
+grep -A 3 -B 2 -F -f <(sort -u -t'.' <(head -n $THE_FILE_BUFFER_SIZE "${THE_PROFILE_RULES}" | sed -E -e 's/^.*$/\t\t\t\t&/g') | grep -vF -f <(sort -u -t'.' <(head -n $THE_FILE_BUFFER_SIZE "${THE_OLD_PROFILE}") ) - ) <(head -n $THE_FILE_BUFFER_SIZE "${THE_PROFILE_RULES}" | sed -E -e 's/^.*$/\t\t\t\t&/g') | sed -E -e 's/^--$//g' | grep -oE '^.+$'
+builtin echo "$TAB_CHAR$TAB_CHAR$TAB_CHAR</array>"

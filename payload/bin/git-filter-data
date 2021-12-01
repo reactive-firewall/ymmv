@@ -1,4 +1,4 @@
-#! /bin/bash
+#! /bin/bash --posix
 # Disclaimer of Warranties.
 # A. YOU EXPRESSLY ACKNOWLEDGE AND AGREE THAT, TO THE EXTENT PERMITTED BY
 #    APPLICABLE LAW, USE OF THIS SHELL SCRIPT AND ANY SERVICES PERFORMED
@@ -60,52 +60,88 @@
 #    even if the above stated remedy fails of its essential purpose.
 ################################################################################
 
+declare -ir MINPARAMS=0;
+declare -i IS_SMUDGE_MODE=0;
+declare -i IS_CLEAN_MODE=0;
+declare -i IS_VERBOSE_MODE=0;
+declare -ir MYVERSION=20211006;
+
+if [[ $# -gt "$MINPARAMS" ]] ; then
+while [ $# -gt $MINPARAMS ]; do    # Until you run out of parameters . . .
+
+case "$1" in
+  -s|--in|--smudge) IS_SMUDGE_MODE=1 ;;
+  -c|--out|--clean) IS_CLEAN_MODE=1 ;;
+  -v|--verbose) IS_VERBOSE_MODE=1 ;;
+  -V|--version) echo "${MYVERSION}" ; exit 0 ;;
+  -*) echo "Error: \"${1}\" Argument Unrecognized!" 1>&2 ; exit 2 ;;
+esac
+shift       # Check next set of parameters.
+done
+fi
+
+# before doing anything buff the data
+
+_GIT_TOOL_BUFFER="${TMPDIR}"/"git_tool_buffer_${RANDOM}_${RANDOM}_${RANDOM}.tmp" ;
+LOCK_FILE="${TMPDIR:-/tmp}/git_tool_script_lock" ;
 EXIT_CODE=0
 
-ulimit -t 600
-PATH="/bin:/sbin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin"
-umask 137
+function cleanup() {
+	unset IS_SMUDGE_MODE || true ;
+	unset IS_CLEAN_MODE || true ;
+	unset IS_VERBOSE_MODE || true ;
+	rm -f "${_GIT_TOOL_BUFFER}" 2>/dev/null || true ;
+	rm -f "${LOCK_FILE}" 2>/dev/null || true ; wait ;
+	unset _GIT_TOOL_BUFFER || true ;
+	unset LOCK_FILE || true ;
+	return
+}
 
-LOCK_FILE="/tmp/git_config_test_script_lock"
-EXIT_CODE=0
+export -f cleanup ;
 
 if [[ ( $(shlock -f ${LOCK_FILE} -p $$ ) -eq 0 ) ]] ; then
-        trap 'rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 1 ;' SIGHUP || EXIT_CODE=3
-        trap 'rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 1 ;' SIGTERM || EXIT_CODE=4
-        trap 'rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 1 ;' SIGQUIT || EXIT_CODE=5
-        trap 'rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 1 ;' SIGSTOP || EXIT_CODE=7
-        trap 'rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 1 ;' SIGINT || EXIT_CODE=8
-        trap 'rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 1 ;' SIGABRT || EXIT_CODE=9
-        trap 'rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit ${EXIT_CODE} ;' EXIT || EXIT_CODE=1
+	trap 'cleanup || true ;' SIGHUP || EXIT_CODE=3
+	trap 'cleanup || true ;' SIGTERM || EXIT_CODE=4
+	trap 'cleanup || true ;' SIGQUIT || EXIT_CODE=5
+	trap 'cleanup || true ;' SIGSTOP || EXIT_CODE=7
+	trap 'cleanup || true ;' SIGINT || EXIT_CODE=8
+	trap 'cleanup || true ;' SIGABRT || EXIT_CODE=9
+	trap 'cleanup || true ; exit ${EXIT_CODE:-255} ;' EXIT || EXIT_CODE=1
 else
-        echo Test already in progress by `head ${LOCK_FILE}` ;
-        false ;
-        exit 255 ;
+	echo Test already in progress by `head ${LOCK_FILE}` ;
+	false ;
+	exit 255 ;
 fi
 
-# THIS IS THE ACTUAL TEST
-if [[ -f ../dot_gitconfig ]] ; then
-	git config -f ../dot_gitconfig --list --name-only 1>/dev/null 2>&1 || EXIT_CODE=1
-elif [[ -f ./dot_gitconfig ]] ; then
-	git config -f ./dot_gitconfig --list --name-only 1>/dev/null 2>&1 || EXIT_CODE=1
-elif [[ -f ./.git/config ]] ; then
-	git config -f ./.git/config --list --name-only 1>/dev/null 2>&1 || EXIT_CODE=1
-else
-	echo "FAIL: missing git config file"
-	EXIT_CODE=1
+cat </dev/stdin >"${_GIT_TOOL_BUFFER}" 2>/dev/null ; wait ;
+
+if [[ ( $IS_SMUDGE_MODE -eq 1 ) ]]; then
+	# first check if we need to smudge at all
+	if [[ ( $(file -b --mime "${_GIT_TOOL_BUFFER}" | grep -coF "text/plain" ) -lt 1 ) ]] ; then
+		IS_SMUDGE_MODE=0 ;
+		EXIT_CODE=5 ;
+	fi
+	# else the file is ok to try and smudge
 fi
 
-if [[ -f ../payload/etc/gitconfig ]] ; then
-	git config -f ../payload/etc/gitconfig --list --name-only 1>/dev/null 2>&1 || EXIT_CODE=1
-elif [[ -f ./payload/etc/gitconfig ]] ; then
-	git config -f ./payload/etc/gitconfig --list --name-only 1>/dev/null 2>&1 || EXIT_CODE=1
-else
-	echo "FAIL: missing global git config template"
-	EXIT_CODE=1
+if [[ ( $IS_CLEAN_MODE -eq 1 ) ]]; then
+	# first check if we need to smudge at all
+	if [[ ( $(file -b --mime "${_GIT_TOOL_BUFFER}" | grep -coF "text/plain" ) -ge 1 ) ]] ; then
+		IS_CLEAN_MODE=0 ;
+		EXIT_CODE=5 ;
+	fi
+	# else the file is not plain text and is ok to try and clean
 fi
 
+if [[ ( $IS_CLEAN_MODE -eq 1 ) ]] ; then
+	cat <"${_GIT_TOOL_BUFFER}" | xxd -ps ;
+elif [[ ( $IS_SMUDGE_MODE -eq 1 ) ]] ; then
+	cat <"${_GIT_TOOL_BUFFER}" | xxd -ps -r ;
+else
+	cat <"${_GIT_TOOL_BUFFER}" ;
+fi
 
-rm -f ${LOCK_FILE} 2>/dev/null > /dev/null || true ; wait ;
-
-# goodbye
-exit ${EXIT_CODE:-255} ;
+#GIT_FILTER_TOOL_DATA_OPT=`git config --bool --default true --get 'filter.data.option'`
+# always clean up
+cleanup || true ; wait ;
+exit ${EXIT_CODE} || exit 255 ;
