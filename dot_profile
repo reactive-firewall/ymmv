@@ -1,3 +1,12 @@
 if [ ! -n "$BASH" ] ;then echo Please run this script $0 with bash; exit 1; fi
+#   This is the default standard profile provided to a user.
+#   They are expected to edit it to meet their own needs.
+# Hints:
+# Set Evironmental varables like so
+# PATH=$(getconf PATH)
+# SHELL=/bin/bash
+# MAIL=/usr/mail/${LOGNAME:-?}
+# Etc...
+# Load the shell startup RC script like so
 source ~/.bashrc ;
 eval $(brew shellenv) || true

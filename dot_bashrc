@@ -12,12 +12,25 @@ export LC_CTYPE="${LC_CTYPE:-en_US}"
 # this file has to be sourced in /etc/profile.
 if [[ ( `umask` -le 27 ) ]] ; then umask 022 ; fi ;
 
+#===============================================================
+#
+# FUNCTIONS
+#
+# Arguably, some functions defined here are quite big.
+# If you want to make this file smaller, these functions can
+# be converted into scripts and removed from here.
+#
+# Many functions were taken (almost) straight from the bash-2.04
+# examples.
+#
+#===============================================================
+
 # configure paths
 function pathappend() {
   for PATH_ARG in "$@" ; do
     if [[ -d "$PATH_ARG" ]] && [[ ":$PATH:" != *":$PATH_ARG:"* ]] ; then
         PATH="${PATH:+"$PATH:"}$PATH_ARG" ;
-	export PATH ;
+        export PATH ;
     fi
   done
   unset PATH_ARG 2>/dev/null || true ;
@@ -27,22 +40,31 @@ function manappend() {
   for MAN_ARG in "$@" ; do
     if [[ -d "$MAN_ARG" ]] && [[ ":$MANPATH:" != *":$MAN_ARG:"* ]] ; then
         MANPATH="${MANPATH:+"$MANPATH:"}$MAN_ARG" ;
-	export MANPATH ;
+        export MANPATH ;
     fi
   done
   unset MAN_ARG 2>/dev/null || true ;
 }
 
+#-------------------------------------------------------------
+# PATH configuration
+#-------------------------------------------------------------
 
 pathappend ${HOME}/homebrew/sbin
 pathappend ${HOME}/homebrew/bin
 pathappend ${HOME}/bin
 pathappend /Applications/Docker.app/Contents/Resources/bin
 pathappend /usr/local/MacGPG2/bin
+pathappend /opt/local/bin
+
+#-------------------------------------------------------------
+# Script configuration (if any)
+#-------------------------------------------------------------
 
 if [[ ! ${POSIXLY_CORRECT} ]] ; then
 # idea from https://rakhesh.com/mac/macos-launchctl-commands/
 export XPC_SERVICE_NAME=$(echo -n $(head -n 1 <(launchctl list 2>/dev/null | grep -F com.apple.Terminal. 2>/dev/null | tr -s '\t ' ' ' 2>/dev/null | cut -d\  -f 3-3) 2>/dev/null ).$$ )
+#export TMPDIR=$(getconf TMPDIR)
 fi
 
 export TMOUT=${TMOUT:-0}
@@ -50,15 +72,24 @@ export TMOUT=${TMOUT:-0}
 # enable this to force color use
 #export CAN_USE_COLOR_IN_ENVIORMENT=1 ;
 
+#-------------------------------------------------------------
+# Source global definitions (if any)
+#-------------------------------------------------------------
+
 if [[ $( command uname -s ) == "Darwin" ]] ; then
 	export BASH_SILENCE_DEPRECATION_WARNING=1
 fi
 
 if [[ ( -r /etc/environment ) ]] ; then
 	if [[ ( ${FORCE_RELOAD_BASH_ENV:-2} -ge 1 ) ]] ; then
-		source /etc/environment ;
+		source /etc/environment ;	# --> Read /etc/environment, if present.
 		export FORCE_RELOAD_BASH_ENV=0;
 	fi
+fi
+
+if [[ -d "${HOME}"/.bin/ ]]; then
+	alias mybin='$HOME/.bin'	# --> add my own bin to path,
+	pathappend "${HOME}"/.bin
 fi
 
 # harden homebrew

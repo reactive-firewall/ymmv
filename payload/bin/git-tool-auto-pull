@@ -1,4 +1,4 @@
-#! /bin/bash
+#! /bin/bash --posix
 # Disclaimer of Warranties.
 # A. YOU EXPRESSLY ACKNOWLEDGE AND AGREE THAT, TO THE EXTENT PERMITTED BY
 #    APPLICABLE LAW, USE OF THIS SHELL SCRIPT AND ANY SERVICES PERFORMED
@@ -60,11 +60,80 @@
 #    even if the above stated remedy fails of its essential purpose.
 ################################################################################
 
-THE_FILE_BUFFER_SIZE=999999
-THE_PROFILE_RULES="${TMPDIR}/firewall.stub"
-THE_OLD_PROFILE="${TMPDIR}/Firewall Config.mobileconfig"
-TAB_CHAR=$(printf '\t')
+declare -ir MINPARAMS=0;
+declare -i IS_HEADLESS_MODE=0;
+declare -i IS_CLEAN_MODE=0;
+declare -i IS_VERBOSE_MODE=0;
+declare -ir MYVERSION=20211018;
+CHECKMARK=$(printf '${tick_symbol:-"$PS2"}')
 
-builtin echo "$TAB_CHAR$TAB_CHAR$TAB_CHAR<array>"
-grep -A 3 -B 2 -F -f <(sort -u -t'.' <(head -n $THE_FILE_BUFFER_SIZE "${THE_PROFILE_RULES}" | sed -E -e 's/^.*$/\t\t\t\t&/g') | grep -vF -f <(sort -u -t'.' <(head -n $THE_FILE_BUFFER_SIZE "${THE_OLD_PROFILE}") ) - ) <(head -n $THE_FILE_BUFFER_SIZE "${THE_PROFILE_RULES}" | sed -E -e 's/^.*$/\t\t\t\t&/g') | sed -E -e 's/^--$//g' | grep -oE '^.+$'
-builtin echo "$TAB_CHAR$TAB_CHAR$TAB_CHAR</array>"
+if [[ $# -gt "$MINPARAMS" ]] ; then
+while [ $# -gt $MINPARAMS ]; do    # Until you run out of parameters . . .
+
+case "$1" in
+  -s|--script) IS_HEADLESS_MODE=1 ;;
+  --clean|--gc|--fsck) IS_CLEAN_MODE=1 ;;
+  -v|--verbose) IS_VERBOSE_MODE=1 ;;
+  -V|--version) echo "${MYVERSION}" ; exit 0 ;;
+  -*) if [[ ( $IS_HEADLESS_MODE -eq 0 ) ]] ; then echo "Error: \"${1}\" Argument Unrecognized!" 1>&2 ; exit 2 ; fi ;;
+esac
+shift       # Check next set of parameters.
+done
+fi
+
+# before doing anything else
+_GIT_TOOL_OLD_BRANCH=$(git branch --show-current ) ;
+LOCK_FILE="${TMPDIR:-/tmp}/git_tool_script.lock" ;
+EXIT_CODE=0
+
+function cleanup() {
+	unset IS_HEADLESS_MODE || true ;
+	unset IS_CLEAN_MODE || true ;
+	unset IS_VERBOSE_MODE || true ;
+	unset CHECKMARK 2>/dev/null || true ;
+	git checkout "${_GIT_TOOL_OLD_BRANCH}" 2>/dev/null || true ;
+	rm -f "${LOCK_FILE}" 2>/dev/null || true ; wait ;
+	unset _GIT_TOOL_OLD_BRANCH || true ;
+	unset LOCK_FILE || true ;
+	return
+}
+
+export -f cleanup ;
+
+if [[ ( $(shlock -f ${LOCK_FILE} -p $$ ) -eq 0 ) ]] ; then
+	trap 'cleanup || true ;' SIGHUP || EXIT_CODE=3
+	trap 'cleanup || true ;' SIGTERM || EXIT_CODE=4
+	trap 'cleanup || true ;' SIGQUIT || EXIT_CODE=5
+	trap 'cleanup || true ;' SIGSTOP || EXIT_CODE=7
+	trap 'cleanup || true ;' SIGINT || EXIT_CODE=8
+	trap 'cleanup || true ;' SIGABRT || EXIT_CODE=9
+	trap 'cleanup || true ; exit ${EXIT_CODE:-255} ;' EXIT || EXIT_CODE=1
+else
+	echo Tool already in progress by `head ${LOCK_FILE}` ;
+	false ;
+	exit 255 ;
+fi
+
+for GIT_AUTO_TOOL_BRANCH in $(git branch -v --list | grep -F "behind" | tr -s ' ' | cut -d\  -f -2 ) ; do
+	if [[ ( $IS_VERBOSE_MODE -eq 1 ) ]] && [[ ( $IS_HEADLESS_MODE -eq 0 ) ]] ; then
+		echo "Auto-Updating: ${GIT_BRANCH}" ;
+	fi
+	(git checkout ${GIT_AUTO_TOOL_BRANCH} && git pull --ff-only ) || ( EXIT_CODE=$((($EXIT_CODE % 127)+1)) ; if [[ ( $IS_HEADLESS_MODE -eq 0 ) ]]; then echo "Can't auto merge ${GIT_AUTO_TOOL_BRANCH}" ; fi ) ;
+	wait ;
+	if [[ ( $IS_VERBOSE_MODE -eq 1 ) ]] && [[ ( $IS_HEADLESS_MODE -eq 0 ) ]] ; then
+		echo "${CHECKMARK} Auto-Updated" ;
+	fi
+done ;
+
+if [[ ( $IS_HEADLESS_MODE -eq 0 ) ]] ; then
+	git checkout ${_GIT_TOOL_OLD_BRANCH} || true ;
+fi
+
+if [[ ( $IS_VERBOSE_MODE -eq 1 ) ]] && [[ ( $IS_HEADLESS_MODE -eq 0 ) ]] ; then
+	git branch -vv --list ;
+fi
+
+#GIT_FILTER_TOOL_DATA_OPT=`git config --bool --default true --get 'filter.data.option'`
+# always clean up
+cleanup || true ; wait ;
+exit ${EXIT_CODE} || exit 255 ;

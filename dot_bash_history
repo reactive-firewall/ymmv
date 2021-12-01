@@ -1,5 +1,9 @@
 # Start of history file
+ls -l -e -a -p -G
+# add common command here
 # git tasks
 git status
 # auto-add modified files
-git add $(git status | grep -F "modified" | tr -s '\t ' '  ' | cut -d: -f 2- )
+git ls-files --modified --exclude-standard -z 2>/dev/null | xargs -0 -L1 -I{} git add {} 2>/dev/null ;
+# long log format
+git log --all --topo-order --decorate --notes --graph --show-signature

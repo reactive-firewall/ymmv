@@ -1,3 +1,19 @@
 if [ ! -n "$BASH" ] ;then echo Please run this script $0 with bash; exit 1; fi
-source ~/.bashrc ;
-eval $(brew shellenv) || true
+
+# profile file
+
+
+# +===============================+
+# |----------- Load RC -----------|
+# +===============================+
+
+if [[ -f ~/.bashrc ]] ; then
+	source ~/.bashrc ;
+	if [[ -x $(command -v brew) ]] ; then
+		eval $(brew shellenv 2>/dev/null) || true
+	fi
+fi
+
+# +===============================+
+# |---------- Clean  Up ----------|
+# +===============================+
