@@ -1,4 +1,4 @@
-#! /bin/bash --posix
+#! /bin/bash
 # Disclaimer of Warranties.
 # A. YOU EXPRESSLY ACKNOWLEDGE AND AGREE THAT, TO THE EXTENT PERMITTED BY
 #    APPLICABLE LAW, USE OF THIS SHELL SCRIPT AND ANY SERVICES PERFORMED
@@ -82,7 +82,7 @@ fi
 
 # before doing anything buff the data
 
-_GIT_TOOL_BUFFER="${TMPDIR}"/"git_tool_buffer_${MYVERSION}_$$_${RANDOM}.tmp" ;
+_GIT_TOOL_BUFFER="${TMPDIR}"/"git_tool_buffer_${MYVERSION}_${RANDOM}_${RANDOM}.tmp" ;
 LOCK_FILE="${TMPDIR:-/tmp}/git_tool_script_lock" ;
 EXIT_CODE=0
 
