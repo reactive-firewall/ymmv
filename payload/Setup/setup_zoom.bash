@@ -14,7 +14,7 @@ pkgutil --check-signature /tmp/ZoomInstallerIT.pkg || exit 2 ;
 #lsbom `pkgutil --bom /tmp/ZoomInstallerIT.pkg`
 wait ; sync ; wait ;
 mkdir -m 755 ~/Applications/ 2>/dev/null || true ;
-osascript -e "do shell script \"installer -pkg /tmp/ZoomInstallerIT.pkg -target LocalSystem -lang en && pkgutil --files us.zoom.pkg.videmeeting | xargs -L1 -I{} mv -vf \\\"/Applications/{}\\\" \\\"${HOME}/Applications/{}\\\"\" with administrator privileges" || true ;
+osascript -e "do shell script \"installer -pkg /tmp/ZoomInstallerIT.pkg -target LocalSystem -lang en && pkgutil --files us.zoom.pkg.videomeeting | xargs -L1 -I{} mv -vf \\\"/Applications/{}\\\" \\\"${HOME}/Applications/{}\\\"\" with administrator privileges" || true ;
 rm -f /tmp/ZoomInstallerIT.pkg ; wait ;
 
 mkdir -m 751 ~/Movies/Zoom 2>/dev/null || true ;
