@@ -119,14 +119,15 @@ install-etc: must_be_root /etc/ /etc/gitconfig /etc/environment /etc/bashrc
 	$(QUIET)source /etc/environment ;
 	$(QUIET)$(ECHO) "$@: Done."
 
-install-pf: must_be_root /etc/ /etc/pf.conf /etc/pf.anchors/local.user
+install-pf: must_be_root /etc/ /etc/pf.conf /etc/pf.extras /etc/pf.anchors/local.user
 	$(QUIET)$(ALFW) --setglobalstate on || exit 126 ;
 	$(QUIET)$(ALFW) --setloggingmode on || true
 	$(QUIET)$(ALFW) --setstealthmode on || true
 	$(QUIET)$(ALFW) --setallowsigned on || true
 	$(QUIET)$(ALFW) --setallowsignedapp off || exit 126 ;
 	$(QUIET)pkill -HUP socketfilterfw || true ;
-	$(QUIET)pfctl -ef /etc/pf.conf || true ;
+	$(QUIET)pfctl -mef /etc/pf.conf || true ;
+	$(QUIET)pfctl -mF states || true ;
 	$(QUIET)$(WAIT)
 	$(QUIET)$(ECHO) "$@: Restart Required."
 
