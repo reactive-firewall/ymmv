@@ -54,6 +54,7 @@
 	diffContext = 6
 	matchTrackingBranch = true
 	pruneDuringFetch = true
+	encoding = utf8
 
 [merge]
 	log = 50
@@ -77,4 +78,4 @@
 	program = gpg2
 
 [i18n]
-	logOutputEncoding = utf-8
+	logOutputEncoding = utf8

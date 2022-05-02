@@ -54,8 +54,8 @@ export USE_DEBUG_MODE="${USE_DEBUG_MODE:-NO}" ;
 # automatically configure iCloud values
 if [[ ( $(defaults export MobileMeAccounts - | grep -A5 -F AccountDSID | grep -coiF "iCloud" ) -eq 1 ) ]] ||\
 [[ ($HAS_CLOUD_ID == "YES") ]] ; then
-	export CLOUD_ID=$(defaults find AccountDSID | grep -F AccountDSID | grep -oE '^\s*[A]{1}[c]{2}[o]{1}.*' | head -n 1 | tr -d '; ' | cut -d\= -f 2)
-	export CLOUD_UUID=$(defaults find AccountDSID | grep -F AccountUUID | grep -oE '^\s*[A]{1}[c]{2}[o]{1}.*' | head -n 1 | tr -d '\"; ' | cut -d\= -f 2)
+	export CLOUD_ID=$(defaults find AccountDSID | grep -F AccountDSID | grep -oE '^\s*[A]{1}[c]{2}[o]{1}.*' | head -n 1 | tr -d '; ' | cut -d\= -f 2-2)
+	export CLOUD_UUID=$(defaults read MobileMeAccounts | grep -F AccountUUID | grep -oE '^\s*[A]{1}[c]{2}[o]{1}.*' | head -n 1 | tr -d '\"; ' | cut -d\= -f 2-2)
 	export CLOUD_UN=$(defaults find AccountDSID | grep -F DisplayName | head -n 1 | tr -d ';' | cut -d\= -f 2 | grep -oE "\".+\"" | tr -d '"')
 	export AUTHOR_NAME="${CLOUD_UN:-${LOGNAME}}"
 	export CLOUD_EMAIL=$(defaults find AccountDSID | grep -F AccountID | grep -oE '^\s*[A]{1}[c]{2}[o]{1}.*' | head -n 1 | tr -d '\"; ' | cut -d\= -f 2)
@@ -197,20 +197,25 @@ function ENFORCE_DEV_MODE() {
 }
 
 function ENFORCE_DEBUG_MODE() {
+	LAST_ARG=$(($#-1))
+	local EXIT_CODE=0 ;
 	if [[ ("${USE_DEBUG_MODE}" == "YES") ]] ; then
 		echo "Optimizing Debug-Mode for developer user" ;
 		if [[ ( "${USE_DEVELOPER_SETUP}" == "YES" ) ]] ; then
-			ENABLE "${@:1:$#}"
+			ENFORCE_DEV_MODE "${@:1:$LAST_ARG}" "${@:$#:$#}"
+			EXIT_CODE=$? ;
 		else
 			echo "    Except you are NOT a developer user!" >&2 ;
 			echo "    Optimizing run-mode for normal user INSTEAD (safety)" ;
-			DISABLE "${@:1:$#}" ;
+			DISABLE "${@:1:$LAST_ARG}" ;
+			EXIT_CODE=$? ;
 		fi
 	else
 		echo "Optimizing run-mode for normal user"
-		DISABLE "${@:1:$#}"
+		DELETE "${@:1:$LAST_ARG}"
+		EXIT_CODE=$? ;
 	fi
-	return $? ; # might not return the right code (might return result of if instead)
+	return $EXIT_CODE ; # might not return the right code (might return result of if instead)
 }
 
 MKDIR="$(command -v mkdir) -m 755"
@@ -287,7 +292,7 @@ for SOME_DOMAIN in AppStore appstore ; do
 		ENFORCE_DEV_MODE ${PPDOM}.${SOME_DOMAIN} ${DEV_KEY} YES
 	done ;
 	for DEBUG_KEY in ShowDebugMenu ; do
-		ENFORCE_DEBUG_MODE ${PPDOM}.${SOME_DOMAIN} ${DEBUG_KEY}
+		ENFORCE_DEBUG_MODE ${PPDOM}.${SOME_DOMAIN} ${DEBUG_KEY} YES
 	done ;
 
 	WRITE ${PPDOM}.${SOME_DOMAIN} AutoPlayVideoSetting -string off
@@ -447,7 +452,7 @@ for SOME_DOMAIN in NSGlobalDomain "Apple Global Domain" ; do
 	# Display ASCII control characters using caret notation in standard text views
 	# Try e.g. `cd /tmp; unidecode "\x{0000}" > cc.txt; open -e cc.txt`
 	for DEV_KEY in NSTextShowsControlCharacters ; do
-		ENFORCE_DEBUG_MODE "${SOME_DOMAIN}" ${DEBUG_KEY}
+		ENFORCE_DEBUG_MODE "${SOME_DOMAIN}" ${DEBUG_KEY} YES
 	done ;
 
 	# WARNING: This setting for ApplePressAndHoldEnabled is required as is. DO NOT MODIFY.
@@ -891,7 +896,7 @@ for ENABLE_KEY in IncludeDevelopMenu ShowFullURLInSmartSearchField ; do
 done ;
 
 for ENABLE_DEBUG_KEY in IncludeInternalDebugMenu WebKitDeveloperExtrasEnabledPreferenceKey com.apple.Safari.ContentPageGroupIdentifier.WebKit2DeveloperExtrasEnabled ; do
-	ENFORCE_DEBUG_MODE ${PPDOM}.Safari ${ENABLE_DEBUG_KEY}
+	ENFORCE_DEBUG_MODE ${PPDOM}.Safari ${ENABLE_DEBUG_KEY} YES
 done ;
 
 # WARNING: This setting is required as is. DO NOT MODIFY.
@@ -1572,7 +1577,7 @@ for SOME_DOMAIN in AppleMultitouchTrackpad driver.AppleBluetoothMultitouch.track
 	WRITE ${PPDOM}.${SOME_DOMAIN} TrackpadThreeFingerVertSwipeGesture -int 2
 	WRITE ${PPDOM}.${SOME_DOMAIN} TrackpadTwoFingerDoubleTapGesture -int 0
 	WRITE ${PPDOM}.${SOME_DOMAIN} TrackpadTwoFingerFromRightEdgeSwipeGesture -int 3
-	WRITE ${PPDOM}.${SOME_DOMAIN} USBMouseStopsTrackpad -int 0
+	WRITE ${PPDOM}.${SOME_DOMAIN} USBMouseStopsTrackpad -int 1
 	WRITE ${PPDOM}.${SOME_DOMAIN} version -int 12 || true
 	# WARNING: This setting for TrackpadRightClick is required as is. DO NOT MODIFY.
 	for ENABLE_KEY in TrackpadHandResting TrackpadMomentumScroll TrackpadRightClick TrackpadScroll UserPreferences ; do
