@@ -126,14 +126,9 @@
 	textconv = tar -tvf - %f 2>/dev/null
 	binary = true
 
-[filter "archive-entry"]
-	clean = cat $(dirname %f) 2>/dev/null | tar -xOf - --no-same-owner %f 2>/dev/null
-	smudge = cat $(dirname %f) 2>/dev/null | tar -cf - --no-same-owner --bzip2 --posix %f @-
-	required = true
-
-[diff "archive-entry"]
-    textconv = cat $(dirname %f) 2>/dev/null | tar -tvf - --no-same-owner --posix %f
-    binary = true
+[diff "BOM"]
+	textconv = lsbom %f
+	binary = true
 
 [diff "config"]
 	xfunction = "^(([[:alnum:][:punct:]]*){1}\\s*?[:=]{1}\\s*?){1}\\s*"
