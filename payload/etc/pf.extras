@@ -1,4 +1,4 @@
-#! /sbin/pfctl -mEf
+#! /sbin/pfctl -mE
 
 # the pf firewall
 
@@ -40,3 +40,9 @@ rare_proto = "{ 10, 11, 12, 13, 14, 15, 16, 18, 19, 20, 21, 22, 23, 24, 25, 26, 
 udp_itunes_airplay_pts = "{ 6001:6010, 6011 }"
 tcp_dyn_air_pts = "{ 443, 2336, 3031, 3283:3284, 3689, 5100, 10548 }"
 udp_dyn_air_pts = "{ 123, 500, 554, 1900, 3031, 3283:3284, 4500, 5350:5351, 5353, 16384:16403 }"
+
+table <private> const persist { 10/8, 192.168/16, 172.16/12 }
+table <linklocal> const persist { 169.254.0.0/16, fe80::/10 }
+table <zeroconf> const persist { 224.0.0.251, 239.255.255.250, ff02::fb }
+table <multicast> const persist { 224.0.0.0/4 }
+table <blocklist> persist
