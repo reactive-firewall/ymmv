@@ -1,4 +1,4 @@
-#! /sbin/pfctl -mEf
+#! /sbin/pfctl -R
 
 include "/etc/pf.extras"
 
@@ -9,17 +9,9 @@ include "/etc/pf.extras"
 # block packets whose ingress interface does not match the one in
 # the route back to their source address
 # block in from urpf-failed to any
-antispoof for $int_if
 
-table <private> const persist { 10/8, 192.168/16, 172.16/12 }
-table <linklocal> const persist { 169.254.0.0/16, fe80::/10 }
-table <zeroconf> const persist { 224.0.0.251, 239.255.255.250, ff02::fb }
-table <blocklist> persist
-
-set skip on $int_if
 
 anchor "local.user/*" {
-	block in log all label "default block rule"
 	anchor "../0.dhcp" {
 		pass out quick proto udp from any port 68 to any port 67 label "allow DHCP requests out"
 		pass in quick proto udp from any port 67 to any port 68 label "allow DHCP responses in"
@@ -48,7 +40,8 @@ anchor "local.user/*" {
 		pass out proto tcp from any to any port $tcp_pts keep state
 	}
 	anchor "../300.local" on $most_if {
-		pass out proto tcp from any to {<me>} port $tcp_push_pts keep state
+		pass in proto tcp from any to {<me>} port $tcp_push_pts keep state
+		pass out proto tcp from {<me>} to any port $tcp_push_pts keep state
 		pass out proto tcp from {<private>} port $tcp_push_pts to {<private>} keep state
 		pass out proto tcp from {<private>} port $tcp_dyn_air_pts to {<private>} keep state
 	}
@@ -67,10 +60,10 @@ anchor "local.user/*" {
 	anchor "../400.dns" {
 		block in quick proto tcp from any port 53 to any flags S/SFRA no state label "Ignore DNS Scans"
 		block drop in quick log proto udp from any port 53 to any port <1024 label "Block Odd DNS"
-		pass out proto udp from any to $dns_srv port 53 label "Allow Pure DNS via $dstaddr"
-		pass out proto udp from any to $cloudflare_dns_srv port 53 label "Allow Pure DNS via $dstaddr"
-		pass out proto udp from any to $google_dns_srv port 53 label "Allow google DNS"
-		pass out log proto udp from any to any port 53 label "Allow other DNS with logging"
+		pass out proto udp from any to $dns_srv port 53 keep state label "Allow Pure DNS via $dstaddr"
+		pass out proto udp from any to $cloudflare_dns_srv port 53 keep state label "Allow Pure DNS via $dstaddr"
+		pass out proto udp from any to $google_dns_srv port 53 keep state label "Allow google DNS"
+		pass out log proto udp from {<me>} to any port 53 no state label "Allow other DNS with logging"
 	}
 	anchor "../500" on $most_if {
 		pass in proto udp from any port $udp_pts to any port $dyn_pts no state label "Allow most UDP"
@@ -79,12 +72,13 @@ anchor "local.user/*" {
 		pass in proto udp from any port $udp_push_pts to any port $dyn_pts keep state label "Allow apple push notification ports in"
 	}
 	anchor "../999.default" {
-		pass out proto tcp from any to any keep state label "Allow TCP Egress"
-		pass out proto udp from any to any keep state label "Allow UDP Egress"
+		pass out proto tcp from {<me>} to any keep state label "Allow TCP Egress"
+		pass out proto udp from {<me>} to any keep state label "Allow UDP Egress"
 		pass out proto icmp all keep state label "Allow ICMP Egress"
 		pass out inet6 proto $ipv6_protos all keep state label "Allow IPv6 Egress"
 	}
+		block in log all no state label "default block rule"
 }
 
-block drop quick on $all_if from {<blocklist>} to any label "Blacklisted Ingress Default Rule"
-block return quick on $most_if from any to {<blocklist>} label "Blacklisted Egress Default Rule"
+block drop in quick on $all_if from {<blocklist>} to any label "Blacklisted Ingress Default Rule"
+block return out quick on $most_if from any to {<blocklist>} label "Blacklisted Egress Default Rule"
