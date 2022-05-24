@@ -1,5 +1,6 @@
 #! /bin/bash
 
+
 if [[ $( \uname -s ) == "Darwin" ]] ; then
 #sudo softwareupdate --install --recommended || true
 hash -p $(dirname $0)/../bin/sud sud
@@ -7,19 +8,21 @@ hash -p $(dirname $0)/../bin/sud sud
 
 echo "checking catalog"
 sud 'https://updates.signal.org/desktop/latest-mac.yml' /tmp/catalog.yml || exit 1;
-_TEMP_SIGNAL_BNDL_VERSION=$(grep -F "version" /tmp/catalog.yml | tr -s ' ' '\n' | tail -n 1 ) ;
+TEMP_SIGNAL_BNDL_VERSION=$(grep -F "version" /tmp/catalog.yml | tr -s ' ' '\n' | tail -n 1 ) ;
 rm -f /tmp/catalog.yml 2>/dev/null || true
 
 # this takes some time:
-sud https://updates.signal.org/desktop/signal-desktop-mac-${_TEMP_SIGNAL_BNDL_VERSION}.dmg /tmp/signal-desktop-mac.dmg || exit 1 ;
+sud https://updates.signal.org/desktop/signal-desktop-mac-x64-${TEMP_SIGNAL_BNDL_VERSION}.dmg /tmp/signal-desktop-mac.dmg || exit 1 ;
 # must be admin user to install:
 wait ; sync ; wait ;
+test -r /tmp/signal-desktop-mac.dmg || exit 1 ;
+
 hdiutil attach /tmp/signal-desktop-mac.dmg -mountPoint /Volumes/signal-desktop-mac -noautoopen
 # must be admin user to install:
 pkgutil --check-signature /Volumes/signal-desktop-mac/Signal.app ;
 # ls -lap /Volumes/signal-desktop-mac/ ;
-pkgbuild --analyze --root /Volumes/signal-desktop-mac/ --filter Applications --filter .DS_Store --filter .background --filter .fseventsd --filter ._.DS_Store --filter ./.Icon --filter ./._Icon --identifier org.whispersystems.signal-desktop --version ${_TEMP_SIGNAL_BNDL_VERSION} /tmp/signal_components.plist
-pkgbuild --root /Volumes/signal-desktop-mac/ --install-location /System/Volumes/Data/Applications/ --filter Applications --filter .DS_Store --filter .background --filter .fseventsd --filter ._.DS_Store --filter .Icon --filter ./._ --identifier org.whispersystems.signal-desktop --version ${_TEMP_SIGNAL_BNDL_VERSION} --component-plist /tmp/signal_components.plist /tmp/signal_installer.pkg
+pkgbuild --analyze --root /Volumes/signal-desktop-mac/ --filter Applications --filter .DS_Store --filter .background --filter .fseventsd --filter ._.DS_Store --filter ./.Icon --filter ./._Icon --identifier org.whispersystems.signal-desktop --version ${TEMP_SIGNAL_BNDL_VERSION} /tmp/signal_components.plist
+pkgbuild --root /Volumes/signal-desktop-mac/ --install-location /System/Volumes/Data/Applications/ --filter Applications --filter .DS_Store --filter .background --filter .fseventsd --filter ._.DS_Store --filter .Icon --filter ./._ --identifier org.whispersystems.signal-desktop --version ${TEMP_SIGNAL_BNDL_VERSION} --component-plist /tmp/signal_components.plist /tmp/signal_installer.pkg
 wait ; sync ; wait ;
 hdiutil detach /Volumes/signal-desktop-mac || hdiutil detach /Volumes/signal-desktop-mac -force ; wait ;
 rm -f /tmp/signal_components.plist ; wait ;
