@@ -76,6 +76,8 @@ anchor "local.user/*" {
 	anchor "../999.default" {
 		pass out proto tcp from {<me>} to any no state label "Allow TCP Egress"
 		pass out proto udp from {<me>} to any no state label "Allow UDP Egress"
+		pass out proto tcp from any to any keep state label "Allow TCP Egress"
+		pass out proto udp from any to any keep state label "Allow UDP Egress"
 		pass out proto icmp all no state label "Allow ICMP Egress"
 		pass out inet6 proto $ipv6_protos all no state label "Allow IPv6 Egress"
 	}
