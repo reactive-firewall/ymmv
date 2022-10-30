@@ -1,6 +1,6 @@
 #! /bin/bash
 
-if [[ ( -z $(command -v gpg2 ) ) ]] ; then
+#if [[ ( -z $(command -v gpg2 ) ) ]] ; then
 if [[ $( \uname -s ) == "Darwin" ]] ; then
 #sudo softwareupdate --install --recommended || true
 #curl -L --url https://developers.yubico.com/yubikey-manager-qt/Releases/yubikey-manager-qt-1.1.5-mac.pkg
@@ -10,7 +10,7 @@ hash -p $(dirname $0)/../bin/sud sud
 
 # this takes some time:
 rm -vf /tmp/GPG_Suite.dmg 2>/dev/null || true ; wait ;
-sud https://releases.gpgtools.org/GPG_Suite-2021.1_105.dmg /tmp/GPG_Suite.dmg
+sud https://releases.gpgtools.org/GPG_Suite-2022.2.dmg /tmp/GPG_Suite.dmg
 hdiutil attach /tmp/GPG_Suite.dmg -mountPoint /Volumes/GPG_Suite || exit 1 ;
 # must be admin user to install:
 #installer -pkg /Volumes/GPG_Suite/Install.pkg -target LocalSystem -lang en
@@ -19,7 +19,7 @@ wait ; sync ; wait ;
 hdiutil detach /Volumes/GPG_Suite 2>/dev/null || hdiutil detach /Volumes/GPG_Suite -force ; wait ;
 
 fi
-fi
+#fi
 
 hash -p /usr/local/MacGPG2/bin/gpg2 gpg2
 # ensure the config files are created (done automatically by gpg2 when first run)
