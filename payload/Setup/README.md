@@ -3,7 +3,7 @@ This folder is basically my template provisioning scripts for new systems, so yo
 
 # License - MIT
 
-## Copyright (c) 2017-2020 Mr. Walls
+## Copyright (c) 2017-2022 Mr. Walls
 ### 
 ### THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 ### IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,

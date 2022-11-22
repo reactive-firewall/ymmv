@@ -7,7 +7,7 @@
 #    EFFORT IS WITH YOU.
 #
 # B. TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, THIS SHELL SCRIPT
-#    AND SERVICES ARE PROVIDED "AS IS" AND “AS AVAILABLE”, WITH ALL FAULTS AND
+#    AND SERVICES ARE PROVIDED "AS IS" AND "AS AVAILABLE", WITH ALL FAULTS AND
 #    WITHOUT WARRANTY OF ANY KIND, AND THE AUTHOR OF THIS SHELL SCRIPT'S LICENSORS
 #    (COLLECTIVELY REFERRED TO AS "THE AUTHOR" FOR THE PURPOSES OF THIS DISCLAIMER)
 #    HEREBY DISCLAIM ALL WARRANTIES AND CONDITIONS WITH RESPECT TO THIS SHELL SCRIPT
@@ -71,23 +71,24 @@ if [[ ( ${#} -gt 2 ) ]] ; then
 	export _GIT_DIFF_TOOL_THIER_MODE="${7:-'000000'}"
 	export _GIT_DIFF_TOOL_OUR_SHA="${3:-'4b825dc642cb6eb9a060e54bf8d69288fbee4904'}"
 	export _GIT_DIFF_TOOL_THIER_SHA="${6:-'1000000000000000000000000000000000000000'}"
-	#echo "Path: ${_GIT_DIFF_TOOL_ARCH_PATH:-'Missing'}"
-	#echo "Old-file: ${_GIT_DIFF_TOOL_OUR_PATH}"
-	#echo "Old-hex: ${_GIT_DIFF_TOOL_OUR_SHA}"
-	#echo "Old-mode: ${_GIT_DIFF_TOOL_OUR_MODE}"
-	#echo "New-file: ${_GIT_DIFF_TOOL_THIER_PATH}"
-	#echo "New-hex: ${_GIT_DIFF_TOOL_THIER_SHA}"
-	#echo ""
-	echo "${_GIT_DIFF_TOOL_THIER_SHA}"
-	#echo "diff --git a/${_GIT_DIFF_TOOL_ARCH_PATH} b/${_GIT_DIFF_TOOL_THIER_PATH}" | tr -s '/' ;
-#if git rev-parse --verify ${_GIT_DIFF_TOOL_OUR_SHA} >/dev/null 2>&1
-#then
-#    _GIT_DIFF_TOOL_DIFF_TYPE="N" ;
-#else
-#    _GIT_DIFF_TOOL_DIFF_TYPE="M" ;
-#fi
+#	echo "Path: ${_GIT_DIFF_TOOL_ARCH_PATH:-'Missing'}"
+#	echo "Old-file: ${_GIT_DIFF_TOOL_OUR_PATH}"
+#	echo "Old-hex: ${_GIT_DIFF_TOOL_OUR_SHA}"
+#	echo "Old-mode: ${_GIT_DIFF_TOOL_OUR_MODE}"
+#	echo "New-file: ${_GIT_DIFF_TOOL_THIER_PATH}"
+#	echo "New-hex: ${_GIT_DIFF_TOOL_THIER_SHA}"
+#	echo ""
+#	echo "${_GIT_DIFF_TOOL_THIER_SHA}"
+#	echo "diff --git a/${_GIT_DIFF_TOOL_ARCH_PATH} b/${_GIT_DIFF_TOOL_THIER_PATH}" | tr -s '/' ;
 
-	#echo "New-mode: ${_GIT_DIFF_TOOL_THIER_MODE}"
+if git rev-parse --verify ${_GIT_DIFF_TOOL_OUR_SHA} >/dev/null 2>&1
+then
+    _GIT_DIFF_TOOL_DIFF_TYPE="N" ;
+else
+    _GIT_DIFF_TOOL_DIFF_TYPE="M" ;
+fi
+
+	echo "New-mode: ${_GIT_DIFF_TOOL_THIER_MODE}"
 else
 	echo "${0}: bad args: ${#} - '${@}'" 1>&2 && exit 125 ;
 fi
@@ -126,18 +127,22 @@ function diffcore_tool_archive() {
 	local THIER_FILE="${2}"
 	local MERGE_FILE="${3}"
 	local NEW_FILE_INDEX="${4}"
-	echo "diff --git a/${_GIT_DIFF_TOOL_ARCH_PATH}/${MERGE_FILE} b/${_GIT_DIFF_TOOL_ARCH_PATH}/${MERGE_FILE}" | tr -s '/' ;
+	#echo "diff --git a/${_GIT_DIFF_TOOL_ARCH_PATH}/${MERGE_FILE} b/${_GIT_DIFF_TOOL_ARCH_PATH}/${MERGE_FILE}" | tr -s '/' ;
+	echo "diff --pdN a/${_GIT_DIFF_TOOL_ARCH_PATH}/${MERGE_FILE} b/${_GIT_DIFF_TOOL_ARCH_PATH}/${MERGE_FILE}" | tr -s '/' ;
 	#echo "old mode 000000" ;
 	#echo "new mode ${_GIT_DIFF_TOOL_THIER_MODE}" ;
-	echo -n "index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391.."
-	cat <"${NEW_FILE_INDEX}" | git hash-object -t blob --literally --stdin -- | tr -d \\n
-	echo " ${_GIT_DIFF_TOOL_THIER_MODE}" ;
+	#echo -n "index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391.."
+	#cat <"${NEW_FILE_INDEX}" | git hash-object -t blob --literally --stdin -- | tr -d \\n
+	#echo " ${_GIT_DIFF_TOOL_THIER_MODE}" ;
 	diff -pdNU ${GIT_DIFF_TOOL_CONTEXT:-3} --label "a/${_GIT_DIFF_TOOL_ARCH_PATH}/${MERGE_FILE}" --label "b/${_GIT_DIFF_TOOL_ARCH_PATH}/${MERGE_FILE}" "${BASE_FILE}" "${THIER_FILE}" ; wait ;
+	#git diff --no-index --no-ext-diff --no-textconv --src-prefix="a/${_GIT_DIFF_TOOL_ARCH_PATH}" --dst-prefix="b/${_GIT_DIFF_TOOL_ARCH_PATH}" -- "${BASE_FILE}" "${THIER_FILE}" ; wait ;
+	#git diff --patch --no-index --no-ext-diff --no-textconv --no-prefix -- "${BASE_FILE}" "${THIER_FILE}" ; wait ;
 	echo "" ;
 }
 export -f diffcore_tool_archive
 
-(cat <(cat <(tar -tf ${_GIT_DIFF_TOOL_OUR_PATH} 2>/dev/null ) <(tar -tf ${_GIT_DIFF_TOOL_THIER_PATH} 2>/dev/null ) | sort -t '/' -u | grep -vE "^.*[/.]+$" | xargs -L1 -I{} -R4 -S${GIT_DIFF_TOOL_FNAMES_BUFFER_LEN} echo "diffcore_tool_archive <(tar -xOf "${_GIT_DIFF_TOOL_OUR_PATH}" '{}' 2>/dev/null ; wait ) <(tar -xOf "${_GIT_DIFF_TOOL_THIER_PATH}" '{}' 2>/dev/null ; wait ) '{}' <(tar -xOf "${_GIT_DIFF_TOOL_THIER_PATH}" '{}' 2>/dev/null ; wait ) ; wait ;" ) 2>/dev/null | bash -s ; wait ; ) | sed -Ee 's/^diff\s*(output|--git)?.*/'"${gitdiffmetacolor}"'&/g' | sed -Ee 's/^[\+|-][\+|-][\+|-]\ .*/'"${gitdiffmetacolor}"'&/g' | sed -Ee 's/^(new|old)\s(file\s)?(mode)\s+\d+/'"${gitdiffmetacolor}"'&/g' | sed -Ee 's/^index\s*.+/'"${gitdiffmetacolor}"'&/g' | sed -Ee 's/^@@.*/'"${gitdifffunccolor}"'&/g' | sed -Ee 's/^\+.*/'"${gitdiffnewcolor}"'&/g' | sed -Ee 's/^\ .+/'"${gitdiffcoloroff}"'&/g' | sed -Ee 's/^-.*/'"${gitdiffoldcolor}"'&/g' | sed -Ee 's/$/'${gitdiffcoloroff}'/g'
+#(cat <(cat <(tar -tf ${_GIT_DIFF_TOOL_OUR_PATH} 2>/dev/null ) <(tar -tf ${_GIT_DIFF_TOOL_THIER_PATH} 2>/dev/null ) | sort -t '/' -u | grep -vE "^.*[/.]+$" | xargs -L1 -I{} -R4 -S${GIT_DIFF_TOOL_FNAMES_BUFFER_LEN} echo "diffcore_tool_archive <(tar -xOf "${_GIT_DIFF_TOOL_OUR_PATH}" '{}' 2>/dev/null ; wait ) <(tar -xOf "${_GIT_DIFF_TOOL_THIER_PATH}" '{}' 2>/dev/null ; wait ) '{}' <(tar -xOf "${_GIT_DIFF_TOOL_THIER_PATH}" '{}' 2>/dev/null ; wait ) ; wait ;" ) 2>/dev/null | bash -s ; wait ; ) | sed -Ee 's/^diff\s*(output|--git)?.*/'"${gitdiffmetacolor}"'&/g' | sed -Ee 's/^[\+|-][\+|-][\+|-]\ .*/'"${gitdiffmetacolor}"'&/g' | sed -Ee 's/^(new|old)\s(file\s)?(mode)\s+\d+/'"${gitdiffmetacolor}"'&/g' | sed -Ee 's/^index\s*.+/'"${gitdiffmetacolor}"'&/g' | sed -Ee 's/^@@.*/'"${gitdifffunccolor}"'&/g' | sed -Ee 's/^\+.*/'"${gitdiffnewcolor}"'&/g' | sed -Ee 's/^\ .+/'"${gitdiffcoloroff}"'&/g' | sed -Ee 's/^-.*/'"${gitdiffoldcolor}"'&/g' | sed -Ee 's/$/'${gitdiffcoloroff}'/g'
+(cat <(cat <(tar -tf ${_GIT_DIFF_TOOL_OUR_PATH} 2>/dev/null ) <(tar -tf ${_GIT_DIFF_TOOL_THIER_PATH} 2>/dev/null ) | sort -t '/' -u | grep -vE "^.*[/.]+$" | xargs -L1 -I{} -R4 -S${GIT_DIFF_TOOL_FNAMES_BUFFER_LEN} echo "diffcore_tool_archive <(tar -xOf "${_GIT_DIFF_TOOL_OUR_PATH}" '{}' 2>/dev/null ; wait ) <(tar -xOf "${_GIT_DIFF_TOOL_THIER_PATH}" '{}' 2>/dev/null ; wait ) '{}' <(tar -xOf "${_GIT_DIFF_TOOL_THIER_PATH}" '{}' 2>/dev/null ; wait ) ; wait ;" ) 2>/dev/null | bash -s ; wait ; ) | tr -s \\n ;
 
 echo ""
 exit 0 ;

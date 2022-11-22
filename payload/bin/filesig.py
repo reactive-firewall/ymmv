@@ -1,5 +1,7 @@
 #! /usr/bin/env python
 
+# Copyright (c) 2020-2022.
+
 """Rough draft of python wrapper for generating file hashes. THIS NEEDS TO BE CLEANED UP A BIT BEFORE it is anywhere near prod ready."""
 
 import argparse
