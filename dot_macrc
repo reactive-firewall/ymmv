@@ -54,8 +54,8 @@ export USE_DEBUG_MODE="${USE_DEBUG_MODE:-NO}" ;
 # automatically configure iCloud values
 if [[ ( $(defaults export MobileMeAccounts - | grep -A5 -F AccountDSID | grep -coiF "iCloud" ) -eq 1 ) ]] ||\
 [[ ($HAS_CLOUD_ID == "YES") ]] ; then
-	export CLOUD_ID=$(defaults find AccountDSID | grep -F AccountDSID | grep -oE '^\s*[A]{1}[c]{2}[o]{1}.*' | head -n 1 | tr -d '; ' | cut -d\= -f 2)
-	export CLOUD_UUID=$(defaults find AccountDSID | grep -F AccountUUID | grep -oE '^\s*[A]{1}[c]{2}[o]{1}.*' | head -n 1 | tr -d '\"; ' | cut -d\= -f 2)
+	export CLOUD_ID=$(defaults find AccountDSID | grep -F AccountDSID | grep -oE '^\s*[A]{1}[c]{2}[o]{1}.*' | head -n 1 | tr -d '; ' | cut -d\= -f 2-2)
+	export CLOUD_UUID=$(defaults read MobileMeAccounts | grep -F AccountUUID | grep -oE '^\s*[A]{1}[c]{2}[o]{1}.*' | head -n 1 | tr -d '\"; ' | cut -d\= -f 2-2)
 	export CLOUD_UN=$(defaults find AccountDSID | grep -F DisplayName | head -n 1 | tr -d ';' | cut -d\= -f 2 | grep -oE "\".+\"" | tr -d '"')
 	export AUTHOR_NAME="${CLOUD_UN:-${LOGNAME}}"
 	export CLOUD_EMAIL=$(defaults find AccountDSID | grep -F AccountID | grep -oE '^\s*[A]{1}[c]{2}[o]{1}.*' | head -n 1 | tr -d '\"; ' | cut -d\= -f 2)
@@ -197,20 +197,25 @@ function ENFORCE_DEV_MODE() {
 }
 
 function ENFORCE_DEBUG_MODE() {
+	LAST_ARG=$(($#-1))
+	local EXIT_CODE=0 ;
 	if [[ ("${USE_DEBUG_MODE}" == "YES") ]] ; then
 		echo "Optimizing Debug-Mode for developer user" ;
 		if [[ ( "${USE_DEVELOPER_SETUP}" == "YES" ) ]] ; then
-			ENABLE "${@:1:$#}"
+			ENFORCE_DEV_MODE "${@:1:$LAST_ARG}" "${@:$#:$#}"
+			EXIT_CODE=$? ;
 		else
 			echo "    Except you are NOT a developer user!" >&2 ;
 			echo "    Optimizing run-mode for normal user INSTEAD (safety)" ;
-			DISABLE "${@:1:$#}" ;
+			DISABLE "${@:1:$LAST_ARG}" ;
+			EXIT_CODE=$? ;
 		fi
 	else
 		echo "Optimizing run-mode for normal user"
-		DISABLE "${@:1:$#}"
+		DELETE "${@:1:$LAST_ARG}"
+		EXIT_CODE=$? ;
 	fi
-	return $? ; # might not return the right code (might return result of if instead)
+	return $EXIT_CODE ; # might not return the right code (might return result of if instead)
 }
 
 MKDIR="$(command -v mkdir) -m 755"
@@ -287,7 +292,7 @@ for SOME_DOMAIN in AppStore appstore ; do
 		ENFORCE_DEV_MODE ${PPDOM}.${SOME_DOMAIN} ${DEV_KEY} YES
 	done ;
 	for DEBUG_KEY in ShowDebugMenu ; do
-		ENFORCE_DEBUG_MODE ${PPDOM}.${SOME_DOMAIN} ${DEBUG_KEY}
+		ENFORCE_DEBUG_MODE ${PPDOM}.${SOME_DOMAIN} ${DEBUG_KEY} YES
 	done ;
 
 	WRITE ${PPDOM}.${SOME_DOMAIN} AutoPlayVideoSetting -string off
@@ -446,8 +451,8 @@ for SOME_DOMAIN in NSGlobalDomain "Apple Global Domain" ; do
 	# WARNING: This setting is required as is. DO NOT MODIFY.
 	# Display ASCII control characters using caret notation in standard text views
 	# Try e.g. `cd /tmp; unidecode "\x{0000}" > cc.txt; open -e cc.txt`
-	for DEV_KEY in NSTextShowsControlCharacters ; do
-		ENFORCE_DEBUG_MODE "${SOME_DOMAIN}" ${DEBUG_KEY}
+	for DEBUG_KEY in NSTextShowsControlCharacters ; do
+		ENFORCE_DEBUG_MODE "${SOME_DOMAIN}" ${DEBUG_KEY} YES
 	done ;
 
 	# WARNING: This setting for ApplePressAndHoldEnabled is required as is. DO NOT MODIFY.
@@ -891,7 +896,7 @@ for ENABLE_KEY in IncludeDevelopMenu ShowFullURLInSmartSearchField ; do
 done ;
 
 for ENABLE_DEBUG_KEY in IncludeInternalDebugMenu WebKitDeveloperExtrasEnabledPreferenceKey com.apple.Safari.ContentPageGroupIdentifier.WebKit2DeveloperExtrasEnabled ; do
-	ENFORCE_DEBUG_MODE ${PPDOM}.Safari ${ENABLE_DEBUG_KEY}
+	ENFORCE_DEBUG_MODE ${PPDOM}.Safari ${ENABLE_DEBUG_KEY} YES
 done ;
 
 # WARNING: This setting is required as is. DO NOT MODIFY.
@@ -1268,7 +1273,7 @@ done ;
 # TurboTax                                                  #
 #-----------------------------------------------------------#
 
-for SOME_YEAR in 2015 2016 2017 2018 2019 2020 ; do
+for SOME_YEAR in 2015 2016 2017 2018 2019 2020 2021 ; do
         ENABLE com.intuit.turbotax.${SOME_YEAR} "License Signed" ;
 done ;
 
@@ -1310,6 +1315,9 @@ WRITE us.zoom.xos "s_skinToneNum" -int 1
 # Music                                                     #
 #-----------------------------------------------------------#
 
+# reset itunes
+DELETE ${PPDOM}.itunes
+
 for SOME_DOMAIN in Music itunes TV ; do
 	if [[ ($HAS_CLOUD_ID == "YES") ]] ; then
 		WRITE ${PPDOM}.${SOME_DOMAIN} StoreUserInfo -dict ${CLOUD_ID} $"{ UserHandle = \"\"; UserName = '${CLOUD_UN}'; }" ;
@@ -1321,6 +1329,41 @@ for SOME_DOMAIN in Music itunes TV ; do
 		DELETE ${PPDOM}.${SOME_DOMAIN} "Store DSID"
 	fi
 	WRITE ${PPDOM}.${SOME_DOMAIN} userMaxConcurrentDownloads -int "${MAX_DOWNLOAD_CONNECTIONS}"
+
+	WRITE ${PPDOM}.${SOME_DOMAIN} artworkSplitWidth -int 300
+	WRITE ${PPDOM}.${SOME_DOMAIN} browseHeight -int 300
+
+	WRITE ${PPDOM}.${SOME_DOMAIN} eqWindowHPos -int 1450
+	WRITE ${PPDOM}.${SOME_DOMAIN} eqWindowVPos -int 32
+
+	WRITE ${PPDOM}.${SOME_DOMAIN} infoPanelWindowHPos -int 256
+	WRITE ${PPDOM}.${SOME_DOMAIN} infoPanelWindowHeight -int 640
+	WRITE ${PPDOM}.${SOME_DOMAIN} infoPanelWindowVPos -int 90
+	WRITE ${PPDOM}.${SOME_DOMAIN} infoPanelWindowWidth -int 800
+
+	ENABLE ${PPDOM}.${SOME_DOMAIN} miniPlayerQueueVisible
+	WRITE ${PPDOM}.${SOME_DOMAIN} miniplayerHPos -int 1450
+	WRITE ${PPDOM}.${SOME_DOMAIN} miniplayerSnapMode -int 3
+	WRITE ${PPDOM}.${SOME_DOMAIN} miniplayerUserSetHeight -int 300
+	WRITE ${PPDOM}.${SOME_DOMAIN} miniplayerVPos -int 300
+	WRITE ${PPDOM}.${SOME_DOMAIN} miniplayerWidthInDesignCoords -int 600
+
+	WRITE ${PPDOM}.${SOME_DOMAIN} videoWindowSnapMode -int 3
+	WRITE ${PPDOM}.${SOME_DOMAIN} videoWindowHPos -int 900
+	WRITE ${PPDOM}.${SOME_DOMAIN} videoWindowHSize -int 900
+	WRITE ${PPDOM}.${SOME_DOMAIN} videoWindowVPos -int 300
+	WRITE ${PPDOM}.${SOME_DOMAIN} videoWindowVSize -int 300
+
+	WRITE ${PPDOM}.${SOME_DOMAIN} visualNameUnicode -string "Visualizer"
+	WRITE ${PPDOM}.${SOME_DOMAIN} visualsWindowHPos -int 128
+	WRITE ${PPDOM}.${SOME_DOMAIN} visualsWindowHSize -int 1220
+	WRITE ${PPDOM}.${SOME_DOMAIN} visualsWindowVPos -int 33
+	WRITE ${PPDOM}.${SOME_DOMAIN} visualsWindowVSize -int 720
+
+	WRITE ${PPDOM}.${SOME_DOMAIN} NSNavLastRootDirectory -string "${DEFAULT_SAVE_LOCATION}"
+
+	DISABLE ${PPDOM}.${SOME_DOMAIN} preloadFilesIntoMemory
+
 done ;
 
 WRITE ${PPDOM}.Music encoderName -string "AAC Encoder"
@@ -1329,6 +1372,7 @@ WRITE ${PPDOM}.Music encoderName -string "AAC Encoder"
 #-----------------------------------------------------------#
 # Music - iTunes                                            #
 #-----------------------------------------------------------#
+
 
 if [[ ($HAS_CLOUD_ID == "YES") ]] ; then
 WRITE ${PPDOM}.itunes MacBuddyStoreID -string "${CLOUD_EMAIL}"
@@ -1364,10 +1408,6 @@ WRITE ${PPDOM}.itunes recentSearches -array "DJ \\U00c5m\\U00e5k" ;
 for ENABLE_KEY in NSApplicationCrashOnExceptions cddbPrefsOK ; do
 	ENABLE ${PPDOM}.TV ${ENABLE_KEY}
 done ;
-
-DISABLE ${PPDOM}.TV preloadFilesIntoMemory
-
-WRITE ${PPDOM}.TV userMaxConcurrentDownloads -int "${MAX_DOWNLOAD_CONNECTIONS}"
 
 #-----------------------------------------------------------#
 # Photos                                                    #
@@ -1572,7 +1612,7 @@ for SOME_DOMAIN in AppleMultitouchTrackpad driver.AppleBluetoothMultitouch.track
 	WRITE ${PPDOM}.${SOME_DOMAIN} TrackpadThreeFingerVertSwipeGesture -int 2
 	WRITE ${PPDOM}.${SOME_DOMAIN} TrackpadTwoFingerDoubleTapGesture -int 0
 	WRITE ${PPDOM}.${SOME_DOMAIN} TrackpadTwoFingerFromRightEdgeSwipeGesture -int 3
-	WRITE ${PPDOM}.${SOME_DOMAIN} USBMouseStopsTrackpad -int 0
+	WRITE ${PPDOM}.${SOME_DOMAIN} USBMouseStopsTrackpad -int 1
 	WRITE ${PPDOM}.${SOME_DOMAIN} version -int 12 || true
 	# WARNING: This setting for TrackpadRightClick is required as is. DO NOT MODIFY.
 	for ENABLE_KEY in TrackpadHandResting TrackpadMomentumScroll TrackpadRightClick TrackpadScroll UserPreferences ; do
