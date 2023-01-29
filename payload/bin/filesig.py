@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-# Copyright (c) 2020-2022.
+# Copyright (c) 2020-2023.
 
 """Rough draft of python wrapper for generating file hashes. THIS NEEDS TO BE CLEANED UP A BIT BEFORE it is anywhere near prod ready."""
 
@@ -11,11 +11,11 @@ def parseArgs(arguments=[]):
 	parser = argparse.ArgumentParser(description='gernerate and show file signatures.')
 	action_group = parser.add_mutually_exclusive_group()
 	action_group.add_argument(
-		'-C', '--check', default=False, dest='io_action', 
+		'-C', '--check', default=False, dest='io_action',
 		action='store_true', help='Check the file hashes, and display'
 	)
 	action_group.add_argument(
-		'-G', '--generate', default=True, dest='io_action', 
+		'-G', '--generate', default=True, dest='io_action',
 		action='store_true', help='Generate the file hashes'
 	)
 	parser.add_argument('-f', '--file', required=True, help='the file to check')

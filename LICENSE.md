@@ -1,7 +1,7 @@
 License - MIT
 
 reactive-firewall/ymmv - "your millage may vary"
-Copyright (c) 2017-2022 Mr. Walls
+Copyright (c) 2017-2023 Mr. Walls
 see https://github.com/reactive-firewall/ymmv/LICENSE.md
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
