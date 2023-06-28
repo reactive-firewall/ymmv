@@ -2,16 +2,14 @@
 	sslVerify = true
 	sslVersion = tlsv1.3
 	extraHeader = DNT: 1
-	cookieFile = ~/Library/Caches/git_http_cookies
+	cookieFile = ~/Library/Cookies/git_http.binarycookies
 
 [core]
-	protectNTFS = true
-	protectHFS = true
 	trustctime = false
 	logAllRefUpdates = true
 	warnAmbiguousRefs = true
-	editor = nano -L
-	pager = less
+	editor = command nano -L
+	pager = command less
 	safecrlf = true
 	compression = 9
 	filemode = true
@@ -29,7 +27,7 @@
 [diff]
 	context = 6
 	renames = copies
-	renameLimit = 10
+	renameLimit = 27
 	algorithm = minimal
 
 [color "diff"]
@@ -70,12 +68,14 @@
 
 [rebase]
 	stat = true
+	updateRefs = true
+	missingCommitsCheck = warn
 
 [rerere]
 	enabled = true
 
-[gpg]
-	program = gpg2
+[gpg "openpgp"]
+	program = command gpg2
 
 [i18n]
 	logOutputEncoding = utf8

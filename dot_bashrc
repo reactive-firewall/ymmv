@@ -80,12 +80,18 @@ if [[ $( command uname -s ) == "Darwin" ]] ; then
 	export BASH_SILENCE_DEPRECATION_WARNING=1
 fi
 
-if [[ ( -r /etc/environment ) ]] ; then
-	if [[ ( ${FORCE_RELOAD_BASH_ENV:-2} -ge 1 ) ]] ; then
+if [[ ( ${FORCE_RELOAD_BASH_ENV:-2} -ge 1 ) ]] ; then
+	if [[ ( -r /etc/environment ) ]] ; then
 		source /etc/environment ;	# --> Read /etc/environment, if present.
 		export FORCE_RELOAD_BASH_ENV=0;
 	fi
+	if [[ ( -z ${PKG_CONFIG_PATH} ) ]] ; then
+		if [[ $( command uname -s ) == "Darwin" ]] ; then
+			export PKG_CONFIG_PATH=$( (system_profiler SPFrameworksDataType 2>/dev/null | grep -F "Location: " | cut -d\: -f2- ; wait ;) | xargs -L1 -I{} find {} -iname "*.pc" -print 2>/dev/null ; wait ; ) ;
+		fi ;
+	fi
 fi
+
 
 if [[ -d "${HOME}"/.bin/ ]]; then
 	alias mybin='$HOME/.bin'	# --> add my own bin to path,
@@ -169,7 +175,7 @@ else
         pkill -15 gpg-agent 2>/dev/null || true ;
         pkill -9 ssh-agent 2>/dev/null || true ;
  	# Launch new helper agent
-	if [[ $( \uname -s ) == "Darwin" ]] && [[ -x /usr/local/MacGPG2/bin/gpg-agent  ]] ; then
+	if [[ $( command uname -s ) == "Darwin" ]] && [[ -x /usr/local/MacGPG2/bin/gpg-agent  ]] ; then
 		eval $(/usr/local/MacGPG2/bin/gpg-agent --enable-ssh-support --ssh-fingerprint-digest SHA256 --homedir=${HOME}/.gnupg/ --daemon -s )
 		unset SSH_AGENT_PID
 		if [ "${gnupg_SSH_AUTH_SOCK_by:-0}" -ne $$ ]; then
@@ -247,7 +253,7 @@ HISTFILESIZE=2000
 shopt -s checkwinsize
 
 # If not running interactively, don't do anything
-#[ $(shopt -q login_shell) ] && return
+#[[ !( $(shopt -q login_shell) ) ]] && return
 
 [ -z "$PS1" ] && return
 
@@ -351,6 +357,8 @@ function _exit()              # Function to run upon exit of shell.
 
 fi
 
+# If not running interactively, don't do anything
+#[[ !( $(shopt -q login_shell) ) ]] && return
 trap _exit EXIT
 trap _exit QUIT
 
