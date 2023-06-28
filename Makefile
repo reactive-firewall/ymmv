@@ -2,7 +2,7 @@
 
 # reactive-firewall/YMMV Repo Template
 # ..................................
-# Copyright (c) 2017-2021, Kendrick Walls
+# Copyright (c) 2017-2023, Kendrick Walls
 # ..................................
 # Licensed under MIT (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,9 +17,38 @@
 # limitations under the License.
 
 
+# THANKS to the user https://stackoverflow.com/users/999943/phyatt
+# For the solid answer to https://stackoverflow.com/a/35320895
+
+ifneq ($(words $(MAKECMDGOALS)),1) # if no argument was given to make...
+.DEFAULT_GOAL = all # set the default goal to all
+
 ifeq "$(ECHO)" ""
 	ECHO=command -p echo
 endif
+
+%:                   # define a last resort default rule
+      @$(MAKE) $@ --no-print-directory -rRf $(firstword $(MAKEFILE_LIST)) # recursive make call,
+
+else
+
+ifeq "$(SHELL)" ""
+	SHELL=command -pv bash
+endif
+
+ifeq "$(MAKE)" ""
+	MAKE=command -pv make
+endif
+
+ifndef ECHO
+T := $(shell $(MAKE) $(MAKECMDGOALS) --no-print-directory \
+      -nrRf $(firstword $(MAKEFILE_LIST)) \
+      ECHO="COUNTTHIS" | grep -c "COUNTTHIS" 2>/dev/null)
+N := x
+C = $(words $N)$(eval N := x $N)
+ECHO = echo -ne "\r [`expr $C '*' 100 / $T`%]"
+endif
+
 
 ifeq "$(ALFW)" ""
 	ALFW=/usr/libexec/ApplicationFirewall/socketfilterfw
@@ -27,10 +56,6 @@ endif
 
 ifeq "$(LINK)" ""
 	LINK=command -pv ln -sf
-endif
-
-ifeq "$(MAKE)" ""
-	MAKE=command -pv make
 endif
 
 ifeq "$(WAIT)" ""
@@ -102,7 +127,10 @@ endif
 
 .SUFFIXES: .zip .php .css .html .bash .sh .py .pyc .txt .js .plist .dmg rc
 
-PHONY: must_be_root install-tools-mac install-pf cleanup install-tools install-etc install-home uninstall build
+PHONY: must_be_root install-tools-mac install-pf cleanup install-tools install-etc install-home uninstall build all
+
+all: install test
+	$(QUIET)$(WAIT)
 
 build:
 	$(QUIET)$(ECHO) "No need to build. Try make -f Makefile install"
@@ -324,12 +352,19 @@ git-config: ~/.config/git/attributes
 	$(QUIET)$(WAIT)
 	$(QUIET)$(ECHO) "$@: installed."
 
-/etc/bashrc.previous: must_be_root /etc/
+/etc/%.previous: must_be_root /etc/ /etc/%
 	$(QUIET)$(CP) $@ $@.previous 2>/dev/null || true
 	$(QUIET)$(WAIT)
 	$(QUIET)$(ECHO) "$@: backed up."
 
-/etc/bashrc: ./payload/etc/bashrc must_be_root /etc/
+/etc/bashrc: ./payload/etc/bashrc must_be_root /etc/ /etc/bashrc.previous
+	$(QUIET)$(WAIT)
+	$(QUIET)$(MAKE) -C ./ -f ./Makefile $@.previous 2>/dev/null || true
+	$(QUIET)$(INSTALL) $(INST_OWN) $(INST_TOOL_OPTS) $< $@ 2>/dev/null || true
+	$(QUIET)$(WAIT)
+	$(QUIET)$(ECHO) "$@: configured."
+
+/etc/environment: ./payload/etc/environment must_be_root /etc/ /etc/environment.previous
 	$(QUIET)$(WAIT)
 	$(QUIET)$(MAKE) -C ./ -f ./Makefile $@.previous 2>/dev/null || true
 	$(QUIET)$(INSTALL) $(INST_OWN) $(INST_TOOL_OPTS) $< $@ 2>/dev/null || true
@@ -361,8 +396,9 @@ git-config: ~/.config/git/attributes
 
 uninstall-etc: /etc/bashrc.previous
 	$(QUIET)$(RM) /etc/gitconfig 2>/dev/null || true
-	$(QUIET)$(RM) /etc/bashrc 2>/dev/null && $(QUIET)$(CP) /etc/bashrc.previous /etc/bashrc 2>/dev/null
-	$(QUIET)$(WAIT)
+	$(QUIET)$(RM) /etc/environment 2>/dev/null && $(QUIET)$(CP) /etc/environment.previous /etc/environment 2>/dev/null || true
+	$(QUIET)$(RM) /etc/bashrc 2>/dev/null && $(QUIET)$(CP) /etc/bashrc.previous /etc/bashrc 2>/dev/null || true
+	$(QUIET)$(WAIT) ;
 	$(QUIET)$(ECHO) "$@: Done."
 
 uninstall-home: uninstall-dot-bash_aliases uninstall-dot-bash_profile uninstall-dot-bash_history uninstall-dot-macrc uninstall-dot-cshrc uninstall-dot-tcshrc uninstall-dot-plan
@@ -409,7 +445,8 @@ purge: clean uninstall-better-home uninstall
 
 test: cleanup
 	$(QUIET)$(ECHO) "$@: START."
-	$(QUIET)ls -1 ./tests/test_*sh | xargs -L1 -I{} bash -c "{} && echo '{}: OK' || echo '{}: FAILED'"
+	$(QUIET)ls -1 ./tests/test_*sh 2>/dev/null | xargs -L1 -I{} $(SHELL) -c "{} && echo '{}: OK' || echo '{}: FAILED' >&2 ; " ;
+	$(QUIET)$(WAIT) ;
 	$(QUIET)$(ECHO) "$@: END."
 
 test-tox: cleanup
@@ -448,3 +485,4 @@ must_be_root:
 	$(QUIET)$(ECHO) "No Rule Found For $@" ;
 	$(QUIET)$(WAIT) ;
 
+endif

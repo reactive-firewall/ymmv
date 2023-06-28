@@ -1,8 +1,7 @@
 [http]
 	sslVerify = true
-	sslVersion = tlsv1.2
 	extraHeader = DNT: 1
-	cookieFile = ~/.git_http_cookies
+	cookieFile = ~/Library/Cookies/git_http.binarycookies
 
 [color "diff"]
 	new = green
@@ -31,7 +30,11 @@
 [core]
 	protectNTFS = true
 	protectHFS = true
-	fsyncObjectFiles = true
+	# old versions used:
+	# fsyncObjectFiles = true
+	# new versions use:
+	fsync = added,committed,pack,index,objects
+	fsyncMethod = fsync
 	trustctime = false
 	logAllRefUpdates = true
 	warnAmbiguousRefs = true
