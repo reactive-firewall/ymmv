@@ -139,3 +139,19 @@ LIBVIRT_AUTOSTART=0
 # default LIBVIRT connection URI
 #LIBVIRT_DEFAULT_URI=qemu:///system
 
+# see https://docs.python.org/3/using/cmdline.html#environment-variables
+# Make python3 more safe in brain-dead environments
+PYTHONCOERCECLOCALE=warn
+
+# make python3 default to utf-8
+PYTHONUTF8=1
+
+# enable to harden python3 runtime (error on warnings)
+#PYTHONWARNINGS=error
+PYTHONWARNINGS=default
+# same as always using -B
+#PYTHONDONTWRITEBYTECODE=1
+
+# force verbose python3 debug mode on (for experts)
+#PYTHONDEBUG=2
+
