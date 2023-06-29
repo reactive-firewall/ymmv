@@ -8,5 +8,5 @@ if [ ! -n "$BASH" ] ;then echo Please run this script $0 with bash; exit 1; fi
 # MAIL=/usr/mail/${LOGNAME:-?}
 # Etc...
 # Load the shell startup RC script like so
-source ~/.bashrc ;
+source ${HOME:-~}"/.bashrc ;
 eval $(brew shellenv) || true

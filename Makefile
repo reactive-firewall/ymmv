@@ -352,21 +352,13 @@ git-config: ~/.config/git/attributes
 	$(QUIET)$(WAIT)
 	$(QUIET)$(ECHO) "$@: installed."
 
-/etc/%.previous: must_be_root /etc/ /etc/%
-	$(QUIET)$(CP) $@ $@.previous 2>/dev/null || true
+/etc/%.previous: must_be_root /etc/
+	$(QUIET)$(CP) -f $< $@.previous 2>/dev/null || true
 	$(QUIET)$(WAIT)
 	$(QUIET)$(ECHO) "$@: backed up."
 
-/etc/bashrc: ./payload/etc/bashrc must_be_root /etc/ /etc/bashrc.previous
+/etc/%: ./payload/etc/% must_be_root /etc/ /etc/%.previous
 	$(QUIET)$(WAIT)
-	$(QUIET)$(MAKE) -C ./ -f ./Makefile $@.previous 2>/dev/null || true
-	$(QUIET)$(INSTALL) $(INST_OWN) $(INST_TOOL_OPTS) $< $@ 2>/dev/null || true
-	$(QUIET)$(WAIT)
-	$(QUIET)$(ECHO) "$@: configured."
-
-/etc/environment: ./payload/etc/environment must_be_root /etc/ /etc/environment.previous
-	$(QUIET)$(WAIT)
-	$(QUIET)$(MAKE) -C ./ -f ./Makefile $@.previous 2>/dev/null || true
 	$(QUIET)$(INSTALL) $(INST_OWN) $(INST_TOOL_OPTS) $< $@ 2>/dev/null || true
 	$(QUIET)$(WAIT)
 	$(QUIET)$(ECHO) "$@: configured."
