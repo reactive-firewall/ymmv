@@ -70,12 +70,15 @@ declare -i SHLOCK_CHECK_ONLY_MODE=1
 
 EXIT_CODE=1 ;
 
+# exit codes: 0 = locked by ${PID_VALUE} ; 1 = generic error ;
+# 2 = not-locked by PID ; 3 = error+not-locked ; 4=found lock
+
 if [[ ( $# -ge "$MINPARAMS" ) ]] ; then
 		while [[ ( $# -gt 0 ) ]]; do  # Until you run out of parameters . . .
 		case "$1" in
 			-p|--pid) shift ; export PID_VALUE="${1}" ; SHLOCK_CHECK_ONLY_MODE=0 ;;
 			-f|--file) shift ; export LOCK_FILE="${1}" ;;
-			*) echo "$0: \"${1}\" Argument Unrecognized!" 1>&2 || false ;;
+			*) echo "$0: \"${1}\" Argument Unrecognized!" 1>&2 || EXIT_CODE=1 ;;
 		esac  # Check next set of parameters.
 		shift ;
 	done
@@ -84,15 +87,20 @@ fi
 if [[ ( -e "${LOCK_FILE}" ) ]] ; then  # just check -e and not -r nor -f to run fast and fail on read
 	if [[ ( "${PID_VALUE}" -eq $(head -n 1 "${LOCK_FILE}") ) ]] ; then
 		EXIT_CODE=0 ;
+	elif [[ ( -r "${LOCK_FILE}" ) ]] ; then  # also can just check -r here instead
+		EXIT_CODE=$(head -n 1 "${LOCK_FILE}" 2>/dev/null | grep -m1 -oE "[0-9]+") ;
 	else
-		EXIT_CODE=$(head -n 1 "${LOCK_FILE}" | grep -m1 -oE "[0-9]+") ;
+		echo $"Error: Lock could not be checked" >&2 ;
+		EXIT_CODE=127;
 	fi
-elif [[ ( -n $( kill -n 0 "${PID_VALUE:-PPID}" 2>/dev/null ) ) ]] ; then
-		echo "${PID_VALUE:-$PPID}" > "${LOCK_FILE}" ; wait ;
-		test -e "${LOCK_FILE}" || false ;
-		EXIT_CODE=0 ;
+elif [[ ( -z $( kill -n 0 "${PID_VALUE}" 2>&1 ) ) ]] ; then
+		echo "${PID_VALUE}" > "${LOCK_FILE}" ; wait ;
+		(test -e "${LOCK_FILE}" && EXIT_CODE=0) || ( false && EXIT_CODE=126 ) ;
+		#test -e "${LOCK_FILE}" || false ;
+		#EXIT_CODE=0;
 else
-	EXITCODE=127;
+	echo $"Error: Refuse to aquire lock for unkown process ${PID_VALUE}" >&2 ;
+	EXIT_CODE=127;
 fi
 
 exit ${EXIT_CODE:-126};
