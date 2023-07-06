@@ -59,48 +59,56 @@
 #    the amount of five dollars ($5.00). The foregoing limitations will apply
 #    even if the above stated remedy fails of its essential purpose.
 ################################################################################
-umask 137
+umask 0112
 
-declare -r MINPARAMS=2
+declare -ir MINPARAMS=2
 declare LOCK_FILE="/tmp/GIL.lock"
-declare -i PID_VALUE="${PPID:-${BASHPID:-$$}}"
+declare -i PID_VALUE="${PPID:-$$}"
 declare -i SHLOCK_CHECK_ONLY_MODE=1
 
 #declare -i VERSION=20230629
 
 EXIT_CODE=1 ;
 
-# exit codes: 0 = locked by ${PID_VALUE} ; 1 = generic error ;
-# 2 = not-locked by PID ; 3 = error+not-locked ; 4=found lock
+# exit codes: (caveat: not all implemented here)
+# x000000 = 0 = locked by ${PID_VALUE} ;
+# x000001 = 1 = not-locked by ${PID_VALUE} ;
+# x000010 = 2 = should be locked by ${PID_VALUE} but some generic error occured ;
+# x000011 = 3 = could not resolve to locked nor not-locked by ${PID_VALUE} (i.e. 1+2) ;
+# x000100 = 4 = locked by ${PID_VALUE} but looks like ${PID_VALUE} is gone now but still found lock (did you remember to unlock before relocking?)
+# x000101 = 5 = not-locked by ${PID_VALUE} but still found lock at ${LOCK_FILE} (i.e. 1+4)
+# x000110 = 6 = could not resolve to locked nor not-locked by ${PID_VALUE} but but still found lock at ${LOCK_FILE}
+# x000111 = 7 = not-locked by ${PID_VALUE} but but still found lock at ${LOCK_FILE} for unknown PID (including when invalid lock file)
 
-if [[ ( $# -ge "$MINPARAMS" ) ]] ; then
-		while [[ ( $# -gt 0 ) ]]; do  # Until you run out of parameters . . .
-		case "$1" in
+if [[ ( $# -ge $MINPARAMS ) ]] ; then
+	while [[ ( $# -gt 0 ) ]] ; do  # Until you run out of parameters . . .
+		case "${1}" in
 			-p|--pid) shift ; export PID_VALUE="${1}" ; SHLOCK_CHECK_ONLY_MODE=0 ;;
 			-f|--file) shift ; export LOCK_FILE="${1}" ;;
-			*) echo "$0: \"${1}\" Argument Unrecognized!" 1>&2 || EXIT_CODE=1 ;;
-		esac  # Check next set of parameters.
+			*) echo "$0: \"${1}\" Argument Unrecognized!" 1>&2 ; EXIT_CODE=3 ;;
+		esac ;  # Check next set of parameters.
 		shift ;
 	done
-fi
 
+fi ;
+if [[ ( $EXIT_CODE -lt $MINPARAMS ) ]] ; then
 if [[ ( -e "${LOCK_FILE}" ) ]] ; then  # just check -e and not -r nor -f to run fast and fail on read
 	if [[ ( "${PID_VALUE}" -eq $(head -n 1 "${LOCK_FILE}") ) ]] ; then
 		EXIT_CODE=0 ;
+		# could update with touch -am "${LOCK_FILE}"
 	elif [[ ( -r "${LOCK_FILE}" ) ]] ; then  # also can just check -r here instead
-		EXIT_CODE=$(head -n 1 "${LOCK_FILE}" 2>/dev/null | grep -m1 -oE "[0-9]+") ;
+		EXIT_CODE=5 ;
 	else
-		echo $"Error: Lock could not be checked" >&2 ;
-		EXIT_CODE=127;
+		printf $"Error: Lock could not be checked\n" >&2 ;
+		EXIT_CODE=7 ;
 	fi
 elif [[ ( -z $( kill -n 0 "${PID_VALUE}" 2>&1 ) ) ]] ; then
-		echo "${PID_VALUE}" > "${LOCK_FILE}" ; wait ;
-		(test -e "${LOCK_FILE}" && EXIT_CODE=0) || ( false && EXIT_CODE=126 ) ;
-		#test -e "${LOCK_FILE}" || false ;
-		#EXIT_CODE=0;
+	printf "${PID_VALUE}\n" >"${LOCK_FILE}" && :
+	sync ; wait ;
+	if [[ ( -r "${LOCK_FILE}" ) ]] ; then EXIT_CODE=0 ; elif [[ ( -e "${LOCK_FILE}" ) ]] ; then EXIT_CODE=2 ; else EXIT_CODE=2 ; fi ;
 else
-	echo $"Error: Refuse to aquire lock for unkown process ${PID_VALUE}" >&2 ;
-	EXIT_CODE=127;
+	printf $"Error: Refuse to aquire lock for unkown process ${PID_VALUE}\n" >&2 ;
+	EXIT_CODE=6 ;
 fi
-
-exit ${EXIT_CODE:-126};
+fi ;
+exit ${EXIT_CODE:-126} ;
