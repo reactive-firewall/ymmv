@@ -24,3 +24,6 @@ Icon*
 *.xcodeproj/xcuserdata
 *.workflow/xcuserdata/*
 *.xcodeproj/project.workflow/xcuserdata/*
+swiftpm
+IDEWorkspaceChecks.plist
+Unit\ Tests/
