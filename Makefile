@@ -27,8 +27,8 @@ ifeq "$(ECHO)" ""
 	ECHO=command -p echo
 endif
 
-%:                   # define a last resort default rule
-      @$(MAKE) $@ --no-print-directory -rRf $(firstword $(MAKEFILE_LIST)) # recursive make call,
+%:		# define a last resort default rule
+	@$(MAKE) $@ --no-print-directory -rRf $(firstword $(MAKEFILE_LIST)) # recursive make call,
 
 else
 

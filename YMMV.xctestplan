@@ -1,0 +1,22 @@
+{
+  "configurations" : [
+    {
+      "id" : "05D9B03B-4856-4CBB-92BE-9D82341AC025",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:YMMV.xcodeproj",
+      "identifier" : "EE5D00AB2A732000003B7E49",
+      "name" : "YMMV"
+    }
+  },
+  "testTargets" : [
+
+  ],
+  "version" : 1
+}
