@@ -20,5 +20,10 @@ payload/*Desktops/
 payload/config/git.bz2
 *.icns
 Icon*
-*.workflow
-*.workflow/*
+*.workflow/xcuserdata
+*.xcodeproj/xcuserdata
+*.workflow/xcuserdata/*
+*.xcodeproj/project.workflow/xcuserdata/*
+swiftpm
+IDEWorkspaceChecks.plist
+Unit\ Tests/

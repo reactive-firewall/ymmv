@@ -27,8 +27,8 @@ ifeq "$(ECHO)" ""
 	ECHO=command -p echo
 endif
 
-%:                   # define a last resort default rule
-      @$(MAKE) $@ --no-print-directory -rRf $(firstword $(MAKEFILE_LIST)) # recursive make call,
+%:		# define a last resort default rule
+	@$(MAKE) $@ --no-print-directory -rRf $(firstword $(MAKEFILE_LIST)) # recursive make call,
 
 else
 
@@ -52,6 +52,10 @@ endif
 
 ifeq "$(ALFW)" ""
 	ALFW=/usr/libexec/ApplicationFirewall/socketfilterfw
+endif
+
+ifeq "$(PFCTL)" ""
+	PFCTL=command -pv pfctl
 endif
 
 ifeq "$(LINK)" ""
@@ -125,7 +129,7 @@ ifeq "$(LOG)" "no"
 	QUIET=@
 endif
 
-.SUFFIXES: .zip .php .css .html .bash .sh .py .pyc .txt .js .plist .dmg rc
+.SUFFIXES: .zip .php .css .html .bash .sh .py .pyc .txt .js .plist .dmg rc .previous
 
 PHONY: must_be_root install-tools-mac install-pf cleanup install-tools install-etc install-home uninstall build all
 
@@ -154,8 +158,8 @@ install-pf: must_be_root /etc/ /etc/pf.conf /etc/pf.extras /etc/pf.anchors/local
 	$(QUIET)$(ALFW) --setallowsigned on || true
 	$(QUIET)$(ALFW) --setallowsignedapp off || exit 126 ;
 	$(QUIET)pkill -HUP socketfilterfw || true ;
-	$(QUIET)pfctl -mef /etc/pf.conf || true ;
-	$(QUIET)pfctl -mF states || true ;
+	$(QUIET)$(PFCTL) -mef /etc/pf.conf || true ;
+	$(QUIET)$(PFCTL) -mF states || true ;
 	$(QUIET)$(WAIT)
 	$(QUIET)$(ECHO) "$@: Restart Required."
 
@@ -165,7 +169,7 @@ install-tools: must_be_root /usr/local/bin/ /usr/local/bin/grepip /usr/local/bin
 install-tools-mac: must_be_root /usr/local/bin/ /usr/local/bin/sud /usr/local/bin/auditALFW /usr/local/bin/auditGK install-pf
 	$(QUIET)$(ECHO) "$@: Done."
 
-install-home: ~/.bashrc ~/.profile ~/.bash_profile ~/.bash_aliases ~/.bash_history ~/.tcshrc ~/.cshrc
+install-home: ~/.bashrc ~/.profile ~/.bash_profile ~/.bash_aliases ~/.bash_history ~/.tcshrc ~/.cshrc ~/.zshrc
 	$(QUIET)$(ECHO) "$@: Configured."
 
 install-better-home: install-home ~/.nofinger ~/.plan nano-config git-config
@@ -352,10 +356,15 @@ git-config: ~/.config/git/attributes
 	$(QUIET)$(WAIT)
 	$(QUIET)$(ECHO) "$@: installed."
 
-/etc/%.previous: must_be_root /etc/
-	$(QUIET)$(CP) -f $< $@.previous 2>/dev/null || true
+/etc/%.previous: /etc/% must_be_root /etc/
+	$(QUIET)$(CP) -pf $< $@.previous 2>/dev/null || true
 	$(QUIET)$(WAIT)
 	$(QUIET)$(ECHO) "$@: backed up."
+
+/etc/%.previous: ./payload/etc/% must_be_root /etc/
+	$(QUIET)$(TOUCH) $@.previous 2>/dev/null || true
+	$(QUIET)$(WAIT)
+	$(QUIET)$(ECHO) "$@: backed up. (Warning: empty backup)"
 
 /etc/%: ./payload/etc/% must_be_root /etc/ /etc/%.previous
 	$(QUIET)$(WAIT)
@@ -416,7 +425,7 @@ uninstall-dot-config-%: ~/.config/%
 	$(QUIET)$(WAIT)
 	$(QUIET)$(ECHO) "$<: Removed. ( $@ )"
 
-uninstall-dot-config: ~/.config/ uninstall-dot-config-nano uninstall-dot-config-completions uninstall-dot-config-nano uninstall-config-git
+uninstall-dot-config: ~/.config/ uninstall-dot-config-nano uninstall-dot-config-completions uninstall-dot-config-nano uninstall-dot-config-git
 	$(QUIET)$(RMDIR) $< 2>/dev/null || true
 	$(QUIET)$(WAIT)
 	$(QUIET)$(ECHO) "$<: Removed. ( $@ )"
@@ -433,7 +442,7 @@ uninstall: uninstall-etc uninstall-tools
 	$(QUIET)$(ECHO) "$@: Done."
 
 purge: clean uninstall-better-home uninstall
-	$(QUIET)$(ECHO) "$@: Done."
+	$(QUIET)$(ECHO) "$@: Done. (Please restart)"
 
 test: cleanup
 	$(QUIET)$(ECHO) "$@: START."
