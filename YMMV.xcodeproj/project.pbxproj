@@ -23,6 +23,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		84E5706B2A79A84900A677B6 /* test_bin_cmd_applist.bash */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; lineEnding = 0; path = test_bin_cmd_applist.bash; sourceTree = "<group>"; };
 		EE5D00AC2A732000003B7E49 /* build */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = text; name = build; path = YMMV; sourceTree = BUILT_PRODUCTS_DIR; };
 		EE5D00AE2A732000003B7E49 /* payload */ = {isa = PBXFileReference; lastKnownFileType = folder; path = payload; sourceTree = SOURCE_ROOT; };
 		EE5D00AF2A732000003B7E49 /* Makefile */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.makefile; path = Makefile; sourceTree = "<group>"; };
@@ -102,6 +103,7 @@
 				EEA7C5A32A734CE600A64AC1 /* test_spelling.bash */,
 				EEA7C5A42A734CE600A64AC1 /* test_git_config.bash */,
 				EEA7C5A52A734CE600A64AC1 /* test_bash_shlock_tool.bash */,
+				84E5706B2A79A84900A677B6 /* test_bin_cmd_applist.bash */,
 				EEA7C5A62A734CE600A64AC1 /* test_codecov_config.bash */,
 			);
 			path = tests;

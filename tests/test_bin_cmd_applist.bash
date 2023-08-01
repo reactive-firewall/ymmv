@@ -7,7 +7,7 @@
 #    EFFORT IS WITH YOU.
 #
 # B. TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, THIS SHELL SCRIPT
-#    AND SERVICES ARE PROVIDED "AS IS" AND “AS AVAILABLE”, WITH ALL FAULTS AND
+#    AND SERVICES ARE PROVIDED "AS IS" AND "AS AVAILABLE", WITH ALL FAULTS AND
 #    WITHOUT WARRANTY OF ANY KIND, AND THE AUTHOR OF THIS SHELL SCRIPT'S LICENSORS
 #    (COLLECTIVELY REFERRED TO AS "THE AUTHOR" FOR THE PURPOSES OF THIS DISCLAIMER)
 #    HEREBY DISCLAIM ALL WARRANTIES AND CONDITIONS WITH RESPECT TO THIS SHELL SCRIPT
@@ -60,17 +60,68 @@
 #    even if the above stated remedy fails of its essential purpose.
 ################################################################################
 
-function getAppID() {
-if [[ ( $(head <(mdls -name kMDItemCFBundleIdentifier -raw "${@:1:$#}") 2>/dev/null | grep -Foc "(null)" 2>/dev/null ) -eq 0 ) ]] ; then
-head <(mdls -name kMDItemCFBundleIdentifier -raw "${@:1:$#}")
-elif [[ ( -e "${@:1:$#}/Contents/Info.plist" ) ]] ; then
-command grep -F "." <( grep -Fv "plist version" <(grep -Ee "([[:alnum:]]+[\.]+[[:print:]]+)*?" <(grep -A 1 -F "CFBundleIdentifier" <(plutil -convert xml1 -o - -- "${@:1:$#}/Contents/Info.plist" 2>/dev/null) 2>/dev/null | tail -n 1 ) ) | tr -s '><' '>' | sed -e 's/string>//g' | cut -d \> -f 2 2>/dev/null ) 2>/dev/null ;
-fi ;
+# test must run within 15 seconds or fails by timeout
+ulimit -t 15
+PATH="/bin:/sbin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:./payload/bin:${PATH}"
+umask 027
+
+LOCK_FILE="/tmp/org.pak.ymmv.test_bin_cmd_applist.lock" ;
+EXIT_CODE=1
+
+test -x $(command -v grep) || exit 126 ;
+test -x $(command -v curl) || exit 126 ;
+test -x $(command -v find) || exit 126 ;
+test -x $(command -v git) || exit 126 ;
+hash -p ./.github/tool_shlock_helper.sh shlock || exit 255 ;
+test -x $(command -v shlock) || exit 126 ;
+
+function cleanup() {
+	rm -f "${LOCK_FILE}" 2>/dev/null || true ; wait ;
+	hash -d shlock 2>/dev/null > /dev/null || true ;
 }
 
-TEMP_APP_ID_VAR=$(getAppID "${@:1:$#}")
-if [[ ( -n "${TEMP_APP_ID_VAR:-${@:1:$#}}" ) ]] ; then
-echo "${TEMP_APP_ID_VAR:-${@:1:$#}}"
+if [[ $(uname -s) == Darwin* ]] ; then
+
+if [[ ( $(shlock -f ${LOCK_FILE} -p $$ ) -eq 0 ) ]] ; then
+		EXIT_CODE=0
+		trap 'cleanup ; wait ; exit 3 ;' SIGHUP || EXIT_CODE=3
+		trap 'cleanup ; wait ; exit 4 ;' SIGTERM || EXIT_CODE=4
+		trap 'cleanup ; wait ; exit 5 ;' SIGQUIT || EXIT_CODE=5
+		# SC2173 - https://github.com/koalaman/shellcheck/wiki/SC2173
+		# trap 'rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 1 ;' SIGSTOP || EXIT_CODE=7
+		trap 'cleanup ; wait ; exit 8 ;' SIGINT || EXIT_CODE=8
+		trap 'cleanup ; wait ; exit 9 ;' SIGABRT || EXIT_CODE=9
+		trap 'cleanup ; wait ; exit ${EXIT_CODE} ;' EXIT || EXIT_CODE=1
+else
+		echo "FAIL" >&2 ;
+		false ;
+		EXIT_CODE=127 ;
 fi ;
 
-exit 0 ;
+
+# THIS IS THE ACTUAL TEST
+if [[ -d ../payload ]] ; then
+	test -x $(../payload/bin/applist.bash "/bin/bash") || EXIT_CODE=2
+elif [[ -d ./payload/bin ]] ; then
+	test -x $(./payload/bin/applist.bash "/bin/bash") || EXIT_CODE=2
+elif [[ -f ./bin/applist.bash ]] ; then
+	test -x $(./bin/applist.bash "/bin/bash") || EXIT_CODE=2
+else
+	echo "FAIL: missing 'applist.bash' source file"
+	EXIT_CODE=1
+fi
+
+fi ;
+
+if [[ ( ${EXIT_CODE} -ne 0 ) ]] ; then
+	case "$EXIT_CODE" in
+		0) true ;; #  dead-code
+		127) false ;;
+		*) echo "SKIP: Unclassified issue with 'applist.bash'" ;;
+	esac
+fi
+
+cleanup || rm -f ${LOCK_FILE} 2>/dev/null > /dev/null || true ; wait ;
+
+# goodbye
+exit ${EXIT_CODE:-255} ;
