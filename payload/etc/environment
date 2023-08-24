@@ -1,12 +1,13 @@
 # setup tools
 # bash shell
-SHELL=/bin/bash
+# NOT POSIX SAFE
+#SHELL=/bin/bash
 
 # Keep bash over zsh for Mac OS X
 BASH_SILENCE_DEPRECATION_WARNING=1
 
 # temporary files on Mac OS X
-#TMPDIR=`getconf DARWIN_USER_TEMP_DIR`
+#TMPDIR=$(getconf DARWIN_USER_TEMP_DIR)
 
 #configure less to use color and utf-8
 LESSCHARSET='utf-8'
@@ -41,6 +42,7 @@ NCURSES_ASSUMED_COLORS="-1,-1"
 
 # NCURSES_NO_UTF8_ACS=1
 
+# stores your favorite line editor
 # some prefer VIM here
 EDITOR=${EDITOR:-"nano -L"}
 #assumes you have an alias or are on a mac
@@ -129,7 +131,7 @@ HOMEBREW_NO_INSECURE_REDIRECT=1
 #default for brew installed readline:
 PKG_CONFIG_PATH=/usr/local/opt/readline/lib/pkgconfig
 
-#link options 
+#link options
 LDFLAGS=-L/usr/local/opt/readline/lib
 
 # libvirt ENV vars
@@ -138,6 +140,24 @@ LIBVIRT_AUTOSTART=0
 
 # default LIBVIRT connection URI
 #LIBVIRT_DEFAULT_URI=qemu:///system
+
+# domain name
+#DOMAIN=.
+# for single user mode
+#HOME=/
+
+#HOSTNAME=localhost
+
+#INPUTRC	location of definition file for input devices such as keyboard
+#LD_LIBRARY_PATH	paths to search for libraries
+#LOGNAME	login name
+#OS	string describing the operating system
+#OSTYPE	more information about version etc.
+#PS1	primary prompt
+#PS2	secondary prompt
+#TERM	terminal type
+#XENVIRONMENT	location of your personal settings for X behavior
+#XFILESEARCHPATH	paths to search for graphical libraries
 
 # see https://docs.python.org/3/using/cmdline.html#environment-variables
 # Make python3 more safe in brain-dead environments

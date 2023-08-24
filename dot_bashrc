@@ -50,21 +50,55 @@ function manappend() {
 # PATH configuration
 #-------------------------------------------------------------
 
-pathappend ${HOME}/homebrew/sbin
+# System-wide .bashrc file for interactive bash(1) shells.
+
+if [[ $OSTYPE =~ "darwin" ]] ; then
+	if [[ ! ${POSIXLY_CORRECT} ]] ; then
+		# MacOS uses the getconf style
+		PATH=$(getconf PATH) ;
+		export DEVELOPER_DIR=${DEVELOPER_DIR:-$(xcode-select -p)} ;
+		export PATH ;
+	else
+		# this seems to be better then the macOS default path (for posix)
+		export PATH=${PATH:-"/bin:/sbin:/usr/sbin:/usr/bin:/usr/local/bin:/usr/local/sbin:."}
+	fi
+	# configure dev mode if needed
+	DEVELOPER_BIN_DIR=${DEVELOPER_BIN_DIR:-$(find $(xcode-select -p)/usr \( -iname "*bin" -a -type d \) -print | head -n 1 ; wait )} ;
+	if [[ -d "$DEVELOPER_BIN_DIR" ]] && [[ ":$PATH:" != "${DEVELOPER_BIN_DIR}:"* ]] ; then
+		PATH="$DEVELOPER_BIN_DIR:${PATH}" ;
+		export PATH ;
+	fi
+fi
+
 pathappend ${HOME}/homebrew/bin
+pathappend ${HOME}/homebrew/sbin
+pathappend /usr/local/bin
+pathappend /usr/local/sbin
 pathappend ${HOME}/bin
+pathappend /Applications/Docker.app/Contents/Resources/sbin
 pathappend /Applications/Docker.app/Contents/Resources/bin
 pathappend /usr/local/MacGPG2/bin
 pathappend /opt/local/bin
+pathappend /opt/local/sbin
+#pathappend ${HOME}/Library/Python/3.4/bin
+#pathappend ${HOME}/Library/Python/3.5/bin
+#pathappend ${HOME}/Library/Python/3.7/bin
+#pathappend ${HOME}/Library/Python/3.8/bin
+pathappend ${HOME}/Library/Python/3.12/bin
+pathappend ${HOME}/Library/Python/3.11/bin
+pathappend ${HOME}/Library/Python/3.10/bin
+pathappend ${HOME}/Library/Python/3.9/bin
+# Some KNOW what they are doing
+# pathappend ${HOME}/Library/Python/2.7/bin
 
 #-------------------------------------------------------------
 # Script configuration (if any)
 #-------------------------------------------------------------
 
 if [[ ! ${POSIXLY_CORRECT} ]] ; then
-# idea from https://rakhesh.com/mac/macos-launchctl-commands/
-export XPC_SERVICE_NAME=$(echo -n $(head -n 1 <(launchctl list 2>/dev/null | grep -F com.apple.Terminal. 2>/dev/null | tr -s '\t ' ' ' 2>/dev/null | cut -d\  -f 3-3) 2>/dev/null ).$$ )
-#export TMPDIR=$(getconf TMPDIR)
+	# idea from https://rakhesh.com/mac/macos-launchctl-commands/
+	export XPC_SERVICE_NAME=$(echo -n ""$(head -n 1 <(launchctl list 2>/dev/null | grep -F com.apple.Terminal. 2>/dev/null | tr -s '\t ' ' ' 2>/dev/null | cut -d\  -f 3-3) 2>/dev/null )"$$" )
+	export TMPDIR=$(getconf DARWIN_USER_TEMP_DIR)
 fi
 
 export TMOUT=${TMOUT:-0}
@@ -96,6 +130,8 @@ fi
 if [[ -d "${HOME}"/.bin/ ]]; then
 	alias mybin='$HOME/.bin'	# --> add my own bin to path,
 	pathappend "${HOME}"/.bin
+else
+	alias mybin='$HOME/bin'	# --> add my own bin to path,
 fi
 
 # harden homebrew
@@ -296,8 +332,16 @@ declare On_Black=${On_Black:='\e[40m'};
 declare On_White=${On_White:='\e[47m'};
 
 # ANSI/VT100 Control sequences for colored error logs.
-declare -r error_badge=$"${RED}${On_Black}ERR!${NC}" ;
-declare -r tick_symbol=$"${GREEN}\\xE2\\x9C\\x94${NC}" ;
+# ANSI/VT100 Control sequences for colored error logs.
+declare -r err_badge="${RED}${On_Black}ERR!${NC}" ;
+if [[ -x $(command -pv xxd) ]] ; then
+declare -r error_badge=${RED}${On_Black}$(echo -n "e29c98" | xxd -r -pi)${NC} ;
+declare -r tick_symbol=${GREEN}$(echo -n "e29c94" | xxd -r -pi)${NC} ;
+else
+# this is nice but if we have xxd it is better
+declare -r error_badge=${RED}${On_Black}"\\xE2\\x9C\\x98"${NC} ;
+declare -r tick_symbol=${GREEN}"\\xE2\\x9C\\x94"${NC} ;
+fi
 
 declare NC=$'\e[0m' ;            # No Color
 declare UNDERLINE='\e[4;1m' ;   # Underline

@@ -60,54 +60,43 @@
 #    even if the above stated remedy fails of its essential purpose.
 ################################################################################
 
-# test must run within 15 seconds or fails by timeout
-ulimit -t 15
-PATH="/bin:/sbin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:${PATH}"
-umask 027
+EXIT_CODE=0
 
-LOCK_FILE="/tmp/test_$RANDOM$RANDOM$RANDOM$RANDOM$RANDOM$RANDOM$RANDOM.lock" ;
+ulimit -t 600
+PATH="/bin:/sbin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin"
+umask 137
+
+LOCK_FILE="/tmp/pf_config_test_script_lock" ;
 EXIT_CODE=1
 
-test -x $(command -v grep) || exit 126 ;
-test -x $(command -v curl) || exit 126 ;
-test -x $(command -v find) || exit 126 ;
-test -x $(command -v git) || exit 126 ;
-hash -p ./.github/tool_shlock_helper.sh shlock || exit 255 ;
-test -x $(command -v shlock) || exit 126 ;
-
-function cleanup() {
-	rm -f "${LOCK_FILE}" 2>/dev/null || true ; wait ;
-	hash -d shlock 2>/dev/null > /dev/null || true ;
-}
-
+if [[ ( $(shlock -f ${LOCK_FILE} -p $$ ) -eq 0 ) ]] ; then
+        EXIT_CODE=0
+        trap 'rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 1 ;' SIGHUP || EXIT_CODE=3
+        trap 'rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 1 ;' SIGTERM || EXIT_CODE=4
+        trap 'rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 1 ;' SIGQUIT || EXIT_CODE=5
+        trap 'rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 1 ;' SIGSTOP || EXIT_CODE=7
+        trap 'rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 1 ;' SIGINT || EXIT_CODE=8
+        trap 'rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 1 ;' SIGABRT || EXIT_CODE=9
+        trap 'rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit ${EXIT_CODE} ;' EXIT || EXIT_CODE=1
+else
+        echo "Test already in progress by "$(head ${LOCK_FILE})"." ;
+        false ;
+        exit ${EXIT_CODE:-255} ;
+fi
 
 # THIS IS THE ACTUAL TEST
-if [[ ( $(./.github/tool_shlock_helper.sh -f ${LOCK_FILE} -p $$ ) -eq 0 ) ]] ; then
-#if [[ ( $(shlock -f ${LOCK_FILE} -p $$ ) -eq 0 ) ]] ; then
-		EXIT_CODE=0
-		trap 'cleanup ; wait ; exit 3 ;' SIGHUP || EXIT_CODE=3
-		trap 'cleanup ; wait ; exit 4 ;' SIGTERM || EXIT_CODE=4
-		trap 'cleanup ; wait ; exit 5 ;' SIGQUIT || EXIT_CODE=5
-		# SC2173 - https://github.com/koalaman/shellcheck/wiki/SC2173
-		# trap 'rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 1 ;' SIGSTOP || EXIT_CODE=7
-		trap 'cleanup ; wait ; exit 8 ;' SIGINT || EXIT_CODE=8
-		trap 'cleanup ; wait ; exit 9 ;' SIGABRT || EXIT_CODE=9
-		trap 'cleanup ; wait ; exit ${EXIT_CODE} ;' EXIT || EXIT_CODE=1
+if [[ -f ../payload/etc/pf.anchors/local.user ]] ; then
+	pfctl -nf ../payload/etc/pf.anchors/local.user 1>/dev/null 2>&1 || EXIT_CODE=1
+elif [[ -f ./payload/etc/pf.anchors/local.user ]] ; then
+	pfctl -nf ./payload/etc/pf.anchors/local.user 1>/dev/null 2>&1 || EXIT_CODE=1
+elif [[ -f ./payload/etc/pf.conf ]] ; then
+	pfctl -nf ./payload/etc/pf.conf 1>/dev/null 2>&1 || EXIT_CODE=1
 else
-		echo "FAIL" >&2 ;
-		false ;
-		EXIT_CODE=127 ;
+	echo "FAIL: missing valid PF firewall rules or config file."
+	EXIT_CODE=1
 fi
 
-if [[ ( ${EXIT_CODE} -ne 0 ) ]] ; then
-	case "$EXIT_CODE" in
-		0) true ;; #  dead-code
-		127) false ;;
-		*) echo "SKIP: Unclassified issue." ;;
-	esac
-fi
-
-cleanup || rm -f ${LOCK_FILE} 2>/dev/null > /dev/null || true ; wait ;
+rm -f ${LOCK_FILE} 2>/dev/null > /dev/null || true ; wait ;
 
 # goodbye
 exit ${EXIT_CODE:-255} ;
