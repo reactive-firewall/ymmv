@@ -91,7 +91,7 @@ source ~/.bashrc
 HOMEBREW_USER=$(stat -f %u ~/homebrew/)
 HOMEBREW_GROUP=$(stat -f %g ~/homebrew/)
 umask 002
-export HOMEBREW_CASK_OPTS="--appdir=~/homebrew/Applications/ --fontdir=~/homebrew/Library/Fonts"
+export HOMEBREW_CASK_OPTS="${HOMEBREW_CASK_OPTS} --appdir=~/homebrew/Applications/ --fontdir=~/homebrew/Library/Fonts"
 brew analytics off
 brew update
 brew upgrade
@@ -138,7 +138,7 @@ brew install --cask "max"
 brew install --cask "musicbrainz-picard"
 brew install --cask "vlc"
 brew install --cask "gimp"
-brew install --cask "4k-video-downloader"
+#brew install --cask "4k-video-downloader"
 
 #########################
 # Security Apps
