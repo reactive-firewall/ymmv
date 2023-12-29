@@ -235,7 +235,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				EEDA4C132A745305004C4498,
+				EEDA4C152A745450004C4498,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
