@@ -10,7 +10,7 @@ hash -p $(dirname $0)/../bin/sud sud
 
 # this takes some time:
 rm -vf /tmp/GPG_Suite.dmg 2>/dev/null || true ; wait ;
-sud https://releases.gpgtools.org/GPG_Suite-2022.2.dmg /tmp/GPG_Suite.dmg
+sud https://releases.gpgtools.org/GPG_Suite-2023.3.dmg /tmp/GPG_Suite.dmg
 hdiutil attach /tmp/GPG_Suite.dmg -mountPoint /Volumes/GPG_Suite || exit 1 ;
 # must be admin user to install:
 #installer -pkg /Volumes/GPG_Suite/Install.pkg -target LocalSystem -lang en
