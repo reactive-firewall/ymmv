@@ -88,16 +88,19 @@ HOMEBREW_USER=$(stat -f %u ~/homebrew/)
 HOMEBREW_GROUP=$(stat -f %g ~/homebrew/)
 umask 002
 export ENABLE_CLANG_FORMAT=on
-export CMAKE_OSX_DEPLOYMENT_TARGET=14.2
+# need to make this dynamic
+#export CMAKE_OSX_DEPLOYMENT_TARGET=14.2
 export CC=clang
 export CXX=clang
 export CPP=clang
 export CMAKE_PROGRAM_PATH=${PATH}:/Applications/Xcode.app/Contents/Developer/usr/bin
 #export SSL_CERT_DIR=??
-export CMAKE_APPLE_SILICON_PROCESSOR=x86_64
-export CMAKE_BUILD_PARALLEL_LEVEL=8
+# need to make this dynamic
+#export CMAKE_APPLE_SILICON_PROCESSOR=x86_64
+#export CMAKE_BUILD_PARALLEL_LEVEL=8
 export CMAKE_OSX_ARCHITECTURES='arm64 x86_64'
 export MACOSX_DEPLOYMENT_TARGET=14.2
+# 12 or newer
 export CMAKE_XCODE_BUILD_SYSTEM=12 # the new build system
 #CMAKE_OSX_SYSROOT
 export DT_TOOLCHAIN_DIR=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain
@@ -132,10 +135,10 @@ unset FORMULA_PC_PATH_VAR 2>/dev/null || true ;
 #for FORMULA_LD_PATH_VAR in $( brew list -1 | xargs -L1 -I{} brew info {} 2>/dev/null | grep -F "FLAGS" | cut -d\= -f 2-2 ; wait ; ) ; do
 #for FORMULA_CPP_PATH_VAR in $( brew list -1 | xargs -L1 -I{} brew info {} 2>/dev/null | grep -F "FLAGS" | cut -d\= -f 2-2 ; wait ; ) ; do
 
-#export LDFLAGS="-L${HOMEBREW_PREFIX}/opt/llvm/lib/c++ -Wl,-rpath,${HOMEBREW_PREFIX}/opt/llvm/lib/c++"
-#export LDFLAGS="${LDFLAGS} -L${HOMEBREW_PREFIX}/opt/berkeley-db@5/lib"
-#export CPPFLAGS="-I${HOMEBREW_PREFIX}/opt/berkeley-db@5/include"
-
+export LDFLAGS="-L${HOMEBREW_PREFIX}/opt/llvm/lib/c++ -Wl,-rpath,${HOMEBREW_PREFIX}/opt/llvm/lib/c++"
+export LDFLAGS="${LDFLAGS} -L${HOMEBREW_PREFIX}/opt/berkeley-db@5/lib"
+export CPPFLAGS="-I${HOMEBREW_PREFIX}/opt/berkeley-db@5/include"
+declare HOMEBREW_NO_INSTALL_CLEANUP=1
 
 brew list -1 --formulae | xargs -L1 caffeinate -dims brew reinstall --formula --build-from-source || true ;
 wait ;
@@ -144,6 +147,7 @@ wait ;
 clear ;
 brew list -1 --formulae | xargs -L1 caffeinate -dims brew reinstall --formula --build-from-source || true ;
 wait ;
+unset HOMEBREW_NO_INSTALL_CLEANUP 2>/dev/null || true ;
 caffeinate -dims brew cleanup
 caffeinate -dims brew autoremove
 wait ;
