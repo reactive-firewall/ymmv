@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		EE5D00B02A732000003B7E49 /* Makefile in Sources */ = {isa = PBXBuildFile; fileRef = EE5D00AF2A732000003B7E49 /* Makefile */; };
+		EEA7C5AE2A734DE300A64AC1 /* Unit_Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = EEA7C5AD2A734DE300A64AC1 /* Unit_Tests.m */; };
+		EEDA4C152A745450004C4498 /* dot_logrc in Resources */ = {isa = PBXBuildFile; fileRef = EEDA4C142A745450004C4498 /* dot_logrc */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -27,6 +29,7 @@
 		EE5D00AE2A732000003B7E49 /* payload */ = {isa = PBXFileReference; lastKnownFileType = folder; path = payload; sourceTree = SOURCE_ROOT; };
 		EE5D00AF2A732000003B7E49 /* Makefile */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.makefile; path = Makefile; sourceTree = "<group>"; };
 		EE5D00B92A7328E4003B7E49 /* YMMV.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = YMMV.entitlements; sourceTree = "<group>"; };
+		EEA7C59B2A734C8F00A64AC1 /* YMMV.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; name = YMMV.xctestplan; path = ../YMMV.xctestplan; sourceTree = "<group>"; };
 		EEA7C59D2A734CE600A64AC1 /* test_bash_config.bash */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = test_bash_config.bash; sourceTree = "<group>"; };
 		EEA7C59E2A734CE600A64AC1 /* test_shell_env_config.bash */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = test_shell_env_config.bash; sourceTree = "<group>"; };
 		EEA7C59F2A734CE600A64AC1 /* test_cc_lines.bash */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = test_cc_lines.bash; sourceTree = "<group>"; };
@@ -37,6 +40,8 @@
 		EEA7C5A42A734CE600A64AC1 /* test_git_config.bash */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = test_git_config.bash; sourceTree = "<group>"; };
 		EEA7C5A52A734CE600A64AC1 /* test_bash_shlock_tool.bash */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = test_bash_shlock_tool.bash; sourceTree = "<group>"; };
 		EEA7C5A62A734CE600A64AC1 /* test_codecov_config.bash */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = test_codecov_config.bash; sourceTree = "<group>"; };
+		EEA7C5AB2A734DE300A64AC1 /* Unit Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Unit Tests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		EEA7C5AD2A734DE300A64AC1 /* Unit_Tests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Unit_Tests.m; sourceTree = "<group>"; tabWidth = 4; };
 		EEA99C152A7451E400D0D9C3 /* dot_plan */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = dot_plan; sourceTree = "<group>"; };
 		EEA99C162A7451E400D0D9C3 /* dot_profile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = dot_profile; sourceTree = "<group>"; };
 		EEA99C172A7451E400D0D9C3 /* dot_bash_history */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = dot_bash_history; sourceTree = "<group>"; };
@@ -54,10 +59,18 @@
 		EEA99C242A7451E500D0D9C3 /* dot_macrc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = dot_macrc; sourceTree = "<group>"; };
 		EEA99C252A7451E500D0D9C3 /* LICENSE.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = LICENSE.md; sourceTree = "<group>"; };
 		EEA99C262A7451E500D0D9C3 /* dot_cshrc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = dot_cshrc; sourceTree = "<group>"; };
+		EEDA4C142A745450004C4498 /* dot_logrc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = dot_logrc; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		EE5D00A92A732000003B7E49 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EEA7C5A82A734DE300A64AC1 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -78,6 +91,7 @@
 				EE5D00AF2A732000003B7E49 /* Makefile */,
 				EE5D00B82A7327F6003B7E49 /* tests */,
 				EE5D00AE2A732000003B7E49 /* payload */,
+				EEA7C5AC2A734DE300A64AC1 /* Unit Tests */,
 				EE5D00AD2A732000003B7E49 /* Products */,
 			);
 			sourceTree = PROJECT_DIR;
@@ -86,6 +100,7 @@
 			isa = PBXGroup;
 			children = (
 				EE5D00AC2A732000003B7E49 /* build */,
+				EEA7C5AB2A734DE300A64AC1 /* Unit Tests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -107,6 +122,15 @@
 			path = tests;
 			sourceTree = SOURCE_ROOT;
 		};
+		EEA7C5AC2A734DE300A64AC1 /* Unit Tests */ = {
+			isa = PBXGroup;
+			children = (
+				EEA7C59B2A734C8F00A64AC1 /* YMMV.xctestplan */,
+				EEA7C5AD2A734DE300A64AC1 /* Unit_Tests.m */,
+			);
+			path = "Unit Tests";
+			sourceTree = "<group>";
+		};
 		EEDA4C132A745305004C4498 /* dot_files */ = {
 			isa = PBXGroup;
 			children = (
@@ -119,6 +143,7 @@
 				EEA99C262A7451E500D0D9C3 /* dot_cshrc */,
 				EEA99C232A7451E500D0D9C3 /* dot_gitconfig */,
 				EEA99C202A7451E500D0D9C3 /* dot_login */,
+				EEDA4C142A745450004C4498 /* dot_logrc */,
 				EEA99C242A7451E500D0D9C3 /* dot_macrc */,
 				EEA99C1C2A7451E400D0D9C3 /* dot_nofinger */,
 				EEA99C152A7451E400D0D9C3 /* dot_plan */,
@@ -148,6 +173,23 @@
 			productReference = EE5D00AC2A732000003B7E49 /* build */;
 			productType = "com.apple.product-type.tool";
 		};
+		EEA7C5AA2A734DE300A64AC1 /* Unit Tests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = EEA7C5AF2A734DE300A64AC1 /* Build configuration list for PBXNativeTarget "Unit Tests" */;
+			buildPhases = (
+				EEA7C5A72A734DE300A64AC1 /* Sources */,
+				EEA7C5A82A734DE300A64AC1 /* Frameworks */,
+				EEA7C5A92A734DE300A64AC1 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "Unit Tests";
+			productName = "Unit Tests";
+			productReference = EEA7C5AB2A734DE300A64AC1 /* Unit Tests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -162,6 +204,9 @@
 				ORGANIZATIONNAME = org.ymmv;
 				TargetAttributes = {
 					EE5D00AB2A732000003B7E49 = {
+						CreatedOnToolsVersion = 14.3.1;
+					};
+					EEA7C5AA2A734DE300A64AC1 = {
 						CreatedOnToolsVersion = 14.3.1;
 					};
 				};
@@ -180,9 +225,21 @@
 			projectRoot = "";
 			targets = (
 				EE5D00AB2A732000003B7E49 /* YMMV */,
+				EEA7C5AA2A734DE300A64AC1 /* Unit Tests */,
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		EEA7C5A92A734DE300A64AC1 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EEDA4C152A745450004C4498,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		EE5D00A82A732000003B7E49 /* Sources */ = {
@@ -190,6 +247,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				EE5D00B02A732000003B7E49 /* Makefile in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EEA7C5A72A734DE300A64AC1 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EEA7C5AE2A734DE300A64AC1 /* Unit_Tests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -316,12 +381,12 @@
 		EE5D00B42A732000003B7E49 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = YMMV.entitlements;
+				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = YMMV.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
-				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_ASSET_PATHS = YMMV.entitlements;
-				DEVELOPMENT_TEAM = "";
-				ENABLE_HARDENED_RUNTIME = YES;
+				"CODE_SIGN_STYLE[sdk=macosx*]" = Automatic;
+				"DEVELOPMENT_ASSET_PATHS[sdk=macosx*]" = YMMV.entitlements;
+				"DEVELOPMENT_TEAM[sdk=macosx*]" = "";
+				"ENABLE_HARDENED_RUNTIME[sdk=macosx*]" = YES;
 				MACOSX_DEPLOYMENT_TARGET = "$(RECOMMENDED_MACOSX_DEPLOYMENT_TARGET)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -330,14 +395,61 @@
 		EE5D00B52A732000003B7E49 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = YMMV.entitlements;
+				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = YMMV.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_ASSET_PATHS = YMMV.entitlements;
-				DEVELOPMENT_TEAM = "";
-				ENABLE_HARDENED_RUNTIME = YES;
+				"CODE_SIGN_STYLE[sdk=macosx*]" = Automatic;
+				"DEVELOPMENT_ASSET_PATHS[sdk=macosx*]" = YMMV.entitlements;
+				"DEVELOPMENT_TEAM[sdk=macosx*]" = "";
+				"ENABLE_HARDENED_RUNTIME[sdk=macosx*]" = YES;
 				MACOSX_DEPLOYMENT_TARGET = "$(RECOMMENDED_MACOSX_DEPLOYMENT_TARGET)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		EEA7C5B02A734DE300A64AC1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALLOW_TARGET_PLATFORM_SPECIALIZATION = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
+				MACOSX_DEPLOYMENT_TARGET = "$(RECOMMENDED_MACOSX_DEPLOYMENT_TARGET)";
+				MARKETING_VERSION = 1.0;
+				MTL_FAST_MATH = NO;
+				PRODUCT_BUNDLE_IDENTIFIER = "org.ymmv.tests.Unit-Tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+				SUPPORTS_MACCATALYST = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		EEA7C5B12A734DE300A64AC1 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALLOW_TARGET_PLATFORM_SPECIALIZATION = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
+				MACOSX_DEPLOYMENT_TARGET = "$(RECOMMENDED_MACOSX_DEPLOYMENT_TARGET)";
+				MARKETING_VERSION = 1.0;
+				MTL_FAST_MATH = NO;
+				PRODUCT_BUNDLE_IDENTIFIER = "org.ymmv.tests.Unit-Tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+				SUPPORTS_MACCATALYST = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};
@@ -358,6 +470,15 @@
 			buildConfigurations = (
 				EE5D00B42A732000003B7E49 /* Debug */,
 				EE5D00B52A732000003B7E49 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		EEA7C5AF2A734DE300A64AC1 /* Build configuration list for PBXNativeTarget "Unit Tests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EEA7C5B02A734DE300A64AC1 /* Debug */,
+				EEA7C5B12A734DE300A64AC1 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

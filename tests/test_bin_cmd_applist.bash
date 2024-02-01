@@ -62,10 +62,10 @@
 
 # test must run within 15 seconds or fails by timeout
 ulimit -t 15
-PATH="/bin:/sbin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:${PATH}"
+PATH="/bin:/sbin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:./payload/bin:${PATH}"
 umask 027
 
-LOCK_FILE="/tmp/test_$RANDOM$RANDOM$RANDOM$RANDOM$RANDOM$RANDOM$RANDOM.lock" ;
+LOCK_FILE="/tmp/org.pak.ymmv.test_bin_cmd_applist.lock" ;
 EXIT_CODE=1
 
 test -x $(command -v grep) || exit 126 ;
@@ -80,10 +80,9 @@ function cleanup() {
 	hash -d shlock 2>/dev/null > /dev/null || true ;
 }
 
+if [[ $(uname -s) == Darwin* ]] ; then
 
-# THIS IS THE ACTUAL TEST
-if [[ ( $(./.github/tool_shlock_helper.sh -f ${LOCK_FILE} -p $$ ) -eq 0 ) ]] ; then
-#if [[ ( $(shlock -f ${LOCK_FILE} -p $$ ) -eq 0 ) ]] ; then
+if [[ ( $(shlock -f ${LOCK_FILE} -p $$ ) -eq 0 ) ]] ; then
 		EXIT_CODE=0
 		trap 'cleanup ; wait ; exit 3 ;' SIGHUP || EXIT_CODE=3
 		trap 'cleanup ; wait ; exit 4 ;' SIGTERM || EXIT_CODE=4
@@ -97,13 +96,28 @@ else
 		echo "FAIL" >&2 ;
 		false ;
 		EXIT_CODE=127 ;
+fi ;
+
+
+# THIS IS THE ACTUAL TEST
+if [[ -d ../payload ]] ; then
+	test -x $(../payload/bin/applist.bash "/bin/bash") || EXIT_CODE=2
+elif [[ -d ./payload/bin ]] ; then
+	test -x $(./payload/bin/applist.bash "/bin/bash") || EXIT_CODE=2
+elif [[ -f ./bin/applist.bash ]] ; then
+	test -x $(./bin/applist.bash "/bin/bash") || EXIT_CODE=2
+else
+	echo "FAIL: missing 'applist.bash' source file"
+	EXIT_CODE=1
 fi
+
+fi ;
 
 if [[ ( ${EXIT_CODE} -ne 0 ) ]] ; then
 	case "$EXIT_CODE" in
 		0) true ;; #  dead-code
 		127) false ;;
-		*) echo "SKIP: Unclassified issue." ;;
+		*) echo "SKIP: Unclassified issue with 'applist.bash'" ;;
 	esac
 fi
 

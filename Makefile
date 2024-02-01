@@ -357,12 +357,12 @@ git-config: ~/.config/git/attributes
 	$(QUIET)$(ECHO) "$@: installed."
 
 /etc/%.previous: /etc/% must_be_root /etc/
-	$(QUIET)$(CP) -pf $< $@.previous 2>/dev/null || true
+	$(QUIET)$(CP) -pf $< $@ 2>/dev/null || true
 	$(QUIET)$(WAIT)
-	$(QUIET)$(ECHO) "$@: backed up."
+	$(QUIET)$(ECHO) "$@: backed-up."
 
 /etc/%.previous: ./payload/etc/% must_be_root /etc/
-	$(QUIET)$(TOUCH) $@.previous 2>/dev/null || true
+	$(QUIET)$(TOUCH) $@ 2>/dev/null || true
 	$(QUIET)$(WAIT)
 	$(QUIET)$(ECHO) "$@: backed up. (Warning: empty backup)"
 
@@ -370,6 +370,7 @@ git-config: ~/.config/git/attributes
 	$(QUIET)$(WAIT)
 	$(QUIET)$(INSTALL) $(INST_OWN) $(INST_TOOL_OPTS) $< $@ 2>/dev/null || true
 	$(QUIET)$(WAIT)
+	$(QUIET)$(TOUCH) $@.previous 2>/dev/null || true
 	$(QUIET)$(ECHO) "$@: configured."
 
 /etc/%: ./payload/etc/% must_be_root /etc/
