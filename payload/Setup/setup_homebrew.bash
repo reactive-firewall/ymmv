@@ -138,7 +138,7 @@ brew install --cask "max"
 brew install --cask "musicbrainz-picard"
 brew install --cask "vlc"
 brew install --cask "gimp"
-#brew install --cask "4k-video-downloader"
+brew install --cask "4k-video-downloader"
 
 #########################
 # Security Apps

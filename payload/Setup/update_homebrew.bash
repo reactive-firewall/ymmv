@@ -7,7 +7,7 @@
 #    EFFORT IS WITH YOU.
 #
 # B. TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, THIS SHELL SCRIPT
-#    AND SERVICES ARE PROVIDED "AS IS" AND “AS AVAILABLE”, WITH ALL FAULTS AND
+#    AND SERVICES ARE PROVIDED "AS IS" AND "AS AVAILABLE," WITH ALL FAULTS AND
 #    WITHOUT WARRANTY OF ANY KIND, AND THE AUTHOR OF THIS SHELL SCRIPT'S LICENSORS
 #    (COLLECTIVELY REFERRED TO AS "THE AUTHOR" FOR THE PURPOSES OF THIS DISCLAIMER)
 #    HEREBY DISCLAIM ALL WARRANTIES AND CONDITIONS WITH RESPECT TO THIS SHELL SCRIPT
@@ -59,17 +59,93 @@
 #    the amount of five dollars ($5.00). The foregoing limitations will apply
 #    even if the above stated remedy fails of its essential purpose.
 ################################################################################
+# Homebrew Setup
+################################################################################
+#PATH="/bin:/sbin:/usr/sbin:/usr/bin"
+umask 002
 
-function getAppID() {
-if [[ ( $(head <(mdls -name kMDItemCFBundleIdentifier -raw "${@:1:$#}") 2>/dev/null | grep -Foc "(null)" 2>/dev/null ) -eq 0 ) ]] ; then
-head <(mdls -name kMDItemCFBundleIdentifier -raw "${@:1:$#}")
-else
-command grep -F "." <( grep -Fv "plist version" <(grep -Ee "([[:alnum:]]+[\.]+[[:print:]]+)*?" <(grep -A 1 -F "CFBundleIdentifier" <(plutil -convert xml1 -o - -- "${@:1:$#}/Contents/Info.plist" 2>/dev/null) 2>/dev/null | tail -n 1 ) ) | tr -s '><' '>' | sed -e 's/string>//g' | cut -d \> -f 2 2>/dev/null ) 2>/dev/null ;
-fi ;
+#PKG_CONFIG_PATH=$(echo ""$(find ~/homebrew/lib -iname "pkgconfig" -a -type d 2>/dev/null)":"$(find ~/homebrew/Cellar/python@3.11 -iname "pkgconfig" -a -type d 2>/dev/null | tail -n1 )":"$(find ~/homebrew/Cellar/bash -iname "pkgconfig" -a -type d 2>/dev/null)":"$(find /usr -iname "pkgconfig" -a -type d 2>/dev/null | head -n 1 ; wait ;) ; wait ;) ;
+
+# configure paths
+function pkgpathappend() {
+	for PKG_CONFIG_PATH_ARG in "$@" ; do
+		if [[ -d "$PKG_CONFIG_PATH_ARG" ]] && [[ ":$PKG_CONFIG_PATH:" != *":$PKG_CONFIG_PATH_ARG:"* ]] ; then
+			PKG_CONFIG_PATH="${PKG_CONFIG_PATH:+"$PKG_CONFIG_PATH:"}$PKG_CONFIG_PATH_ARG" ;
+			export PKG_CONFIG_PATH ;
+		fi ;
+	done ;
+	wait ;
+	unset PKG_CONFIG_PATH_ARG 2>/dev/null || true ;
 }
 
-TEMP_APP_ID_VAR=$(getAppID "${@:1:$#}")
+#for FORMULA_PC_PATH_VAR in $( brew list -1 | xargs -L1 -I{} brew info {} 2>/dev/null | grep -F "PKG" | cut -d\= -f 2-2 ; wait ; ) ; do
 
-echo "${TEMP_APP_ID_VAR:-${@:1:$#}}"
+#ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+if [[ !( -e ~/homebrew ) ]] ; then printf "error\n" ; exit 126 ; fi ;
+chflags 'hidden' ~/homebrew 2>/dev/null || true ;
+source ~/.bashrc
+HOMEBREW_USER=$(stat -f %u ~/homebrew/)
+HOMEBREW_GROUP=$(stat -f %g ~/homebrew/)
+umask 002
+export ENABLE_CLANG_FORMAT=on
+export CMAKE_OSX_DEPLOYMENT_TARGET=14.2
+export CC=clang
+export CXX=clang
+export CPP=clang
+export CMAKE_PROGRAM_PATH=${PATH}:/Applications/Xcode.app/Contents/Developer/usr/bin
+#export SSL_CERT_DIR=??
+export CMAKE_APPLE_SILICON_PROCESSOR=x86_64
+export CMAKE_BUILD_PARALLEL_LEVEL=8
+export CMAKE_OSX_ARCHITECTURES='arm64 x86_64'
+export MACOSX_DEPLOYMENT_TARGET=14.2
+export CMAKE_XCODE_BUILD_SYSTEM=12 # the new build system
+#CMAKE_OSX_SYSROOT
+export DT_TOOLCHAIN_DIR=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain
+export HOMEBREW_CASK_OPTS="${HOMEBREW_CASK_OPTS} --appdir=~/homebrew/Applications/ --fontdir=~/homebrew/Library/Fonts"
+brew analytics off
+caffeinate -dims brew autoremove
+caffeinate -dims brew update
+caffeinate -dims brew upgrade
 
-exit 0 ;
+##########################
+# set aliases
+##########################
+rm -rf "$(brew --cache)"
+caffeinate -dims brew cleanup
+caffeinate -dims brew autoremove
+
+
+##########################
+# Rebuild All Packages
+##########################
+
+#brew list -1 | xargs -L1 -I{} brew info {} | grep -F "PKG"
+for FORMULA_PC_PATH_VAR in $(find ${HOMEBREW_PREFIX:-~/homebrew}/. -iname "pkgconfig" -a -type d 2>/dev/null ; wait ; ) ; do
+	pkgpathappend ${FORMULA_PC_PATH_VAR} ; wait ;
+done ;
+wait ;
+echo ""
+export PKG_CONFIG_PATH ;
+unset FORMULA_PC_PATH_VAR 2>/dev/null || true ;
+
+# hint for better source builds
+#for FORMULA_LD_PATH_VAR in $( brew list -1 | xargs -L1 -I{} brew info {} 2>/dev/null | grep -F "FLAGS" | cut -d\= -f 2-2 ; wait ; ) ; do
+#for FORMULA_CPP_PATH_VAR in $( brew list -1 | xargs -L1 -I{} brew info {} 2>/dev/null | grep -F "FLAGS" | cut -d\= -f 2-2 ; wait ; ) ; do
+
+#export LDFLAGS="-L${HOMEBREW_PREFIX}/opt/llvm/lib/c++ -Wl,-rpath,${HOMEBREW_PREFIX}/opt/llvm/lib/c++"
+#export LDFLAGS="${LDFLAGS} -L${HOMEBREW_PREFIX}/opt/berkeley-db@5/lib"
+#export CPPFLAGS="-I${HOMEBREW_PREFIX}/opt/berkeley-db@5/include"
+
+
+brew list -1 --formulae | xargs -L1 caffeinate -dims brew reinstall --formula --build-from-source || true ;
+wait ;
+brew outdated -q --casks | xargs -L1 caffeinate -dims brew reinstall --cask --adopt || true ;
+wait ;
+clear ;
+brew list -1 --formulae | xargs -L1 caffeinate -dims brew reinstall --formula --build-from-source || true ;
+wait ;
+caffeinate -dims brew cleanup
+caffeinate -dims brew autoremove
+wait ;
+chown -hR ${HOMEBREW_USER}:${HOMEBREW_GROUP} ~/homebrew 2>/dev/null || sudo -E chown -hR ${HOMEBREW_USER}:${HOMEBREW_GROUP} ~/homebrew || true
+exit 0

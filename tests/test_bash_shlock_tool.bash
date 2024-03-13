@@ -103,7 +103,7 @@ if [[ ( ${EXIT_CODE} -ne 0 ) ]] ; then
 	case "$EXIT_CODE" in
 		0) true ;; #  dead-code
 		127) false ;;
-		*) echo "SKIP: Unclassified issue with '${_TEST_DOC}'" ;;
+		*) echo "SKIP: Unclassified issue." ;;
 	esac
 fi
 
