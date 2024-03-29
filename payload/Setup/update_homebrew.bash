@@ -81,147 +81,49 @@ function pkgpathappend() {
 #for FORMULA_PC_PATH_VAR in $( brew list -1 | xargs -L1 -I{} brew info {} 2>/dev/null | grep -F "PKG" | cut -d\= -f 2-2 ; wait ; ) ; do
 
 #ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
-if [[ !( -e ~/homebrew ) ]] ; then
-cd ~/
-mkdir homebrew && curl -L https://github.com/Homebrew/brew/tarball/master | tar xz --strip 1 -C homebrew
-cd ${OLDPWD}
-fi
+if [[ !( -e ~/homebrew ) ]] ; then printf "error\n" ; exit 126 ; fi ;
 chflags 'hidden' ~/homebrew 2>/dev/null || true ;
 source ~/.bashrc
 HOMEBREW_USER=$(stat -f %u ~/homebrew/)
 HOMEBREW_GROUP=$(stat -f %g ~/homebrew/)
 umask 002
+export ENABLE_CLANG_FORMAT=on
+# need to make this dynamic
+#export CMAKE_OSX_DEPLOYMENT_TARGET=14.2
+export CC=clang
+export CXX=clang
+export CPP=clang
+export CMAKE_PROGRAM_PATH=${PATH}:/Applications/Xcode.app/Contents/Developer/usr/bin
+#export SSL_CERT_DIR=??
+# need to make this dynamic
+#export CMAKE_APPLE_SILICON_PROCESSOR=x86_64
+#export CMAKE_BUILD_PARALLEL_LEVEL=8
+export CMAKE_OSX_ARCHITECTURES='arm64 x86_64'
+export MACOSX_DEPLOYMENT_TARGET=14.2
+# 12 or newer
+export CMAKE_XCODE_BUILD_SYSTEM=12 # the new build system
+#CMAKE_OSX_SYSROOT
+export DT_TOOLCHAIN_DIR=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain
 export HOMEBREW_CASK_OPTS="${HOMEBREW_CASK_OPTS} --appdir=~/homebrew/Applications/ --fontdir=~/homebrew/Library/Fonts"
 brew analytics off
-brew update
-brew upgrade
-
-##########################
-# Tap Homebrew Repos
-##########################
-brew tap "homebrew/core" || true
-brew tap "homebrew/cask" || true
+caffeinate -dims brew autoremove
+caffeinate -dims brew update
+caffeinate -dims brew upgrade
 
 ##########################
 # set aliases
 ##########################
 rm -rf "$(brew --cache)"
+caffeinate -dims brew cleanup
+caffeinate -dims brew autoremove
 
-##########################
-# Network tools
-##########################
-brew install "openssl@3"
-brew install "dnstracer"
-brew install "nmap"
-
-#########################
-# Cloud Apps
-#########################
-#brew install --cask "google-drive-file-stream"
-
-#########################
-# Email / Messaging Apps
-#########################
-#brew install --cask "slack"
-#brew install --cask "twitch"
-
-#########################
-# Files Apps
-#########################
-#brew install --cask "send-to-kindle"
-#brew install --cask "timemachineeditor"
-brew install --cask "jsonlint"
-brew install --cask "phplint"
-brew install --cask "eslint"
-brew install --cask "yamllint"
-brew install --cask "cpplint"
-brew install --cask "rst-lint"
-brew install --cask "markdownlint-cli2"
-
-#########################
-# Media Apps
-#########################
-brew install --cask "max"
-brew install --cask "musicbrainz-picard"
-#brew install --cask "vlc"
-brew install --cask "gimp"
-#brew install --cask "4k-video-downloader"
-
-#########################
-# Security Apps
-#########################
-brew install "libassuan"
-brew install "gnupg-pkcs11-scd" || true
-brew install "libgpg-error"
-brew install "pkcs11-helper"
-brew install "gpg-suite-pinentry" || true
-brew install --cask "opensc" || true
-
-#########################
-# Programming Apps
-#########################
-# brew install --cask "android-file-transfer"
-# brew install --cask "bbedit"
-# brew install --cask "github"
-# brew install --cask "osxfuse"
-# brew install --cask "sublime-text"
-brew install --cask "virtualbox"
-brew install --cask "virtualbox-extension-pack"
-
-#########################
-# Gaming Apps
-#########################
-#brew install --cask "battle-net"
-#brew install --cask "starcraft"
-#brew install --cask "steam"
-#brew install --cask "steamcmd"
-
-#########################
-# Quick Look Apps
-#########################
-#brew install --cask "provisionql"
-#brew install --cask "qlcolorcode"
-#brew install --cask "qlimagesize"
-#brew install --cask "qlmarkdown"
-#brew install --cask "qlstephen"
-#brew install --cask "qlvideo"
-#brew install --cask "quicklook-json"
-#brew install --cask "quicklook-pat"
-#brew install --cask "quicklookapk"
-#brew install --cask "quicklookase"
-#brew install --cask "suspicious-package"
-#brew install --cask "webpquicklook"
-
-#########################
-# Cleanup
-#########################
-brew cleanup
-
-##########################
-# Install CLI Tools
-##########################
-brew install libassuan gnu-pkcs11-scd libgpg-error pkcs11-helper || true
-brew install "bash"
-brew install "bash-completion"
-#brew install "ext4fuse"
-brew install "ffmpeg"
-#brew install "fuse-ntfs-3g"
-brew install "nano"
-#brew install "python"
-#brew install "python@3.9"
-#brew install "python@3.10"
-brew install "python@3.11"
-#brew install "wget"
-brew install "curl"
-#brew install "youtube-dl"
-brew install --cask "docker"
 
 ##########################
 # Rebuild All Packages
 ##########################
 
 #brew list -1 | xargs -L1 -I{} brew info {} | grep -F "PKG"
-for FORMULA_PC_PATH_VAR in $(find ~/homebrew/. -iname "pkgconfig" -a -type d 2>/dev/null ; wait ; ) ; do
+for FORMULA_PC_PATH_VAR in $(find ${HOMEBREW_PREFIX:-~/homebrew}/. -iname "pkgconfig" -a -type d 2>/dev/null ; wait ; ) ; do
 	pkgpathappend ${FORMULA_PC_PATH_VAR} ; wait ;
 done ;
 wait ;
@@ -229,7 +131,25 @@ echo ""
 export PKG_CONFIG_PATH ;
 unset FORMULA_PC_PATH_VAR 2>/dev/null || true ;
 
-brew list -1 --formulae | xargs -L1 caffeinate -dims brew reinstall --build-from-source || true ;
+# hint for better source builds
+#for FORMULA_LD_PATH_VAR in $( brew list -1 | xargs -L1 -I{} brew info {} 2>/dev/null | grep -F "FLAGS" | cut -d\= -f 2-2 ; wait ; ) ; do
+#for FORMULA_CPP_PATH_VAR in $( brew list -1 | xargs -L1 -I{} brew info {} 2>/dev/null | grep -F "FLAGS" | cut -d\= -f 2-2 ; wait ; ) ; do
+
+export LDFLAGS="-L${HOMEBREW_PREFIX}/opt/llvm/lib/c++ -Wl,-rpath,${HOMEBREW_PREFIX}/opt/llvm/lib/c++"
+export LDFLAGS="${LDFLAGS} -L${HOMEBREW_PREFIX}/opt/berkeley-db@5/lib"
+export CPPFLAGS="-I${HOMEBREW_PREFIX}/opt/berkeley-db@5/include"
+declare HOMEBREW_NO_INSTALL_CLEANUP=1
+
+brew list -1 --formulae | xargs -L1 caffeinate -dims brew reinstall --formula --build-from-source || true ;
+wait ;
+brew outdated -q --casks | xargs -L1 caffeinate -dims brew reinstall --cask --adopt || true ;
+wait ;
+clear ;
+brew list -1 --formulae | xargs -L1 caffeinate -dims brew reinstall --formula --build-from-source || true ;
+wait ;
+unset HOMEBREW_NO_INSTALL_CLEANUP 2>/dev/null || true ;
+caffeinate -dims brew cleanup
+caffeinate -dims brew autoremove
 wait ;
 chown -hR ${HOMEBREW_USER}:${HOMEBREW_GROUP} ~/homebrew 2>/dev/null || sudo -E chown -hR ${HOMEBREW_USER}:${HOMEBREW_GROUP} ~/homebrew || true
 exit 0
