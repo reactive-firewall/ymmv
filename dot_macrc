@@ -33,7 +33,7 @@ export CURRENT_SECONDS=$(date -j "+%s")
 
 declare -i MAX_DOWNLOAD_CONNECTIONS=5
 OS_VERSION=$(sw_vers -productVersion)
-OS_VERSION_MAJOR=$(echo $OS_VERSION | cut -d. -f 1-2 )
+OS_VERSION_MAJOR=$(printf "%s\n" $OS_VERSION | cut -d. -f 1-2 )
 
 
 # OPTION FLAGS
@@ -88,21 +88,21 @@ export TOKEN_ID=$(defaults read com.apple.findmy.fmfcore.notbackedup publicAPSTo
 
 function WRITE() {
 	DEFAULTS=$(command -v defaults)
-	echo "Configuring ${1} ${2:-}" ;
+	printf "%s\n" "Configuring ${1} ${2:-}" ;
 	if [[ ("${USE_DEVELOPER_SETUP}" == "YES") ]] ; then
-		echo "    Will use key \"${2:-'<empty>'}\" " ;
-		echo "    Will use type \"${3:-data}\" " ;
+		printf "%s\n" "    Will use key \"${2:-'<empty>'}\" " ;
+		printf "%s\n" "    Will use type \"${3:-data}\" " ;
 	fi
-	if [[ ( $(echo "-"$(${DEFAULTS} read-type "${1}" "${2:-}" 2>/dev/null | cut -d\  -f 3 | sed -Ee 's/integer/int/g' | sed -Ee 's/dictionary/dict/g' | sed -Ee 's/boolean/bool/g' )) == $(echo "${3:-data}" | sed -Ee 's/-add//g') ) ]] ; then
-		${DEFAULTS} write "${1}" "${2:-}" "${@:3:$#}" || echo "args: \"${2:-}\" \"${@:3:$#}\"" ;
+	if [[ ( $(printf "%s\n" "-"$(${DEFAULTS} read-type "${1}" "${2:-}" 2>/dev/null | cut -d\  -f 3 | sed -Ee 's/integer/int/g' | sed -Ee 's/dictionary/dict/g' | sed -Ee 's/boolean/bool/g' )) == $(printf "%s\n" "${3:-data}" | sed -Ee 's/-add//g') ) ]] ; then
+		${DEFAULTS} write "${1}" "${2:-}" "${@:3:$#}" || printf "%s\n" "args: \"${2:-}\" \"${@:3:$#}\"" ;
 	else
-		echo "    Should use type \"-"$(${DEFAULTS} read-type "${1}" "${2:-}" 2>/dev/null | cut -d\  -f 3 | sed -Ee 's/integer/int/g' | sed -Ee 's/dictionary/dict/g' | sed -Ee 's/boolean/bool/g')"\""
+		printf "%s\n" "    Should use type \"-"$(${DEFAULTS} read-type "${1}" "${2:-}" 2>/dev/null | cut -d\  -f 3 | sed -Ee 's/integer/int/g' | sed -Ee 's/dictionary/dict/g' | sed -Ee 's/boolean/bool/g')"\""
 		if [[ ("${USE_DEVELOPER_SETUP}" == "YES") ]] ; then
-			echo "    DEVELOPER OVERRIDE  (Admin Help You, You'll NEED it to recover!)" ;
-			${DEFAULTS} write "${1}" "${2:-}" "${@:3:$#}" || echo "args: \"${2:-}\" \"${@:3:$#}\"" ;
-			echo "    " ;
+			printf "%s\n" "    DEVELOPER OVERRIDE  (Admin Help You, You'll NEED it to recover!)" ;
+			${DEFAULTS} write "${1}" "${2:-}" "${@:3:$#}" || printf "%s\n" "args: \"${2:-}\" \"${@:3:$#}\"" ;
+			printf "%s\n" "    " ;
 		else
-			echo "    SKIPPING INSTEAD (safety)" ;
+			printf "%s\n" "    SKIPPING INSTEAD (safety)" ;
 		fi ;
 	fi ;
 	return $? ;
@@ -111,15 +111,15 @@ function WRITE() {
 function DISABLE() {
 	DEFAULTS=$(command -v defaults)
 	if [[ ( $(${DEFAULTS} read "${1}" "${@:2:$#}" 2>/dev/null) -ne 0 ) ]] ; then
-		echo "Disabling ${1} ${@:2:$#}" ;
+		printf "%s\n" "Disabling ${1} ${@:2:$#}" ;
 		${DEFAULTS} write "${1}" "${@:2:$#}" -bool NO ;
 	else
-		echo "Skipping ${1} ${@:2:$#} as it is already disabled" ;
+		printf "%s\n" "Skipping ${1} ${@:2:$#} as it is already disabled" ;
 	fi
 	if [[ ( $(${DEFAULTS} read "${1}" "${@:2:$#}" 2>/dev/null) -eq 0 ) ]] ; then
 		return 0 ;
 	else
-		echo "Error ${1} ${@:2:$#} is still NOT enabled" >&2 && false;
+		printf "%s\n" "Error ${1} ${@:2:$#} is still NOT enabled" >&2 && false;
 		return 255 ;
 	fi
 }
@@ -127,15 +127,15 @@ function DISABLE() {
 function ENABLE() {
 	DEFAULTS=$(command -v defaults)
 	if [[ ( $(${DEFAULTS} read "${1}" "${@:2:$#}" 2>/dev/null ) -eq 0 ) ]] ; then
-		echo "Enabling ${1} ${@:2:$#}" ;
+		printf "%s\n" "Enabling ${1} ${@:2:$#}" ;
 		${DEFAULTS} write "${1}" "${@:2:$#}" -bool YES ;
 	else
-		echo "Skipping ${1} ${@:2:$#} as it is already enabled" ;
+		printf "%s\n" "Skipping ${1} ${@:2:$#} as it is already enabled" ;
 	fi
 	if [[ ( $(${DEFAULTS} read "${1}" "${@:2:$#}" 2>/dev/null) -eq 1 ) ]] ; then
 		return 0 ;
 	else
-		echo "Error ${1} ${@:2:$#} is still NOT enabled" >&2 && false;
+		printf "%s\n" "Error ${1} ${@:2:$#} is still NOT enabled" >&2 && false;
 		return 255 ;
 	fi
 }
@@ -143,15 +143,15 @@ function ENABLE() {
 function DELETE() {
 	DEFAULTS=$(command -v defaults)
 	if [[ ( $(${DEFAULTS} read "${1}" "${@:2:$#}" 2>/dev/null | wc -l) -gt 0 ) ]] ; then
-		echo "Deleting ${1} ${@:2:$#}" ;
-		${DEFAULTS} delete "${1}" "${@:2:$#}" || echo "Error delete failed" >&2 ;
+		printf "%s\n" "Deleting ${1} ${@:2:$#}" ;
+		${DEFAULTS} delete "${1}" "${@:2:$#}" || printf "%s\n" "Error delete failed" >&2 ;
 	else
-		echo "Skipping ${1} ${@:2:$#} as there is nothing to delete" ;
+		printf "%s\n" "Skipping ${1} ${@:2:$#} as there is nothing to delete" ;
 	fi
 	if [[ ( $(${DEFAULTS} read "${1}" "${@:2:$#}" 2>/dev/null | wc -l) -lt 1 ) ]] ; then
 		return 0 ;
 	else
-		echo "Error ${1} ${@:2:$#} is still NOT deleted" >&2 && false;
+		printf "%s\n" "Error ${1} ${@:2:$#} is still NOT deleted" >&2 && false;
 		return 255 ;
 	fi
 }
@@ -159,14 +159,14 @@ function DELETE() {
 function ENFORCE_GRAPHICS_MODE() {
 	LAST_ARG=$(($#-1))
 	if [[ ("${USE_FANCY_GRAPHICS}" == "YES") ]] ; then
-		echo "Optimizing for fancy graphics enabled"
+		printf "%s\n" "Optimizing for fancy graphics enabled"
 		if [[ ( "${@:$#:$#}" == "YES" ) ]] ; then
 			ENABLE "${@:1:$LAST_ARG}"
 		else
 			DISABLE "${@:1:$LAST_ARG}"
 		fi
 	else
-		echo "Optimizing for faster graphics response"
+		printf "%s\n" "Optimizing for faster graphics response"
 		if [[ ( "${@:$#:$#}" == "YES" ) ]] ; then
 			DISABLE "${@:1:$LAST_ARG}"
 		else
@@ -179,14 +179,14 @@ function ENFORCE_GRAPHICS_MODE() {
 function ENFORCE_DEV_MODE() {
 	LAST_ARG=$(($#-1))
 	if [[ ("${USE_DEVELOPER_SETUP}" == "YES") ]] ; then
-		echo "Optimizing for developer user"
+		printf "%s\n" "Optimizing for developer user"
 		if [[ ( "${@:$#:$#}" == "YES" ) ]] ; then
 			ENABLE "${@:1:$LAST_ARG}"
 		else
 			DISABLE "${@:1:$LAST_ARG}"
 		fi
 	else
-		echo "Optimizing for normal user"
+		printf "%s\n" "Optimizing for normal user"
 		if [[ ( "${@:$#:$#}" == "YES" ) ]] ; then
 			DISABLE "${@:1:$LAST_ARG}"
 		else
@@ -200,18 +200,18 @@ function ENFORCE_DEBUG_MODE() {
 	LAST_ARG=$(($#-1))
 	local EXIT_CODE=0 ;
 	if [[ ("${USE_DEBUG_MODE}" == "YES") ]] ; then
-		echo "Optimizing Debug-Mode for developer user" ;
+		printf "%s\n" "Optimizing Debug-Mode for developer user" ;
 		if [[ ( "${USE_DEVELOPER_SETUP}" == "YES" ) ]] ; then
 			ENFORCE_DEV_MODE "${@:1:$LAST_ARG}" "${@:$#:$#}"
 			EXIT_CODE=$? ;
 		else
-			echo "    Except you are NOT a developer user!" >&2 ;
-			echo "    Optimizing run-mode for normal user INSTEAD (safety)" ;
+			printf "%s\n" "    Except you are NOT a developer user!" >&2 ;
+			printf "%s\n" "    Optimizing run-mode for normal user INSTEAD (safety)" ;
 			DISABLE "${@:1:$LAST_ARG}" ;
 			EXIT_CODE=$? ;
 		fi
 	else
-		echo "Optimizing run-mode for normal user"
+		printf "%s\n" "Optimizing run-mode for normal user"
 		DELETE "${@:1:$LAST_ARG}"
 		EXIT_CODE=$? ;
 	fi
@@ -233,8 +233,8 @@ if [[ ( -r "${HOME}/.UserPreferences" ) ]] ; then
 	export -f ENFORCE_DEV_MODE
 	source <(grep -oE "^(?:\s*)?[-0-9A-Z_]+[=]{1}.+$" "${HOME}/.UserPreferences" | sed -Ee 's/^[[:space:]]+//g' | grep -ovE "^WRITE" | grep -ovE "^DEFAULTS") || true
 	# loads ALLOWED user SETTINGS (IGNORES OTHER SHELL COMMANDS)
-	echo "dev mode is set to ${USE_DEVELOPER_SETUP}"
-	echo "Debug mode is set to ${USE_DEBUG_MODE:-unset}"
+	printf "%s\n" "dev mode is set to ${USE_DEVELOPER_SETUP}"
+	printf "%s\n" "Debug mode is set to ${USE_DEBUG_MODE:-unset}"
 	export USE_DEVELOPER_SETUP="${USE_DEVELOPER_SETUP:-NO}" ;
 	export USE_DEBUG_MODE="${USE_DEBUG_MODE:-NO}" ;
 	export CAL_UUID="${CAL_UUID:-${ZERO_UUID}}" ;
@@ -1069,7 +1069,7 @@ WRITE ${PPDOM}.iChat.inputLine inputLineSettingsKey -dict automaticDashSubstitut
 #-----------------------------------------------------------#
 
 if [[ ($HAS_CLOUD_ID == "YES") ]] ; then
-WRITE ${PPDOM}.commcenter.callservices "last.known.icloud.id" -string $(echo -n "$CLOUD_EMAIL" | openssl dgst -sha1 ) ;
+WRITE ${PPDOM}.commcenter.callservices "last.known.icloud.id" -string $(printf "%s" "$CLOUD_EMAIL" | openssl dgst -sha1 ) ;
 fi
 
 #-----------------------------------------------------------#
@@ -1077,7 +1077,7 @@ fi
 #-----------------------------------------------------------#
 
 #recheck on OS updates
-if [[ $(echo "$OS_VERSION_MAJOR" == "10.15") ]] ; then
+if [[ $(printf "%s\n" "$OS_VERSION_MAJOR" == "10.15") ]] ; then
 WRITE ${PPDOM}.TelephonyUtilities CachedVCCaps -int 17592188010496
 WRITE ${PPDOM}.TelephonyUtilities thumperCallingCapabilitiesStates -array ;
 fi;
@@ -1676,7 +1676,7 @@ WRITE ${PPDOM}.FontRegistry.user LastUpdated -date "${CURRENT_DATE_TIME}"
 #-----------------------------------------------------------#
 
 for SOME_DOMAIN in Siri.SiriTodayExtension SiriNCService ; do
-	WRITE ${PPDOM}.${SOME_DOMAIN} AppleLanguages -array $(echo -n "${LANG}" | tr '_-' '-')
+	WRITE ${PPDOM}.${SOME_DOMAIN} AppleLanguages -array $(printf "%s" "${LANG}" | tr '_-' '-')
 	WRITE ${PPDOM}.${SOME_DOMAIN} AppleLocale -string ${LANG}
 done ;
 
@@ -1684,7 +1684,7 @@ done ;
 # siri.context.service                                      #
 #-----------------------------------------------------------#
 
-WRITE ${PPDOM}.siri.context.service InstalledLanguages -array $(echo -n "${LANG}" | tr '_-' '-')
+WRITE ${PPDOM}.siri.context.service InstalledLanguages -array $(printf "%s" "${LANG}" | tr '_-' '-')
 
 #-----------------------------------------------------------#
 # speech.recognition.AppleSpeechRecognition.prefs           #
@@ -1698,7 +1698,7 @@ ENABLE ${PPDOM}.speech.recognition.AppleSpeechRecognition.prefs DictationIMIntro
 
 WRITE ${PPDOM}.assistant.backedup "Modification Dates" -date "${CURRENT_DATE_TIME}"
 
-WRITE ${PPDOM}.assistant.backedup "Session Language" -string $(echo -n "${LANG}" | tr '_-' '-')
+WRITE ${PPDOM}.assistant.backedup "Session Language" -string $(printf "%s" "${LANG}" | tr '_-' '-')
 
 #-----------------------------------------------------------#
 # assistant.support                                         #
@@ -2009,8 +2009,8 @@ WRITE ${PPDOM}.screensaver askForPasswordDelay -int 0
 
 ENABLE ${PPDOM}.stocks.account deleteOnNextLaunch
 
-echo ""
-#echo "========== Just Finished =========="
+printf "%s\n" ""
+#printf "%s\n" "========== Just Finished =========="
 
 #-----------------------------------------------------------#
 # DOMAINS FOR ADMIN TO RESEARCH FURTHER                    #
@@ -2046,7 +2046,7 @@ bash <(defaults find "NSWindow Frame " 2>/dev/null | sed -Ee 's/Found [0-9]+ key
 # Commented out, as this is known to cause problems in various Adobe apps :(
 # See https://github.com/mathiasbynens/dotfiles/issues/237
 # see setting in .bashrc instead
-#echo "0x08000100:0" > ~/.CFUserTextEncoding
+#printf "%s\n" "0x08000100:0" > ~/.CFUserTextEncoding
 
 # Remove duplicates in the "Open With" menu (also see `lscleanup` alias)
 /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -kill -r -domain local -domain system -domain user || true
@@ -2103,9 +2103,9 @@ export -n GPDOM
 if [[ ("${USE_DEVELOPER_SETUP}" == "YES") ]] ; then
 # If not running interactively, don't do anything
 if [[ ( -t 0 ) ]] ; then
-echo "Developer Terminal detected. (Restart required)"
-echo "try: #kill -3 -1 " ;
-echo "try: #ps -o pid -o command -u $USER | grep -vF \"coreauthd\" | sed -E -e 's/^[[:space:]]+//g' | tr -s ' ' ' ' | cut -d\  -f 1 | xargs -L1 -I{} kill -3 {}";
+printf "%s\n" "Developer Terminal detected. (Restart required)"
+printf "%s\n" "try: #kill -3 -1 " ;
+printf "%s\n" "try: #ps -o pid -o command -u $USER | grep -vF \"coreauthd\" | sed -E -e 's/^[[:space:]]+//g' | tr -s ' ' ' ' | cut -d\  -f 1 | xargs -L1 -I{} kill -3 {}";
 exit 0 ;
 fi
 fi
@@ -2117,7 +2117,7 @@ fi
 #ps -o pid -o command -u $USER | grep -vF "coreauthd" | sed -E -e 's/^[[:space:]]+//g' | tr -s ' ' ' ' | cut -d\  -f 1 | xargs -L1 -I{} kill -3 {} 2>/dev/null || true ;
 kill -QUIT -1 ;
 
-echo "Done. Note that some of these changes require a logout/restart to take effect."
+printf "%s\n" "Done. Note that some of these changes require a logout/restart to take effect."
 
 exit 0 ;
 
