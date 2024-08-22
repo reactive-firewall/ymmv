@@ -17,10 +17,10 @@ jobs:
     env:
       LANG: "en_US.UTF-8"
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-python@v3
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
       with:
-        python-version: 3.9
+        python-version: "3.12"
     - name: Pre-Clean
       id: clean
       run: make -j1 -f Makefile purge 2>/dev/null || true ;
@@ -44,32 +44,29 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.7, 3.8]
+        python-version: [3.9, "3.10"]
         lang-var: ["de.utf-8", "jp.utf-8"]
         experimental: [true]
         include:
-          - python-version: 3.7
-            lang-var: "en_US.utf-8"
-            experimental: false
-          - python-version: 3.8
-            lang-var: "en_US.utf-8"
-            experimental: false
           - python-version: 3.9
+            lang-var: "en_US.utf-8"
+            experimental: false
+          - python-version: "3.10"
             lang-var: "de.utf-8"
             experimental: false
-          - python-version: 3.9
+          - python-version: "3.10"
             lang-var: "jp.utf-8"
             experimental: false
-          - python-version: 3.9
+          - python-version: "3.10"
             lang-var: "en_US.utf-8"
             experimental: false
     env:
       PYTHON_VERSION: ${{ matrix.python-version }}
       LANG: ${{ matrix.lang-var }}
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Setup Python
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
     - name: Setup dependencies
@@ -108,14 +105,14 @@ jobs:
     timeout-minutes: 10
     strategy:
       matrix:
-        python-version: [3.7, 3.8, 3.9]
+        python-version: [3.9, "3.10", "3.11", "3.12"]
     env:
       PYTHON_VERSION: ${{ matrix.python-version }}
       LANG: "en_US.utf-8"
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Setup Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies for ${{ matrix.python-version }}
@@ -142,7 +139,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: [3.7, 3.8, 3.9]
+        python-version: [3.9, "3.10", "3.11", "3.12"]
     env:
       OS: ${{ matrix.os }}
       PYTHON_VERSION: ${{ matrix.python-version }}
@@ -150,9 +147,9 @@ jobs:
       CODECLIMATE_REPO_TOKEN: ${{ secrets.CODECLIMATE_TOKEN }}
       CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Setup Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies for python ${{ matrix.python-version }} on ${{ matrix.os }}
@@ -219,15 +216,14 @@ jobs:
     timeout-minutes: 10
 
     env:
-      PYTHON_VERSION: '3.9'
+      PYTHON_VERSION: '3.11'
       LANG: "en_US.utf-8"
-
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Setup Python
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v5
       with:
-        python-version: 3.9
+        python-version: '3.11'
     - name: Install dependencies for python Linters
       run: |
         pip install --upgrade pip setuptools wheel
@@ -256,7 +252,8 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
-        python-version: [3.7, 3.8, 3.9]
+        python-version: [3.9, "3.10", "3.11", "3.12"]
+
     env:
       OS: ${{ matrix.os }}
       PYTHON_VERSION: ${{ matrix.python-version }}
@@ -265,9 +262,9 @@ jobs:
       CODECLIMATE_REPO_TOKEN: ${{ secrets.CODECLIMATE_TOKEN }}
       CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Setup Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies for python ${{ matrix.python-version }} on ${{ matrix.os }}
@@ -340,15 +337,15 @@ jobs:
     timeout-minutes: 30
 
     env:
-      PYTHON_VERSION: '3.9'
+      PYTHON_VERSION: '3.11'
       LANG: 'en_US.utf-8'
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Setup Python
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v5
       with:
-        python-version: 3.9
+        python-version: '3.11'
     - name: Install dependencies for Tox
       run: |
         pip install --upgrade pip setuptools wheel tox
