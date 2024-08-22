@@ -172,7 +172,7 @@ install-tools-mac: must_be_root /usr/local/bin/ /usr/local/bin/sud /usr/local/bi
 install-home: ~/.bashrc ~/.profile ~/.bash_profile ~/.bash_aliases ~/.bash_history ~/.tcshrc ~/.cshrc ~/.zshrc
 	$(QUIET)$(ECHO) "$@: Configured."
 
-install-better-home: install-home ~/.nofinger ~/.plan nano-config git-config
+install-better-home: install-home ~/.nofinger ~/.plan nano-config git-config completion-config
 	$(QUIET)$(ECHO) "$@: Configured."
 
 nano-config: ~/.config/nano/nanorc ~/.config/nano/nano_syntax
@@ -182,6 +182,10 @@ nano-config: ~/.config/nano/nanorc ~/.config/nano/nano_syntax
 git-config: ~/.config/git/attributes
 	$(QUIET)$(WAIT)
 	$(QUIET)$(ECHO) "User Git: Configured."
+
+completion-config: ~/.config/completions ~/.config/completions/ymmv
+	$(QUIET)$(WAIT)
+	$(QUIET)$(ECHO) "User completions: Configured."
 
 ~/.config/: ./payload/config/
 	$(QUIET)$(MKDIR) $@ 2>/dev/null || true
@@ -194,6 +198,14 @@ git-config: ~/.config/git/attributes
 	$(QUIET)$(INSTALL) $< $@ 2>/dev/null || true
 	$(QUIET)$(CHOWN) $(INST_USER_OWN) $@ 2>/dev/null || true
 	$(QUIET)$(CHMOD) $(INST_CONFIG_OPTS) $@ 2>/dev/null || true
+	$(QUIET)$(WAIT)
+	$(QUIET)$(ECHO) "$@: installed"
+
+~/.config/completions/%: ./payload/config/completions/% ~/.config/compleations/
+	$(QUIET)$(WAIT)
+	$(QUIET)$(INSTALL) $< $@ 2>/dev/null || true
+	$(QUIET)$(CHOWN) $(INST_USER_OWN) $@ 2>/dev/null || true
+	$(QUIET)$(CHMOD) $(INST_TOOL_OPTS) $@ 2>/dev/null || true
 	$(QUIET)$(WAIT)
 	$(QUIET)$(ECHO) "$@: installed"
 

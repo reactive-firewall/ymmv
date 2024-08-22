@@ -614,6 +614,11 @@ if ! shopt -oq posix; then
       fi
     done
   fi
+
+  if [ -r ${HOME}/.config/completions/ymmv ]; then
+    source ${HOME}/.config/completions/ymmv
+  fi
+
 fi
 
 # set up man page search
