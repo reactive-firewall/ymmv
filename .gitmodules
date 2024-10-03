@@ -1,0 +1,10 @@
+[submodule "CEP-5"]
+	path = CEP/5
+	url = https://gist.github.com/3d2bd3cf37f87974df6f7bee31a05a89.git
+	ignore = dirty
+
+[submodule "CEP-8"]
+	path = CEP/8
+	url = https://gist.github.com/b7ee98df9e636a51806e62ef9c4ab161.git
+	ignore = dirty
+	
