@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 56;
+	objectVersion = 70;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -62,6 +62,11 @@
 		EEDA4C142A745450004C4498 /* dot_logrc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = dot_logrc; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		84078A632CAF525400E1AB0B /* 5 */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = 5; sourceTree = "<group>"; };
+		84078A642CAF525600E1AB0B /* 8 */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = 8; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
+
 /* Begin PBXFrameworksBuildPhase section */
 		EE5D00A92A732000003B7E49 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
@@ -83,6 +88,7 @@
 		EE5D00A32A732000003B7E49 = {
 			isa = PBXGroup;
 			children = (
+				EEDA4C132A745305004C4499 /* CEP */,
 				EEDA4C132A745305004C4498 /* dot_files */,
 				EEA99C252A7451E500D0D9C3 /* LICENSE.md */,
 				EEA99C1E2A7451E400D0D9C3 /* Pak.terminal */,
@@ -151,6 +157,15 @@
 				EEA99C192A7451E400D0D9C3 /* dot_tcshrc */,
 			);
 			name = dot_files;
+			sourceTree = "<group>";
+		};
+		EEDA4C132A745305004C4499 /* CEP */ = {
+			isa = PBXGroup;
+			children = (
+				84078A632CAF525400E1AB0B /* 5 */,
+				84078A642CAF525600E1AB0B /* 8 */,
+			);
+			path = CEP;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -235,7 +250,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				EEDA4C152A745450004C4498,
+				EEDA4C152A745450004C4498 /* dot_logrc in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
