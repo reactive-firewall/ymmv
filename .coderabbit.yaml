@@ -6,16 +6,25 @@ reviews:
     # Code Review Instructions
 
     - Ensure the code follows best practices and coding standards.
-    - For **Python** code, follow [PEP 20](https://www.python.org/dev/peps/pep-0020/) and [CEP-8](https://gist.github.com/reactive-firewall/b7ee98df9e636a51806e62ef9c4ab161) standards.
-    - For **BASH** and **Shellscript** code, follow [Pure BASH Bible](https://github.com/dylanaraps/pure-bash-bible) and [CEP-5](https://gist.github.com/reactive-firewall/3d2bd3cf37f87974df6f7bee31a05a89) standards.
-    - Check all bash files start with an [extensive disclaimer](https://gist.github.com/reactive-firewall/866b42d175ae3ebefcb2a5878b30ea17).
+    - For **Python** code, follow
+      [PEP 20](https://www.python.org/dev/peps/pep-0020/) and
+      [CEP-8](https://gist.github.com/reactive-firewall/b7ee98df9e636a51806e62ef9c4ab161)
+      standards.
+    - For **BASH** and **Shellscript** code, follow
+      [Pure BASH Bible](https://github.com/dylanaraps/pure-bash-bible) and
+      [CEP-5](https://gist.github.com/reactive-firewall/3d2bd3cf37f87974df6f7bee31a05a89)
+      standards.
+    - Check all **BASH** files start with an
+      [extensive disclaimer](https://gist.github.com/reactive-firewall/866b42d175ae3ebefcb2a5878b30ea17).
     - Check for security vulnerabilities and potential issues.
     - Ensure the code follows the **DRY, AHA, and SOLID** principles.
 
     # Documentation Review Instructions
     - Verify that documentation and comments are clear and comprehensive.
     - Verify that documentation and comments are free of spelling mistakes.
-    - Verify that technical documentation includes a "References" section at the end of documentation, using the same format as actual RFCs, with both "Normative References" and "Informative References".
+    - Verify that technical documentation includes a "References" section at
+      the end of documentation, using the same format as actual RFCs, with
+      both "Normative References" and "Informative References".
 
     # Test Code Review Instructions
     - Ensure that test code is automated, comprehensive, and follows testing best practices.
@@ -29,29 +38,8 @@ reviews:
   high_level_summary_placeholder: '@coderabbitai Summary'
   auto_title_placeholder: '@coderabbitai'
   review_status: true
-  poem: true
-  collapse_walkthrough: false
-  sequence_diagrams: true
-  changed_files_summary: true
   labeling_instructions: []
-  path_filters:
-    include:
-      - '**/*.{py,js,sh,md,txt,yml,bash,yaml,json}'
-      - '.*{rc,conf,cfg,yml,yaml,json}'
-      - 'README.md'
-      - 'LICENSE.md'
-      - 'MAKEFILE'
-      - 'tests/check_*'
-      - 'tests/test_*'
-      - 'docs/**'
-    exclude:
-      - '*.xc*/**'
-      - 'node_modules/**'
-      - 'dist/**'
-      - 'build/**'
-      - '.git/**'
-      - 'venv/**'
-      - '__pycache__/**'
+  path_filters: ['!*.xc*/**', '!node_modules/**', '!dist/**', '!build/**', '!.git/**', '!venv/**', '!__pycache__/**']
   path_instructions:
     - path: README.md
       instructions: >-
@@ -75,6 +63,8 @@ reviews:
         4. As a general guideline, try to provide any relevant, official, and supporting documentation links to any tool's suggestions in review comments. This guideline is important for posterity.
 
         5. As a general rule, undocumented function definitions and class definitions in the project's Python code are assumed incomplete. Please consider suggesting a short summary of the code for any of these incomplete definitions as docstrings when reviewing.
+
+        6. Verify Flake8's configuration file is located at ".flake8.ini"
     - path: tests/*
       instructions: >-
         When reviewing test code:
@@ -116,7 +106,6 @@ reviews:
   abort_on_close: true
   auto_review:
     enabled: true
-    auto_incremental_review: true
     ignore_title_keywords: []
     labels: []
     drafts: false
@@ -150,9 +139,6 @@ reviews:
           - TWELFTH_OF_NEVER
           - OXFORD_SPELLING
           - PASSIVE_VOICE
-    flake8:
-      enabled: true
-      configuration_file: ".flake8.ini"
     shellcheck:
       enabled: true
     ruff:
@@ -182,5 +168,3 @@ reviews:
     yamllint:
       enabled: true
       configuration_file: ".yamllint.conf"
-    jsonlint:
-      enabled: true
