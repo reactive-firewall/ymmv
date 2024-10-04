@@ -95,6 +95,18 @@ For a full list of available commands, refer to the `Makefile`.
 
 ## Directory Structure
 
+```ascii
+ymmv/
+├── payload/
+│   ├── bin/
+│   ├── config/
+│   ├── Setup/
+│   └── etc/
+├── tests/
+├── Makefile
+└── dot_files/
+```
+
 - **payload/**
   - **bin/**: Custom bash scripts and tools.
   - **config/**: Configuration files for various applications and services.
