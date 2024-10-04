@@ -30,7 +30,7 @@ jobs:
         id: yamlfiles
         shell: bash
         run: |
-          FILES=$(git ls-files --exclude-standard -- *.yaml *.yml **/*.yml .**/**/*.yml )
+          FILES=$(git ls-files --exclude-standard -- *.yaml *.yml **/*.yml ./.circleci/*.yml ./.github/**/*.yml )
           if [ -z "$FILES" ]; then
             printf "%s\n" "No YAML files found."
             printf "%s\n" "files=" >> "$GITHUB_OUTPUT"
