@@ -1,0 +1,105 @@
+# .coderabbit.yaml
+version: 2
+language: en
+review:
+  enabled: true
+  instructions: |
+    # Code Review Instructions
+
+    - Ensure the code follows best practices and coding standards.
+    - For **Python** code, follow [PEP 20](https://www.python.org/dev/peps/pep-0020/) and [CEP-8](https://gist.github.com/reactive-firewall/b7ee98df9e636a51806e62ef9c4ab161) standards.
+    - For **BASH** and **Shellscript** code, follow [Pure BASH Bible](https://github.com/dylanaraps/pure-bash-bible) and [CEP-5](https://gist.github.com/reactive-firewall/3d2bd3cf37f87974df6f7bee31a05a89) standards.
+    - Check all bash files start with an [extensive disclaimer](https://gist.github.com/reactive-firewall/866b42d175ae3ebefcb2a5878b30ea17).
+    - Check for security vulnerabilities and potential issues.
+    - Ensure the code follows the **DRY, AHA, and SOLID** principles.
+
+    # Documentation Review Instructions
+    - Verify that documentation and comments are clear and comprehensive.
+    - Verify that documentation and comments are free of spelling mistakes.
+    - Verify that technical documentation includes a "References" section at the end of documentation, using the same format as actual RFCs, with both "Normative References" and "Informative References".
+
+    # Test Code Review Instructions
+    - Ensure that test code is automated, comprehensive, and follows testing best practices.
+    - Verify that all critical functionality is covered by tests.
+
+    # Misc.
+    - Confirm that the code meets the project's requirements and objectives.
+    - Confirm that copyright years are up-to date whenever a file is changed.
+
+linters:
+  languagetool:
+    enabled: true
+    language: en-US
+    configuration:
+      level: picky
+      mother_tongue: en
+      dictionary:
+        - 'reactive-firewall'
+        - 'CEP-8'
+        - 'CEP-5'
+        - 'Shellscript'
+        - 'bash'
+      disabled_rules:
+        - EN_QUOTES
+        - CONSECUTIVE_SPACES
+      enabled_rules:
+        - STYLE
+        - EN_CONTRACTION_SPELLING
+        - EN_WORD_COHERENCY
+        - IT_IS_OBVIOUS
+        - TWELFTH_OF_NEVER
+        - OXFORD_SPELLING
+        - PASSIVE_VOICE
+  flake8:
+    enabled: true
+    configuration_file: ".flake8.ini"
+  shellcheck:
+    enabled: true
+  ruff:
+    enabled: true
+    configuration:
+      extend_select:
+        - E  # Pycodestyle errors (style issues)
+        - F  # PyFlakes codes (logical errors)
+        - W  # Pycodestyle warnings
+        - N  # PEP 8 naming conventions
+      ignore:
+        - W191
+        - W391
+        - E117
+        - D208
+      line_length: 100
+      dummy_variable_rgx: '^(_.*|junk|extra)$'  # Variables starting with '_' or named 'junk' or 'extras', are considered dummy variables
+      external:
+        flake8-blind-except: {}
+        flake8-docstrings: {}
+        flake8-comprehensions: {}
+        flake8-debugger: {}
+        flake8-eradicate: {}
+        # Include other Flake8 plugins as needed
+  markdownlint:
+    enabled: true
+  yamllint:
+    enabled: true
+    configuration_file: ".yamllint.conf"
+  jsonlint:
+    enabled: true
+
+path_filters:
+  include:
+    - '**/*.{py,js,sh,md,txt,yml,bash,yaml,json}'
+    - '.*{rc,conf,cfg,yml,yaml,json}'
+    - 'README.md'
+    - 'LICENSE.md'
+    - 'MAKEFILE'
+    - 'tests/check_*'
+    - 'tests/test_*'
+    - 'docs/**'
+  exclude:
+    - '*.xc*/**'
+    - 'node_modules/**'
+    - 'dist/**'
+    - 'build/**'
+    - '.git/**'
+    - 'venv/**'
+    - '__pycache__/**'
