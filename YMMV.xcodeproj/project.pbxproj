@@ -26,7 +26,7 @@
 
 /* Begin PBXFileReference section */
 		EE5D00AC2A732000003B7E49 /* build */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = text; name = build; path = YMMV; sourceTree = BUILT_PRODUCTS_DIR; };
-		EE5D00AD2A732000003B7E50 /* .coderabbit.yaml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.yaml; lineEnding = 0; path = .coderabbit.yaml; sourceTree = "<group>"; usesTabs = 0; };
+		EE5D00AD2A732000003B7E50 /* .coderabbit.yaml */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 4; lastKnownFileType = sourcecode.yaml; lineEnding = 0; path = .coderabbit.yaml; sourceTree = "<group>"; tabWidth = 4; usesTabs = 0; };
 		EE5D00AE2A732000003B7E49 /* payload */ = {isa = PBXFileReference; lastKnownFileType = folder; path = payload; sourceTree = SOURCE_ROOT; };
 		EE5D00AF2A732000003B7E49 /* Makefile */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.makefile; path = Makefile; sourceTree = "<group>"; };
 		EE5D00B92A7328E4003B7E49 /* YMMV.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = YMMV.entitlements; sourceTree = "<group>"; };
