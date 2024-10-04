@@ -31,7 +31,7 @@ Welcome to **YMMV**, a comprehensive collection of bash scripts and configuratio
 
 ## Introduction
 
-**YMMV** aims to streamline the process of setting up a new macOS system or maintaining an existing one by automating the installation of software and configuration of system settings. Whether you're a developer, system administrator, or power user, these scripts help you get up and running quickly with a tailored environment.
+**YMMV** aims to streamline the process of setting up a new macOS environment or maintaining an existing one by automating the installation of software and configuration of system settings. Whether you're a developer, system administrator, or power user, these scripts help you get up and running quickly with a tailored environment.
 
 ## Features
 
