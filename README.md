@@ -24,11 +24,11 @@ efficient operating environment.
 
 ## Status
 
-### master
+**Master**
 [![status](https://travis-ci.org/reactive-firewall/ymmv.svg?branch=master)](https://travis-ci.org/reactive-firewall/ymmv)
 [![code coverage](https://codecov.io/gh/reactive-firewall/ymmv/branch/master/graph/badge.svg)](https://codecov.io/gh/reactive-firewall/ymmv/branch/master/)
 
-### Stable
+**Stable**
 [![status](https://travis-ci.org/reactive-firewall/ymmv.svg?branch=stable)](https://travis-ci.org/reactive-firewall/ymmv)
 [![code coverage](https://codecov.io/gh/reactive-firewall/ymmv/branch/stable/graph/badge.svg)](https://codecov.io/gh/reactive-firewall/ymmv/branch/stable/)
 
