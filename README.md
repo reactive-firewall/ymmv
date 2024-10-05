@@ -1,6 +1,9 @@
 # YMMV: Your Mileage May Vary - System Configuration and Automation Scripts
 
-Welcome to **YMMV**, a comprehensive collection of bash scripts and configurations designed to automate system setup and management, primarily for macOS environments. This project simplifies the installation of essential tools, applications, and system configurations, ensuring a secure and efficient operating environment.
+Welcome to **YMMV**, a comprehensive collection of bash scripts and configurations designed to
+automate system setup and management, primarily for macOS environments. This project simplifies the
+installation of essential tools, applications, and system configurations, ensuring a secure and
+efficient operating environment.
 
 ## Table of Contents
 
@@ -21,17 +24,20 @@ Welcome to **YMMV**, a comprehensive collection of bash scripts and configuratio
 
 ## Status
 
-### master ###
+### master
 [![status](https://travis-ci.org/reactive-firewall/ymmv.svg?branch=master)](https://travis-ci.org/reactive-firewall/ymmv)
 [![code coverage](https://codecov.io/gh/reactive-firewall/ymmv/branch/master/graph/badge.svg)](https://codecov.io/gh/reactive-firewall/ymmv/branch/master/)
 
-### Stable ###
+### Stable
 [![status](https://travis-ci.org/reactive-firewall/ymmv.svg?branch=stable)](https://travis-ci.org/reactive-firewall/ymmv)
 [![code coverage](https://codecov.io/gh/reactive-firewall/ymmv/branch/stable/graph/badge.svg)](https://codecov.io/gh/reactive-firewall/ymmv/branch/stable/)
 
 ## Introduction
 
-**YMMV** aims to streamline the process of setting up a new macOS environment or maintaining an existing one by automating the installation of software and configuration of system settings. Whether you're a developer, system administrator, or power user, these scripts help you get up and running quickly with a tailored environment.
+**YMMV** aims to streamline the process of setting up a new macOS environment or maintaining an
+existing one by automating the installation of software and configuration of system settings.
+Whether you're a developer, system administrator, or power user, these scripts help you get up
+and running quickly with a tailored environment.
 
 ## Features
 
@@ -59,7 +65,8 @@ cd ymmv
 
 ## Usage
 
-The project utilizes a `Makefile` to streamline the installation and setup process. Below are some common commands:
+The project utilizes a `Makefile` to streamline the installation and setup process.
+Below are some common commands:
 
 - **Install all configurations and tools:**
 
@@ -174,11 +181,13 @@ After installation, it's recommended to run tests to ensure all configurations a
 make test
 ```
 
-This command executes scripts in the `tests/` directory to validate your setup.
+This command executes scripts in the `tests/` directory to validate the setup.
 
 ## Contributing
 
-I welcome contributions! If you have ideas for improvements or new features, feel free to fork the repository and submit a pull request. Please ensure that your code adheres to the project's coding standards and passes all tests.
+I welcome contributions! If you have ideas for improvements or new features, feel free to fork
+the repository and submit a pull request. Please ensure that your code adheres to the project's
+coding standards and passes all tests.
 
 ## License
 

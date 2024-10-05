@@ -26,7 +26,10 @@
 
 /* Begin PBXFileReference section */
 		EE5D00AC2A732000003B7E49 /* build */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = text; name = build; path = YMMV; sourceTree = BUILT_PRODUCTS_DIR; };
-		EE5D00AD2A732000003B7E50 /* .coderabbit.yaml */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 4; lastKnownFileType = sourcecode.yaml; lineEnding = 0; path = .coderabbit.yaml; sourceTree = "<group>"; tabWidth = 4; usesTabs = 0; };
+		EE5D00AD2A732000003B7E50 /* .coderabbit.yaml */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 2; lastKnownFileType = sourcecode; lineEnding = 0; path = .coderabbit.yaml; sourceTree = "<group>"; tabWidth = 2; usesTabs = 0; };
+		EE5D00AD2A732000003B7E51 /* .markdownlint.json */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 4; lastKnownFileType = text; lineEnding = 0; path = .markdownlint.json; sourceTree = "<group>"; tabWidth = 4; usesTabs = 1; };
+		EE5D00AD2A732000003B7E52 /* .markdownlint.yaml */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 2; lastKnownFileType = text; lineEnding = 0; path = .markdownlint.yaml; sourceTree = "<group>"; tabWidth = 2; usesTabs = 0; };
+		EE5D00AD2A732000003B7E53 /* .yamllint.conf */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 2; lastKnownFileType = text; lineEnding = 0; path = .yamllint.conf; sourceTree = "<group>"; tabWidth = 2; usesTabs = 0; };
 		EE5D00AE2A732000003B7E49 /* payload */ = {isa = PBXFileReference; lastKnownFileType = folder; path = payload; sourceTree = SOURCE_ROOT; };
 		EE5D00AF2A732000003B7E49 /* Makefile */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.makefile; path = Makefile; sourceTree = "<group>"; };
 		EE5D00B92A7328E4003B7E49 /* YMMV.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = YMMV.entitlements; sourceTree = "<group>"; };
@@ -90,6 +93,9 @@
 			isa = PBXGroup;
 			children = (
 				EE5D00AD2A732000003B7E50 /* .coderabbit.yaml */,
+				EE5D00AD2A732000003B7E51 /* .markdownlint.json */,
+				EE5D00AD2A732000003B7E52 /* .markdownlint.yaml */,
+				EE5D00AD2A732000003B7E53 /* .yamllint.conf */,
 				EEDA4C132A745305004C4499 /* CEP */,
 				EEDA4C132A745305004C4498 /* dot_files */,
 				EEA99C252A7451E500D0D9C3 /* LICENSE.md */,
