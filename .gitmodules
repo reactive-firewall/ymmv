@@ -8,3 +8,7 @@
 	url = https://gist.github.com/b7ee98df9e636a51806e62ef9c4ab161.git
 	ignore = dirty
 	
+[submodule "CEP-9"]
+	path = CEP/9
+	url = https://gist.github.com/d840ee9990e65f302ce2a8d78ebe73f6.git
+	ignore = dirty
