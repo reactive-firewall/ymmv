@@ -7,7 +7,7 @@
 #    EFFORT IS WITH YOU.
 #
 # B. TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, THIS SHELL SCRIPT
-#    AND SERVICES ARE PROVIDED "AS IS" AND “AS AVAILABLE”, WITH ALL FAULTS AND
+#    AND SERVICES ARE PROVIDED "AS IS" AND "AS AVAILABLE", WITH ALL FAULTS AND
 #    WITHOUT WARRANTY OF ANY KIND, AND THE AUTHOR OF THIS SHELL SCRIPT'S LICENSORS
 #    (COLLECTIVELY REFERRED TO AS "THE AUTHOR" FOR THE PURPOSES OF THIS DISCLAIMER)
 #    HEREBY DISCLAIM ALL WARRANTIES AND CONDITIONS WITH RESPECT TO THIS SHELL SCRIPT
@@ -60,42 +60,125 @@
 #    even if the above stated remedy fails of its essential purpose.
 ################################################################################
 
-# CAVEATE: This Script is for convience and should not be used as a source of truth
+# CAVEAT: This Script is for convience and should not be used as a source of truth
 # when checking crypto hashes.
 
 
 # to check though:
-diff -q <(tail -n 62 "$0" | head -n 60 | shasum -a 384 -t -) <(tail -n 1 "$0")
+diff -q <(tail -n 157 "$0" | head -n 145 | shasum -a 384 -t -) <(tail -n 1 "$0")
 
+# Usage Summary:
+#    find_exec_tool_is_from_Apple_pkg FILE
+# Use the '--fix' option to enable auto-correction of vulnerabilities.
+#
+# Exit Code Summary:
+# The script uses the EXIT_CODE variable to track exit conditions:
+# -   0: Successful execution.
+# -   1: General failure.
+# - 126: Script already in progress or command not executable.
+# - 129: Received SIGHUP signal.
+# - 130: Received SIGINT signal (Ctrl+C).
+# - 131: Received SIGQUIT signal.
+# - 137: Received SIGABRT signal.
+# - 143: Received SIGTERM signal.
+
+# Try to safely setup and fail fast if unable.
+ulimit -t 600
+# setting the path may break brain-dead CI that uses crazy paths
+# PATH="/bin:/sbin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin"
 THE_FILE="${@:1:$#}"
-hash -p $(dirname "${0}")/find_exec_tool_is_from_pkg find_exec_tool_is_from_pkg
-hash -p /usr/sbin/pkgutil pkgutil
-hash grep
-hash cut
 umask 137
+
+# force utf-8 for checking in script
+export LC_CTYPE="${LC_CTYPE:-en_US.UTF-8}"
+
+# Function to check if a command exists.
+
+# USAGE:
+#	~$ check_command CMD
+# Arguments:
+# CMD (Required) -- Name of the command to check
+# Results:
+#	exits 64 -- missing required argument
+#	exits 126 -- check complete and has failed, can not find given command.
+#	returns successful -- check complete and command found to be executable.
+function check_command() {
+	test -z "$1" && { printf "%s\n" "Error: command name is required to check for existence." >&2 ; exit 64 ; } ;
+	local cmd="$1" ;
+	test -x "$(command -v ${cmd})" || { printf "%s\n" "Error: Required command '$cmd' is not found." >&2 ; exit 126 ; } ;
+}  # end check_command()
+# propagate/export function to sub-shells
+export -f check_command
+
+# Check required commands
+check_command grep ;
+check_command cut ;
+check_command getconf ;
+check_command openssl ;
+check_command tr ;
+hash -p /usr/sbin/pkgutil pkgutil || exit 127 ;
+check_command pkgutil ;
+hash -p $(dirname "${0}")/find_exec_tool_is_from_pkg find_exec_tool_is_from_pkg || exit 127 ;
+check_command find_exec_tool_is_from_pkg ;
+# CAVEAT: NON-CEP-5 locking is OK (Apple systems should have a shlock builtin)
+test -x ./.github/tool_shlock_helper.sh && hash -p ./.github/tool_shlock_helper.sh shlock || : ;
+check_command shlock ;
+
+# set remaining variables
+LOCK_FILE="${TMPDIR:-/tmp}/org.ymmv.find-tool-apple-pkg-shell"
 
 declare -r CHECK_LINE_A=$"Status: signed by a certificate trusted by macOS" ;
 declare -r CHECK_LINE_B=$"B0 B1 73 0E CB C7 FF 45 05 14 2C 49 F1 29 5E 6E DA 6B CA ED 7E 2C" ;
 declare -r CHECK_LINE_C=$"68 C5 BE 91 B5 A1 10 01 F0 24" ;
 declare -r INSECURE_TEMP_PATH=$(getconf DARWIN_USER_TEMP_DIR)/$(openssl rand -base64 42 | tr -d ' ' | tr -s '/' '_' ; wait ;)
 
+# Set default exitcode to failure until sure we won't need to abort
+EXIT_CODE=1
+
+# end of bootstraping, use functions below this point
+
+# Function to check if a command exists.
+
+# USAGE:
+#	~$ cleanup
+# Arguments:
+#	N/A
+# Results:
+#	returns -- once cleanup has been done on a best-effort case.
 function _cleanup() {
-    unset CHECK_LINE_A || true ;
-    unset CHECK_LINE_B || true ;
-    unset CHECK_LINE_C || true ;
+	unset CHECK_LINE_A || true ;
+	unset CHECK_LINE_B || true ;
+	unset CHECK_LINE_C || true ;
 	rm -qf "${INSECURE_TEMP_PATH}" 2>/dev/null || true ;
-    unset INSECURE_TEMP_PATH || true ;
-    unset THE_FILE || true ;
-    return
+	unset INSECURE_TEMP_PATH || true ;
+	unset THE_FILE || true ;
+	return
+	rm -f ${LOCK_FILE} 2>/dev/null || : ; wait ;
+	# unset when done
+	unset LOCK_FILE 2>/dev/null || : ;
+	hash -d find_exec_tool_is_from_pkg 2>/dev/null || : ;
+	hash -d shlock 2>/dev/null || : ;
 }
 
-trap 'cleanup ; wait ; exit 1 ;' SIGKILL ;
-trap 'cleanup ; wait ; exit 1 ;' SIGQUIT ;
-trap 'cleanup ; wait ; exit 1 ;' SIGHUP ;
-trap 'cleanup ; wait ; exit 1 ;' SIGABRT ;
-trap 'cleanup ; wait ; exit 1 ;' SIGINT ;
-trap 'cleanup ; wait ; exit 1 ;' SIGTERM ;
+function handle_signals() {
+	if [[ ( $(shlock -f ${LOCK_FILE} -p $$ ) -eq 0 ) ]] ; then
+		EXIT_CODE=0
+		trap 'cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 129 ;' SIGHUP || EXIT_CODE=129
+		trap 'cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 143 ;' SIGTERM || EXIT_CODE=143
+		trap 'cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 131 ;' SIGQUIT || EXIT_CODE=131
+		# SC2173 - https://github.com/koalaman/shellcheck/wiki/SC2173
+		#trap 'cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 1 ;' SIGSTOP || EXIT_CODE=7
+		trap 'cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 130 ;' SIGINT || EXIT_CODE=130
+		trap 'cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 137 ;' SIGABRT || EXIT_CODE=137
+		trap 'cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit ${EXIT_CODE} ;' EXIT || EXIT_CODE=1
+	else
+		# shellcheck disable=SC2046
+		printf "\t%s\n" "Check Setup Scripts Tests Coverage already in progress by "$(head "${LOCK_FILE}") >&2 ;
+		exit 126 ;
+	fi
+}
 
+handle_signals
 
 if [[ ( $( find_exec_tool_is_from_pkg "${THE_FILE}" ) -eq $(true) ) ]] ; then
 	TEMP_APP_TRUST=$(pkgutil --check-signature "${THE_FILE}" 2>/dev/null | tee ${INSECURE_TEMP_PATH} | grep -F "$CHECK_LINE_A" 2>/dev/null )
@@ -103,25 +186,24 @@ if [[ ( $( find_exec_tool_is_from_pkg "${THE_FILE}" ) -eq $(true) ) ]] ; then
 		TEMP_APP_HASH=$(tail -n 5 "${INSECURE_TEMP_PATH}" 2>/dev/null | grep -F "$CHECK_LINE_B" 2>/dev/null )
 		if [[ ( -n "$TEMP_APP_HASH" ) ]] ; then
 			if [[ ( -n $(tail -n 4 "${INSECURE_TEMP_PATH}" 2>/dev/null | grep -F "$CHECK_LINE_C" 2>/dev/null ) ) ]] ; then
-				true ;
-				exit $? ;
+				true ; EXIT_CODE=$? ;
 			else
-				false ;
+				false ; EXIT_CODE=$? ;
 			fi
 		else
-			false ;
+			false ; EXIT_CODE=$? ;
 		fi
-		exit $? ;
 	else
-		false ;
+		false ; EXIT_CODE=$? ;
 	fi
-	exit $? ;
 else
-	echo "$0: No such path: '$THE_FILE'" 1>&2 ;
-	false ;
-	exit $? ;
+	printf "%s\n" "$0: No such path: '$THE_FILE'" 1>&2 ;
+	false ; EXIT_CODE=$? ;
 fi
-exit 255 ;
+
+cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || : ; wait ;
+
+exit ${EXIT_CODE:-70} ;
 
 # This file's code hash:
-3028e3a26e5b7aea4a55b7eb1b09974d2c61114931e914528759cdd9b3cb51ccc057e0324201a8f663432f607ae8d4a5  -
+7a3c6ce1cf16880310e7d1d618b201984052afb97c08eec2ff877c0735bc529e5d31b31f786aebddf548c4e4450f38b5  -
