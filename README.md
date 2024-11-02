@@ -193,4 +193,6 @@ coding standards and passes all tests.
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE.md) file for details.
 
+### Copyright (c), 2018-2024 
+
 ---
