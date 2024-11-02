@@ -74,17 +74,17 @@ case "$1" in
   -s|--script) IS_HEADLESS_MODE=1 ;;
   --clean|--gc|--fsck) IS_CLEAN_MODE=1 ;;
   -v|--verbose) IS_VERBOSE_MODE=1 ;;
-  -V|--version) echo "${MYVERSION}" ; exit 0 ;;
-  -*) if [[ ( $IS_HEADLESS_MODE -eq 0 ) ]] ; then echo "Error: \"${1}\" Argument Unrecognized!" 1>&2 ; exit 2 ; fi ;;
+  -V|--version) printf "%s\n" "${MYVERSION}" ; exit 2 ;;
+  -*) if [[ ( $IS_HEADLESS_MODE -eq 0 ) ]] ; then printf "%s\n" "Error: \"${1}\" Argument Unrecognized!" 1>&2 ; exit 2 ; fi ;;
 esac
-shift       # Check next set of parameters.
+shift  # Check next set of parameters.
 done
 fi
 
 # before doing anything else
 _GIT_TOOL_OLD_BRANCH=$(git branch --show-current ) ;
 LOCK_FILE="${TMPDIR:-/tmp}/git_tool_script.lock" ;
-EXIT_CODE=0
+EXIT_CODE=1
 
 function cleanup() {
 	unset IS_HEADLESS_MODE || true ;
@@ -100,19 +100,25 @@ function cleanup() {
 
 export -f cleanup ;
 
-if [[ ( $(shlock -f ${LOCK_FILE} -p $$ ) -eq 0 ) ]] ; then
-	trap 'cleanup || true ;' SIGHUP || EXIT_CODE=3
-	trap 'cleanup || true ;' SIGTERM || EXIT_CODE=4
-	trap 'cleanup || true ;' SIGQUIT || EXIT_CODE=5
-	trap 'cleanup || true ;' SIGSTOP || EXIT_CODE=7
-	trap 'cleanup || true ;' SIGINT || EXIT_CODE=8
-	trap 'cleanup || true ;' SIGABRT || EXIT_CODE=9
-	trap 'cleanup || true ; exit ${EXIT_CODE:-255} ;' EXIT || EXIT_CODE=1
-else
-	echo Tool already in progress by `head ${LOCK_FILE}` ;
-	false ;
-	exit 255 ;
-fi
+function handle_signals() {
+	if [[ ( $(shlock -f ${LOCK_FILE} -p $$ ) -eq 0 ) ]] ; then
+		EXIT_CODE=0
+		trap 'cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 129 ;' SIGHUP || EXIT_CODE=129
+		trap 'cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 143 ;' SIGTERM || EXIT_CODE=143
+		trap 'cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 131 ;' SIGQUIT || EXIT_CODE=131
+		# SC2173 - https://github.com/koalaman/shellcheck/wiki/SC2173
+		#trap 'cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 1 ;' SIGSTOP || EXIT_CODE=7
+		trap 'cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 130 ;' SIGINT || EXIT_CODE=130
+		trap 'cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 137 ;' SIGABRT || EXIT_CODE=137
+		trap 'cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit ${EXIT_CODE} ;' EXIT || EXIT_CODE=1
+	else
+		# shellcheck disable=SC2046
+		printf "\t%s\n" "Git-Filter-Dedup Script already in progress by "$(head "${LOCK_FILE}") >&2 ;
+		exit 126 ;
+	fi
+}
+
+handle_signals
 
 for GIT_AUTO_TOOL_BRANCH in $(git branch -v --list | grep -F "behind" | tr -s ' ' | cut -d\  -f -2 ) ; do
 	if [[ ( $IS_VERBOSE_MODE -eq 1 ) ]] && [[ ( $IS_HEADLESS_MODE -eq 0 ) ]] ; then
@@ -136,4 +142,4 @@ fi
 #GIT_FILTER_TOOL_DATA_OPT=`git config --bool --default true --get 'filter.data.option'`
 # always clean up
 cleanup || true ; wait ;
-exit ${EXIT_CODE} || exit 255 ;
+exit ${EXIT_CODE:-1} ;
