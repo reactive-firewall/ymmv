@@ -128,13 +128,13 @@ EXIT_CODE=1
 # Results:
 #	returns -- once cleanup has been done on a best-effort case.
 function _cleanup() {
-	unset THE_FILE || true ;
-	return
+	unset THE_FILE || : ;
 	rm -f ${LOCK_FILE} 2>/dev/null || : ; wait ;
 	# unset when done
 	unset LOCK_FILE 2>/dev/null || : ;
 	hash -d find_exec_tool_is_from_pkg 2>/dev/null || : ;
 	hash -d shlock 2>/dev/null || : ;
+	return
 }
 
 function handle_signals() {
