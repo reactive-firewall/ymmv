@@ -1,0 +1,117 @@
+#! /bin/bash
+# Project: YMMV
+# Description: This script generates an ASCII tree of the project's modules, classes, functions, and methods.
+# Usage: ./generate_ascii_tree.sh [directory]
+# Author: Mr. Walls
+
+set -euo pipefail
+
+# Function: print_usage
+# Description: Prints usage information for the script.
+print_usage() {
+	printf 'Usage: %s [directory]\n' "$(basename "$0")"
+	printf 'Generates an ASCII tree of modules, classes, functions, and methods in the specified directory.\n'
+	printf 'If no directory is specified, defaults to the current directory.\n'
+}
+
+# Function: check_dependencies
+# Description: Checks if required commands are available.
+check_dependencies() {
+	local dependencies=("find" "awk")
+	for cmd in "${dependencies[@]}"; do
+		if ! command -v "$cmd" > /dev/null 2>&1; then
+			printf 'Error: Required command "%s" not found in PATH.\n' "$cmd" >&2
+			exit 1
+		fi
+	done
+}
+
+# Function: process_python_file
+# Description: Processes a Python file to extract classes and functions.
+# Arguments:
+#   $1 - The Python file to process.
+process_python_file() {
+	local file="$1"
+	printf 'File: %s\n' "$file"
+
+	awk '
+	function print_indent(level) {
+		for (i = 0; i < level; i++) printf "    ";
+	}
+	/^[[:space:]]*class[[:space:]]+/ {
+		class_name = $2;
+		sub("\\(.*", "", class_name);
+		print_indent(1); printf "Class: %s\n", class_name;
+		in_class = 1;
+		next;
+	}
+	/^[[:space:]]*def[[:space:]]+/ {
+		func_name = $2;
+		sub("\\(.*", "", func_name);
+		if (in_class) {
+			print_indent(2); printf "Method: %s\n", func_name;
+		} else {
+			print_indent(1); printf "Function: %s\n", func_name;
+		}
+	}
+	/^$/ {
+		in_class = 0;
+	}
+	' "$file"
+	printf '\n'
+}
+
+# Function: process_shell_script
+# Description: Processes a shell script to extract variables and functions.
+# Arguments:
+#   $1 - The shell script file to process.
+process_shell_script() {
+	local file="$1"
+	printf 'File: %s\n' "$file"
+	printf '    Script: %s\n' "$file"
+	printf '    Variables and Functions:\n'
+
+	awk '
+	/^[[:space:]]*([a-zA-Z_][a-zA-Z0-9_]*)=/ {
+		var_name = $1;
+		sub("=.*", "", var_name);
+		printf "        Variable: %s\n", var_name;
+	}
+	/^[[:space:]]*function[[:space:]]+([a-zA-Z_][a-zA-Z0-9_]*)/ {
+		func_name = $2;
+		printf "        Function: %s\n", func_name;
+	}
+	/^[[:space:]]*([a-zA-Z_][a-zA-Z0-9_]*)\\(\\)[[:space:]]*\\{/ {
+		func_name = $1;
+		printf "        Function: %s\n", func_name;
+	}
+	' "$file"
+	printf '\n'
+}
+
+# Function: main
+# Description: Main function to execute the script logic.
+# Arguments:
+#   $@ - Optional directory to process.
+main() {
+	local target_dir="${1:-.}"
+
+	check_dependencies
+
+	find "$target_dir" -type f \( -name '*.py' -o -name '*.sh' \) | while read -r file; do
+		if [[ "$file" == *.py ]]; then
+			process_python_file "$file"
+		elif [[ "$file" == *.sh ]]; then
+			process_shell_script "$file"
+		fi
+	done
+}
+
+# Check for help option
+if [[ "${1:-}" == '-h' || "${1:-}" == '--help' ]]; then
+	print_usage
+	exit 0
+fi
+
+# Execute the main function with all arguments
+main "$@"
