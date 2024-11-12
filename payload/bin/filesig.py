@@ -31,16 +31,16 @@ def extractRegexPattern(theInput_Str, theInputPattern):
 
 
 def compactList(list, intern_func=None):
-   if intern_func is None:
-       def intern_func(x): return x
-   seen = {}
-   result = []
-   for item in list:
-       marker = intern_func(item)
-       if marker in seen: continue
-       seen[marker] = 1
-       result.append(item)
-   return result
+	if intern_func is None:
+		def intern_func(x): return x
+	seen = {}
+	result = []
+	for item in list:
+		marker = intern_func(item)
+		if marker in seen: continue
+		seen[marker] = 1
+		result.append(item)
+	return result
 
 
 def main(argv=None):
