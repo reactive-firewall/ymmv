@@ -66,11 +66,11 @@ umask 137
 
 GREP_ARGS=""
 
-while [[ ($# -gt 1) && (${1:0:1} = '-') ]] ; do
-GREP_ARGS="${GREP_ARGS} ${1}"
-shift
-done
+while [[ ($# -gt 1) && (${1:1:1} = '-') ]] ; do
+GREP_ARGS="${GREP_ARGS} ${1}";
+shift ;
+done ;
 
-\grep${GREP_ARGS} -oE "([[:alnum:]]{1}[-[:alnum:]]*[\.]{1}){2,}[[:alnum:]]{1}[-[:alnum:]\.]+" $@
+/bin/grep ${GREP_ARGS} -oE "([[:alnum:]]{1}[-[:alnum:]]*[\.]{1}){2,}[[:alnum:]]{1}[-[:alnum:]\.]+" $@
 
-exit 0 ;
+exit $? ;
