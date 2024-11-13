@@ -1,4 +1,4 @@
-#! /bin/bash
+#! /bin/bash --posix
 # Disclaimer of Warranties.
 # A. YOU EXPRESSLY ACKNOWLEDGE AND AGREE THAT, TO THE EXTENT PERMITTED BY
 #    APPLICABLE LAW, USE OF THIS SHELL SCRIPT AND ANY SERVICES PERFORMED
@@ -156,13 +156,18 @@ function handle_signals() {
 }
 
 handle_signals
-
-if [[ ( -e "${THE_FILE}" ) ]] ; then
-	TEMP_APP_SOURCE=$(pkgutil --file-info "${THE_FILE}" 2>/dev/null | grep -F "pkgid:" 2>/dev/null | cut -d: -f 2 2>/dev/null )
-	if [[ ( -n "$TEMP_APP_SOURCE" ) ]] ; then true ; else false ; fi ; EXIT_CODE=$? ;
+# Validate input
+if [[ -z "${THE_FILE}" ]]; then
+	printf "%s\n" "$0: No file specified" 1>&2
+	EXIT_CODE=64
+elif [[ ! -e "${THE_FILE}" ]]; then
+	printf "%s\n" "$0: No such path: \'${THE_FILE}\'" 1>&2
+	EXIT_CODE=2
 else
-	printf "%s\n" "$0: No such path: \'$THE_FILE\'" 1>&2 ;
-	false ; EXIT_CODE=$? ;
+	TEMP_APP_SOURCE="$(pkgutil --file-info "${THE_FILE}" 2>/dev/null | grep -F "pkgid:" 2>/dev/null | cut -d: -f 2 2>/dev/null)"
+	# Set exit code based on whether package info was found
+	[[ -n "${TEMP_APP_SOURCE}" ]]
+	EXIT_CODE=$?
 fi
 
 cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || : ; wait ;
