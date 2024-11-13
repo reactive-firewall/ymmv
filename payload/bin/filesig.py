@@ -11,12 +11,20 @@ def parseArgs(arguments=[]):
 	parser = argparse.ArgumentParser(description='gernerate and show file signatures.')
 	action_group = parser.add_mutually_exclusive_group()
 	action_group.add_argument(
-		'-C', '--check', default=False, dest='io_action',
-		action='store_true', help='Check the file hashes, and display'
+		'-C',
+		'--check',
+		default=False,
+		dest='io_action',
+		action='store_true',
+		help='Check the file hashes, and display'
 	)
 	action_group.add_argument(
-		'-G', '--generate', default=True, dest='io_action',
-		action='store_true', help='Generate the file hashes'
+		'-G',
+		'--generate',
+		default=True,
+		dest='io_action',
+		action='store_true',
+		help='Generate the file hashes'
 	)
 	parser.add_argument('-f', '--file', required=True, help='the file to check')
 	return parser.parse_args(arguments)
@@ -32,7 +40,10 @@ def extractRegexPattern(theInput_Str, theInputPattern):
 
 def compactList(list, intern_func=None):
 	if intern_func is None:
-		def intern_func(x): return x
+
+		def intern_func(x):
+			return x
+
 	seen = {}
 	result = []
 	for item in list:
@@ -47,7 +58,10 @@ def main(argv=None):
 	args = parseArgs(argv)
 	file = args.file
 	generate_new = False
-	theResult = dict({256:None, 512:None})
+	theResult = dict({
+		256: None,
+		512: None
+	})
 	if args.io_action is not None:
 		generate_new = args.io_action
 	if file is not None:
@@ -56,7 +70,12 @@ def main(argv=None):
 		import os.path
 		try:
 			for hash_level in [256, 512]:
-				cli_args = ["openssl", "dgst", str("-sha{}").format(str(hash_level)), str(os.path.abspath(file))]
+				cli_args = [
+					"openssl",
+					"dgst",
+					str("-sha{}").format(str(hash_level)),
+					str(os.path.abspath(file))
+				]
 				theResult[hash_level] = subprocess.check_output(cli_args)
 		except Exception:
 			theResult = None
