@@ -130,7 +130,7 @@ EXIT_CODE=1
 function _cleanup() {
 	unset THE_FILE || : ;
 	unset BEFORE_LINE_NUMBER || : ;
-	unset BEFORE_LINE_NUMBER || : ;
+	unset AFTER_LINE_NUMBER || : ;
 	rm -f ${LOCK_FILE} 2>/dev/null || : ; wait ;
 	# unset when done
 	unset LOCK_FILE 2>/dev/null || : ;
