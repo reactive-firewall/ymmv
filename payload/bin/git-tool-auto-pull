@@ -120,25 +120,31 @@ function handle_signals() {
 
 handle_signals
 
-for GIT_AUTO_TOOL_BRANCH in $(git branch -v --list | grep -F "behind" | tr -s ' ' | cut -d\  -f -2 ) ; do
-	if [[ ( $IS_VERBOSE_MODE -eq 1 ) ]] && [[ ( $IS_HEADLESS_MODE -eq 0 ) ]] ; then
-		echo "Auto-Updating: ${GIT_BRANCH}" ;
+if [[ ($EXIT_CODE -eq 0) ]] ; then
+
+	for GIT_AUTO_TOOL_BRANCH in $(git branch -v --list | grep -F "behind" | tr -s ' ' | cut -d\  -f -2 ) ; do
+		if [[ ( $IS_VERBOSE_MODE -eq 1 ) ]] && [[ ( $IS_HEADLESS_MODE -eq 0 ) ]] ; then
+			printf "Auto-Updating: %s\n" "${GIT_BRANCH}" ;
+		fi
+		if [[ ! (git checkout "${GIT_AUTO_TOOL_BRANCH}" && git pull --ff-only) ]] || [[ $EXIT_CODE ]] ; then
+			EXIT_CODE=1
+			[[ $IS_HEADLESS_MODE -eq 0 ]] && printf "Can't auto merge %s\n" "${GIT_AUTO_TOOL_BRANCH}" ;
+		fi
+		wait ;
+		if [[ ( $IS_VERBOSE_MODE -eq 1 ) ]] && [[ ( $IS_HEADLESS_MODE -eq 0 ) ]] ; then
+			printf "%s Auto-Updated\n" "${CHECKMARK}" ;
+		fi
+	done ;
+
+	if [[ ( $IS_HEADLESS_MODE -eq 0 ) ]] ; then
+		git checkout ${_GIT_TOOL_OLD_BRANCH} || : ;
 	fi
-	(git checkout ${GIT_AUTO_TOOL_BRANCH} && git pull --ff-only ) || ( EXIT_CODE=$((($EXIT_CODE % 127)+1)) ; if [[ ( $IS_HEADLESS_MODE -eq 0 ) ]]; then echo "Can't auto merge ${GIT_AUTO_TOOL_BRANCH}" ; fi ) ;
-	wait ;
+
 	if [[ ( $IS_VERBOSE_MODE -eq 1 ) ]] && [[ ( $IS_HEADLESS_MODE -eq 0 ) ]] ; then
-		echo "${CHECKMARK} Auto-Updated" ;
+		git branch -vv --list ;
 	fi
-done ;
 
-if [[ ( $IS_HEADLESS_MODE -eq 0 ) ]] ; then
-	git checkout ${_GIT_TOOL_OLD_BRANCH} || true ;
-fi
-
-if [[ ( $IS_VERBOSE_MODE -eq 1 ) ]] && [[ ( $IS_HEADLESS_MODE -eq 0 ) ]] ; then
-	git branch -vv --list ;
-fi
-
+fi ;
 #GIT_FILTER_TOOL_DATA_OPT=`git config --bool --default true --get 'filter.data.option'`
 # always clean up
 cleanup || true ; wait ;
