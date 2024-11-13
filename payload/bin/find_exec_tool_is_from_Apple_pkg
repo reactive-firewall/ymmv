@@ -152,7 +152,6 @@ function _cleanup() {
 	rm -qf "${INSECURE_TEMP_PATH}" 2>/dev/null || true ;
 	unset INSECURE_TEMP_PATH || true ;
 	unset THE_FILE || true ;
-	return
 	rm -f ${LOCK_FILE} 2>/dev/null || : ; wait ;
 	# unset when done
 	unset LOCK_FILE 2>/dev/null || : ;
