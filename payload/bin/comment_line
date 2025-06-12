@@ -1,5 +1,4 @@
 #! /bin/bash --posix
-#! /bin/bash
 # Disclaimer of Warranties.
 # A. YOU EXPRESSLY ACKNOWLEDGE AND AGREE THAT, TO THE EXTENT PERMITTED BY
 #    APPLICABLE LAW, USE OF THIS SHELL SCRIPT AND ANY SERVICES PERFORMED
@@ -70,7 +69,6 @@
 ulimit -t 600
 # setting the path may break brain-dead CI that uses crazy paths
 # PATH="/bin:/sbin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin"
-THE_FILE="${@:1:$#}"
 umask 137
 
 # force utf-8 for checking in script
@@ -89,6 +87,7 @@ export LC_CTYPE="${LC_CTYPE:-en_US.UTF-8}"
 function check_command() {
 	test -z "$1" && { printf "%s\n" "Error: command name is required to check for existence." >&2 ; exit 64 ; } ;
 	local cmd="$1" ;
+	# shellcheck disable=SC2086
 	test -x "$(command -v ${cmd})" || { printf "%s\n" "Error: Required command '$cmd' is not found." >&2 ; exit 126 ; } ;
 }  # end check_command()
 # propagate/export function to sub-shells
@@ -114,10 +113,10 @@ declare -i AFTER_LINE_NUMBER=$((${LINE_NUMBER}+1))
 declare -r THE_FILE="${3}"
 LOCK_FILE="${TMPDIR:-/tmp}/org.ymmv.comment-line-shell"
 
-# Set default exitcode to failure until sure we won't need to abort
+# Set default exit-code to failure until sure we won't need to abort
 EXIT_CODE=1
 
-# end of bootstraping, use functions below this point
+# end of bootstrapping, use functions below this point
 
 # Function to check if a command exists.
 
@@ -131,26 +130,29 @@ function _cleanup() {
 	unset THE_FILE || : ;
 	unset BEFORE_LINE_NUMBER || : ;
 	unset AFTER_LINE_NUMBER || : ;
-	rm -f ${LOCK_FILE} 2>/dev/null || : ; wait ;
-	# unset when done
+	# shellcheck disable=SC2317
+	rm -f "${LOCK_FILE}" 2>/dev/null || : ;
+	# shellcheck disable=SC2317
+	wait ;
 	unset LOCK_FILE 2>/dev/null || : ;
-	hash -d shlock 2>/dev/null || : ;
+	# shellcheck disable=SC2317
+	hash -d shlock 2>/dev/null > /dev/null || : ;
 }
 
 function handle_signals() {
-	if [[ ( $(shlock -f ${LOCK_FILE} -p $$ ) -eq 0 ) ]] ; then
+	if [[ ( $(shlock -f "${LOCK_FILE}" -p $$ ) -eq 0 ) ]] ; then
 		EXIT_CODE=0
-		trap 'cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 129 ;' SIGHUP || EXIT_CODE=129
-		trap 'cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 143 ;' SIGTERM || EXIT_CODE=143
-		trap 'cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 131 ;' SIGQUIT || EXIT_CODE=131
+		trap 'cleanup 2>/dev/null || rm -f "${LOCK_FILE}" 2>/dev/null > /dev/null || true ; wait ; exit 129 ;' SIGHUP || EXIT_CODE=129
+		trap 'cleanup 2>/dev/null || rm -f "${LOCK_FILE}" 2>/dev/null > /dev/null || true ; wait ; exit 143 ;' SIGTERM || EXIT_CODE=143
+		trap 'cleanup 2>/dev/null || rm -f "${LOCK_FILE}" 2>/dev/null > /dev/null || true ; wait ; exit 131 ;' SIGQUIT || EXIT_CODE=131
 		# SC2173 - https://github.com/koalaman/shellcheck/wiki/SC2173
-		#trap 'cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 1 ;' SIGSTOP || EXIT_CODE=7
-		trap 'cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 130 ;' SIGINT || EXIT_CODE=130
-		trap 'cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 137 ;' SIGABRT || EXIT_CODE=137
-		trap 'cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit ${EXIT_CODE} ;' EXIT || EXIT_CODE=1
+		#trap 'cleanup 2>/dev/null || rm -f "${LOCK_FILE}" 2>/dev/null > /dev/null || true ; wait ; exit 1 ;' SIGSTOP || EXIT_CODE=7
+		trap 'cleanup 2>/dev/null || rm -f "${LOCK_FILE}" 2>/dev/null > /dev/null || true ; wait ; exit 130 ;' SIGINT || EXIT_CODE=130
+		trap 'cleanup 2>/dev/null || rm -f "${LOCK_FILE}" 2>/dev/null > /dev/null || true || true ; wait ; exit 137 ;' SIGABRT || EXIT_CODE=137
+		trap 'cleanup 2>/dev/null || rm -f "${LOCK_FILE}" 2>/dev/null > /dev/null || true ; wait ; exit ${EXIT_CODE} ;' EXIT || EXIT_CODE=1
 	else
 		# shellcheck disable=SC2046
-		printf "\t%s\n" "Check Setup Scripts Tests Coverage already in progress by "$(head "${LOCK_FILE}") >&2 ;
+		printf "\t%s\n" "Comment out line script already in progress by "$(head -n1 "${LOCK_FILE}") >&2 ;
 		exit 126 ;  # EINPROGRESS
 	fi
 }
@@ -164,11 +166,15 @@ if [[ ( -e "${THE_FILE}" ) ]] ; then
 			if [[ ( ${BEFORE_LINE_NUMBER} -gt 0 ) ]] ; then
 				head -n ${BEFORE_LINE_NUMBER} ${THE_FILE} || EXIT_CODE=66 ;  # e.g. EIO/ESPIPE/ERANGE
 			fi
+			# shellcheck disable=SC2086
 			if [[ ( ${EXIT_CODE:-1} -eq 0 ) ]] ; then
 				head -n ${LINE_NUMBER} ${THE_FILE} | tail -n 1 | sed -E 's/^/'"${COMMENT_VALUE}"'/g' || EXIT_CODE=89 ;
 				wait ;
+				# shellcheck disable=SC2086
 				if [[ ( ${EXIT_CODE:-1} -eq 0 ) ]] ; then
+					# shellcheck disable=SC2086
 					if [[ ( ${FILE_LENGTH} -gt ${AFTER_LINE_NUMBER} ) ]] ; then
+						# shellcheck disable=SC2086
 						tail -n +${AFTER_LINE_NUMBER} ${THE_FILE} || EXIT_CODE=65 ;  # e.g. EIO/ERANGE
 					else
 						printf "%s" "" ;  # output empty string
@@ -195,6 +201,7 @@ else
 	EXIT_CODE=64
 fi
 
-cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || : ; wait ;
+cleanup 2>/dev/null || rm -f "${LOCK_FILE}" 2>/dev/null || : ; wait ;
 
+# shellcheck disable=SC2086
 exit ${EXIT_CODE:-70} ;

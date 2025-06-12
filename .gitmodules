@@ -1,6 +1,16 @@
+[submodule "CEP-4"]
+	path = CEP/4
+	url = https://gist.github.com/reactive-firewall/cc041f10aad1d43a5ef15f50a6bbd5a5.git
+	ignore = dirty
+
 [submodule "CEP-5"]
 	path = CEP/5
 	url = https://gist.github.com/3d2bd3cf37f87974df6f7bee31a05a89.git
+	ignore = dirty
+
+[submodule "CEP-7"]
+	path = CEP/7
+	url = https://gist.github.com/reactive-firewall/123b8a45f1bdeb064079e0524a29ec20.git
 	ignore = dirty
 
 [submodule "CEP-8"]

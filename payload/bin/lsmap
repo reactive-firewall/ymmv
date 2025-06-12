@@ -89,17 +89,14 @@ check_dependencies() {
 
 # Function: process_directory
 # Description: Processes a directory recursively to build the tree.
-# Arguments:
-#   $1 - The directory to process.
-#   $2 - The prefix for the tree lines.
-#   $3 - Is this the last entry in its directory?
 process_directory() {
 	local dir="$1"
 	local prefix="$2"
 	local is_last="$3"
 
+	# Print the current directory
 	printf '%s' "$prefix"
-	if [[ "$is_last" == "true" ]]; then
+	if [ "$is_last" = "true" ]; then
 		printf '└── '
 		prefix="${prefix}    "
 	else
@@ -108,12 +105,27 @@ process_directory() {
 	fi
 	printf '%s\n' "$(basename "$dir")"
 
+	# Use a temporary file to store entries
+	local temp_file=$(mktemp)
+	find "$dir" -maxdepth 1 -mindepth 1 -print0 | sort -z > "$temp_file"
+
+	# Read entries from the temporary file
 	local entries=()
 	while IFS= read -r -d '' entry; do
 		entries+=("$entry")
-	done < <(find "$dir" -maxdepth 1 -mindepth 1 -print0 | sort -z)
+	done < "$temp_file"
 
+	# Get the total number of entries
 	local total="${#entries[@]}"
+
+	# If there are no entries, clean up and return
+	if [ "$total" -eq 0 ]; then
+		rm "$temp_file"
+		# printf '%s└── {Empty}\n' "$prefix"
+		return
+	fi
+
+	# Process each entry
 	local index=0
 	for entry in "${entries[@]}"; do
 		((index++))
@@ -126,13 +138,13 @@ process_directory() {
 		if [ -d "$entry" ]; then
 			process_directory "$entry" "$prefix" "$child_is_last"
 		elif [ -f "$entry" ]; then
-			if [[ "$entry" == *.py ]]; then
+			if [ "${entry##*.}" = "py" ]; then
 				process_python_file "$entry" "$prefix" "$child_is_last"
-			elif [[ "$entry" == *.sh ]]; then
+			elif [ "${entry##*.}" = "sh" ]; then
 				process_shell_script "$entry" "$prefix" "$child_is_last"
 			else
 				printf '%s' "$prefix"
-				if [[ "$child_is_last" == "true" ]]; then
+				if [ "$child_is_last" = "true" ]; then
 					printf '└── '
 				else
 					printf '├── '
@@ -141,21 +153,20 @@ process_directory() {
 			fi
 		fi
 	done
+
+	# Clean up the temporary file
+	rm "$temp_file"
 }
 
 # Function: process_python_file
 # Description: Processes a Python file to extract classes and functions.
-# Arguments:
-#   $1 - The Python file to process.
-#   $2 - The prefix for the tree lines.
-#   $3 - Is this the last entry in its directory?
 process_python_file() {
 	local file="$1"
 	local prefix="$2"
 	local is_last="$3"
 
 	printf '%s' "$prefix"
-	if [[ "$is_last" == "true" ]]; then
+	if [ "$is_last" = "true" ]; then
 		printf '└── '
 		new_prefix="${prefix}    "
 	else
@@ -165,77 +176,135 @@ process_python_file() {
 	printf '%s\n' "$(basename "$file")"
 
 	awk -v prefix="$new_prefix" '
-	function print_tree(p, name, is_last) {
-		printf "%s", p
-		if (is_last == 1) {
-			printf "└── "
-			p = p "    "
-		} else {
-			printf "├── "
-			p = p "│   "
-		}
-		print name
-		return p
-	}
-	function get_indent(line) {
-		match(line, /^[ \t]*/)
-		return RLENGTH
-	}
-	BEGIN {
-		level = 0
-		indent_stack[0] = prefix
-		indents[0] = 0
-	}
-	/^[[:space:]]*class[[:space:]]+[A-Za-z_][A-Za-z0-9_]*.*:/ {
-		line = $0
-		curr_indent = get_indent(line)
-		class_name = $2
-		sub("\\(.*", "", class_name)
+    function get_indent(line) {
+        match(line, /^[ \t]*/)
+        return RLENGTH
+    }
 
-		while (level > 0 && curr_indent <= indents[level]) {
-			level--
-		}
+    function print_tree(p, name, is_last) {
+        printf "%s%s %s\n", p, (is_last ? "└──" : "├──"), name
+        return p (is_last ? "    " : "│   ")
+    }
 
-		prefix = indent_stack[level]
-		is_last = 0
-		prefix = print_tree(prefix, "Class: " class_name, is_last)
+    BEGIN {
+        item_count = 0
+        delete items
+        delete indents
+        delete parents
+        delete types
+        delete has_children
+        delete last_at_level
+        prev_indent = -1
+        curr_parent = -1
+    }
 
-		level++
-		indents[level] = curr_indent
-		indent_stack[level] = prefix
-		next
-	}
-	/^[[:space:]]*def[[:space:]]+[A-Za-z_][A-Za-z0-9_]*.*:/ {
-		line = $0
-		curr_indent = get_indent(line)
+    /^[[:space:]]*(class|def)[[:space:]]+[A-Za-z_][A-Za-z0-9_]*.*:/ {
+        line = $0
+        curr_indent = get_indent(line)
+        items[item_count] = line
+        indents[item_count] = curr_indent
+        types[item_count] = ($1 ~ /^class/) ? "class" : "def"
 
-		while (level > 0 && curr_indent <= indents[level]) {
-			level--
-		}
+        # Find parent based on indentation
+        parent = -1
+        for (i = item_count - 1; i >= 0; i--) {
+            if (indents[i] < curr_indent) {
+                parent = i
+                has_children[i] = 1
+                break
+            }
+        }
 
-		prefix = indent_stack[level]
-		func_name = $2
-		sub("\\(.*", "", func_name)
-		is_last = 0
-		print_tree(prefix, (level > 0 ? "Method: " : "Function: ") func_name, is_last)
-		next
-	}
-	' "$file"
+        parents[item_count] = parent
+        item_count++
+    }
+
+    END {
+        # First, identify last items at each level under each parent
+        for (i = 0; i < item_count; i++) {
+            curr_indent = indents[i]
+            parent = parents[i]
+            
+            # Look ahead to find if this is the last at its level under its parent
+            is_last = 1
+            for (j = i + 1; j < item_count; j++) {
+                if (parents[j] == parent && indents[j] == curr_indent) {
+                    is_last = 0
+                    break
+                }
+            }
+            
+            if (is_last) {
+                last_at_level[i] = 1
+            }
+        }
+
+        # Now print items with correct prefixes
+        for (i = 0; i < item_count; i++) {
+            line = items[i]
+            curr_indent = indents[i]
+            parent = parents[i]
+            
+            # Build prefix by walking up the parent chain
+            curr_prefix = prefix
+            if (parent >= 0) {
+                # Get the chain of parents up to root
+                p_chain_len = 0
+                p = i
+                while (p >= 0) {
+                    p_chain[p_chain_len++] = p
+                    p = parents[p]
+                }
+                
+                # Build prefix from root to current, keeping track of siblings
+                for (j = p_chain_len - 1; j > 0; j--) {
+                    p = p_chain[j]
+                    next_p = p_chain[j-1]
+                    
+                    # Check if current level has more siblings after this chain
+                    has_sibling = 0
+                    for (k = next_p + 1; k < item_count; k++) {
+                        if (parents[k] == parents[p] && indents[k] == indents[p]) {
+                            has_sibling = 1
+                            break
+                        }
+                    }
+                    
+                    curr_prefix = curr_prefix (has_sibling ? "│   " : "    ")
+                }
+            }
+
+            # Determine if this item is last at its level
+            is_last = last_at_level[i]
+
+            if (types[i] == "class") {
+                name = line
+                sub(/^[[:space:]]*class[[:space:]]+/, "", name)
+                sub(/\(.*/, "", name)
+                sub(/:.*/, "", name)
+                print_tree(curr_prefix, "Class: " name, is_last)
+            } else {
+                name = line
+                sub(/^[[:space:]]*def[[:space:]]+/, "", name)
+                sub(/\(.*/, "", name)
+                sub(/:.*/, "", name)
+                is_method = (parent >= 0 && types[parent] == "class")
+                print_tree(curr_prefix, (is_method ? "Method: " : "Function: ") name, is_last)
+            }
+        }
+    }
+' "$file"
 }
 
 # Function: process_shell_script
 # Description: Processes a shell script to extract variables and functions.
-# Arguments:
-#   $1 - The shell script file to process.
-#   $2 - The prefix for the tree lines.
-#   $3 - Is this the last entry in its directory?
 process_shell_script() {
 	local file="$1"
 	local prefix="$2"
 	local is_last="$3"
 
 	printf '%s' "$prefix"
-	if [[ "$is_last" == "true" ]]; then
+	if [ "$is_last" = "true" ]; then
 		printf '└── '
 		new_prefix="${prefix}    "
 	else
@@ -247,25 +316,35 @@ process_shell_script() {
 	awk -v prefix="$new_prefix" '
 	function print_tree(p, name, is_last) {
 		printf "%s", p
-		if (is_last == 1) {
+		if (is_last) {
 			printf "└── "
 		} else {
 			printf "├── "
 		}
 		print name
 	}
-	/^[[:space:]]*([a-zA-Z_][a-zA-Z0-9_]*)=/ {
+	BEGIN {
+		count = 0
+	}
+	/^[[:space:]]*(export[[:space:]]+|declare[[:space:]]+|local[[:space:]]+)?([a-zA-Z_][a-zA-Z0-9_]*)=/ {
 		var_name = $1
+		sub("^(export|declare|local)[[:space:]]+", "", var_name)
 		sub("=.*", "", var_name)
-		print_tree(prefix, "Variable: " var_name, 0)
+		entries[count++] = "Variable: " var_name
 	}
-	/^[[:space:]]*function[[:space:]]+([a-zA-Z_][a-zA-Z0-9_]*)/ {
+	/^[[:space:]]*function[[:space:]]+([a-zA-Z_][a-zA-z0-9_]*)/ {
 		func_name = $2
-		print_tree(prefix, "Function: " func_name, 0)
+		entries[count++] = "Function: " func_name
 	}
-	/^[[:space:]]*([a-zA-Z_][a-zA-Z0-9_]*)\(\)[[:space:]]*\{/ {
+	/^[[:space:]]*([a-zA-Z_][a-zA-z0-9_]*)\(\)[[:space:]]*\{/ {
 		func_name = $1
-		print_tree(prefix, "Function: " func_name, 0)
+		entries[count++] = "Function: " func_name
+	}
+	END {
+		for (i = 0; i < count; i++) {
+			is_last = (i == count - 1)
+			print_tree(prefix, entries[i], is_last)
+		}
 	}
 	' "$file"
 }
@@ -273,12 +352,19 @@ process_shell_script() {
 # Main function
 main() {
 	local target_dir="${1:-.}"
+
+	# Validate directory
+	if [[ ! -d "$target_dir" ]]; then
+		printf 'Error: Directory "%s" does not exist.\n' "$target_dir" >&2
+		exit 64
+	fi
+
 	check_dependencies
 	process_directory "$target_dir" "" "true"
 }
 
 # Check for help option
-if [[ "${1:-}" == '-h' || "${1:-}" == '--help' ]]; then
+if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
 	print_usage
 	exit 0
 fi

@@ -1,0 +1,42 @@
+#!/bin/bash
+
+# Function to list dangling tags
+list_dangling_tags() {
+    git fsck --full --strict --lost-found --name-objects 2>/dev/null | \
+    cut -d\  -f 3-3 | \
+    xargs -L1 -I{} git describe --tags --always --candidates=100 {} 2>/dev/null | \
+    xargs -L1 -I{} printf "%s\n" {}
+}
+
+# Function to list dangling trees
+list_dangling_trees() {
+    git fsck --full --strict --lost-found --name-objects 2>/dev/null | \
+    grep -ovF "blob" | \
+    cut -d\  -f 3-3 | \
+    xargs -L1 -I{} git ls-tree -r {} 2>/dev/null | \
+    sort -ds -t\s -k4 | \
+    sort -fibrus -t/ | \
+    sort -fib -t\s -k4 | \
+    tr '\t' ' ' | \
+    cut -d\  -f 3-3 | \
+    xargs -L1 -I{} git describe --tags --always --candidates=100 {} 2>/dev/null | \
+    xargs -L1 -I{} printf "%s\n" {}
+}
+
+# Function to list dangling blobs
+list_dangling_blobs() {
+    git fsck --full --strict --lost-found --name-objects 2>/dev/null | \
+    grep -F "blob" | \
+    cut -d\  -f 3-3 | \
+    xargs -L1 -I{} printf "%s\n" {}
+}
+
+# Main function to execute the desired operations
+main() {
+    list_dangling_tags
+    list_dangling_trees
+    list_dangling_blobs
+}
+
+# Execute the main function
+main

@@ -78,26 +78,31 @@ function cleanup() {
 	unset IS_CLEAN_MODE || : ;
 	unset IS_VERBOSE_MODE || : ;
 	unset GIT_FILTER_TOOL_DATA_SKIP || : ;
+	# shellcheck disable=SC2317
 	rm -f "${_GIT_TOOL_BUFFER}" 2>/dev/null || : ;
-	rm -f "${LOCK_FILE}" 2>/dev/null || : ; wait ;
-	unset _GIT_TOOL_BUFFER || : ;
-	unset LOCK_FILE || : ;
-	return
+	# shellcheck disable=SC2317
+	rm -f "${LOCK_FILE}" 2>/dev/null || : ;
+	unset _GIT_TOOL_BUFFER 2>/dev/null || : ;
+	# shellcheck disable=SC2317
+	wait ;
+	unset LOCK_FILE 2>/dev/null || : ;
+	# shellcheck disable=SC2317
+	hash -d shlock 2>/dev/null > /dev/null || : ;
 }
 
 export -f cleanup ;
 
 function handle_signals() {
-	if [[ ( $(shlock -f ${LOCK_FILE} -p $$ ) -eq 0 ) ]] ; then
+	if [[ ( $(shlock -f "${LOCK_FILE}" -p $$ ) -eq 0 ) ]] ; then
 		EXIT_CODE=0
-		trap 'cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 129 ;' SIGHUP || EXIT_CODE=129
-		trap 'cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 143 ;' SIGTERM || EXIT_CODE=143
-		trap 'cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 131 ;' SIGQUIT || EXIT_CODE=131
+		trap 'cleanup 2>/dev/null || rm -f "${LOCK_FILE}" 2>/dev/null > /dev/null || true ; wait ; exit 129 ;' SIGHUP || EXIT_CODE=129
+		trap 'cleanup 2>/dev/null || rm -f "${LOCK_FILE}" 2>/dev/null > /dev/null || true ; wait ; exit 143 ;' SIGTERM || EXIT_CODE=143
+		trap 'cleanup 2>/dev/null || rm -f "${LOCK_FILE}" 2>/dev/null > /dev/null || true ; wait ; exit 131 ;' SIGQUIT || EXIT_CODE=131
 		# SC2173 - https://github.com/koalaman/shellcheck/wiki/SC2173
-		#trap 'cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 1 ;' SIGSTOP || EXIT_CODE=7
-		trap 'cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 130 ;' SIGINT || EXIT_CODE=130
-		trap 'cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 137 ;' SIGABRT || EXIT_CODE=137
-		trap 'cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit ${EXIT_CODE} ;' EXIT || EXIT_CODE=1
+		#trap 'cleanup 2>/dev/null || rm -f "${LOCK_FILE}" 2>/dev/null > /dev/null || true ; wait ; exit 1 ;' SIGSTOP || EXIT_CODE=7
+		trap 'cleanup 2>/dev/null || rm -f "${LOCK_FILE}" 2>/dev/null > /dev/null || true ; wait ; exit 130 ;' SIGINT || EXIT_CODE=130
+		trap 'cleanup 2>/dev/null || rm -f "${LOCK_FILE}" 2>/dev/null > /dev/null || true || true ; wait ; exit 137 ;' SIGABRT || EXIT_CODE=137
+		trap 'cleanup 2>/dev/null || rm -f "${LOCK_FILE}" 2>/dev/null > /dev/null || true ; wait ; exit ${EXIT_CODE} ;' EXIT || EXIT_CODE=1
 	else
 		# shellcheck disable=SC2046
 		printf "\t%s\n" "Git-Filter-Data Script already in progress by "$(head "${LOCK_FILE}") >&2 ;
@@ -122,7 +127,7 @@ done
 fi
 
 # before doing anything buff the data
-{ cat </dev/stdin >"${_GIT_TOOL_BUFFER}" 2>/dev/null || EXIT_CODE=65 } ; wait ;
+{ cat </dev/stdin >"${_GIT_TOOL_BUFFER}" 2>/dev/null || EXIT_CODE=65 ;} ; wait ;
 
 if [[ ( $IS_SMUDGE_MODE -eq 1 ) ]]; then
 	# first check if we need to smudge at all

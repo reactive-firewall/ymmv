@@ -78,17 +78,22 @@ function cleanup() {
 	unset IS_CLEAN_MODE || : ;
 	unset IS_VERBOSE_MODE || : ;
 	unset GIT_FILTER_TOOL_DEDUP_SKIP || : ;
+	# shellcheck disable=SC2317
 	rm -f "${_GIT_TOOL_BUFFER}" 2>/dev/null || : ;
-	rm -f "${LOCK_FILE}" 2>/dev/null || : ; wait ;
-	unset _GIT_TOOL_BUFFER || : ;
-	unset LOCK_FILE || : ;
-	return
+	# shellcheck disable=SC2317
+	rm -f "${LOCK_FILE}" 2>/dev/null || : ;
+	unset _GIT_TOOL_BUFFER 2>/dev/null || : ;
+	# shellcheck disable=SC2317
+	wait ;
+	unset LOCK_FILE 2>/dev/null || : ;
+	# shellcheck disable=SC2317
+	hash -d shlock 2>/dev/null > /dev/null || : ;
 }
 
 export -f cleanup ;
 
 function handle_signals() {
-	if [[ ( $(shlock -f ${LOCK_FILE} -p $$ ) -eq 0 ) ]] ; then
+	if [[ ( $(shlock -f "${LOCK_FILE}" -p $$ ) -eq 0 ) ]] ; then
 		EXIT_CODE=0
 		trap 'cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 129 ;' SIGHUP || EXIT_CODE=129
 		trap 'cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 143 ;' SIGTERM || EXIT_CODE=143
@@ -122,35 +127,44 @@ done
 fi
 
 # before doing anything buff the data
-{ cat </dev/stdin >"${_GIT_TOOL_BUFFER}" 2>/dev/null || EXIT_CODE=65 } ; wait ;
+{ cat </dev/stdin >"${_GIT_TOOL_BUFFER}" 2>/dev/null || EXIT_CODE=65 ;} ; wait ;
 
-if [[ ( $IS_SMUDGE_MODE -eq 1 ) ]]; then
-	# first check if we can smudge at all
-	if [[ ( $(file -b --mime "${_GIT_TOOL_BUFFER}" | grep -cioF "text/plain" ) -lt 1 ) ]] ; then
-		IS_SMUDGE_MODE=0 ;
-		EXIT_CODE=64 ;
-	fi
-	# else the file is ok to try and smudge
-fi
-
-if [[ ( $IS_CLEAN_MODE -eq 1 ) ]]; then
-	# first check if we need to clean at all
-	if [[ ( $(file -b --mime "${_GIT_TOOL_BUFFER}" | grep -cioF "text/plain" ) -lt 1 ) ]] ; then
-		IS_CLEAN_MODE=0 ;
-		EXIT_CODE=2 ; # should not be running anyway
-	fi
-	# else the file is plain text and is ok to try and clean
-fi
-
-
-# cat_sort_dedup only smudges to ensure previous blobs are preserved for posterity
-if [[ ( $IS_SMUDGE_MODE -eq 1 ) ]] ; then
-	cat <"${_GIT_TOOL_BUFFER}" | grep -Fiof <(cat <"${_GIT_TOOL_BUFFER}" | sort -u) ;
-else
+# shellcheck disable=SC2086
+if [[ ${GIT_FILTER_TOOL_DEDUP_SKIP} ]] ; then
 	cat <"${_GIT_TOOL_BUFFER}" ;
-fi
+	EXIT_CODE=0 ; # actually skipped
+else
+	if [[ ( ${GIT_FILTER_TOOL_DEDUP_SKIP} -eq 1 ) ]]; then
+	# shellcheck disable=SC2086
+	if [[ ( $IS_SMUDGE_MODE -eq 1 ) ]]; then
+		# first check if we can smudge at all
+		if [[ ( $(file -b --mime "${_GIT_TOOL_BUFFER}" | grep -cioF "text/plain" ) -lt 1 ) ]] ; then
+			IS_SMUDGE_MODE=0 ;
+			EXIT_CODE=64 ;
+			printf "%s\n" "Error: Non-text data can not be filtered!" 1>&2 ; exit 2 ;;
+		fi
+		# else the file is ok to try and smudge
+	fi
+	# shellcheck disable=SC2086
+	if [[ ( $IS_CLEAN_MODE -eq 1 ) ]]; then
+		# first check if we need to clean at all
+		if [[ ( $(file -b --mime "${_GIT_TOOL_BUFFER}" | grep -cioF "text/plain" ) -lt 1 ) ]] ; then
+			IS_CLEAN_MODE=0 ;
+			EXIT_CODE=2 ; # should not be running anyway
+		fi
+		# else the file is plain text and is ok to try and clean
+	fi
 
+
+	# cat_sort_dedup only smudges to ensure previous blobs are preserved for posterity
+	if [[ ( $IS_SMUDGE_MODE -eq 1 ) ]] ; then
+		cat <"${_GIT_TOOL_BUFFER}" | grep -Fiof <(cat <"${_GIT_TOOL_BUFFER}" | sort -u) ;
+	else
+		cat <"${_GIT_TOOL_BUFFER}" ;
+	fi
+fi
 #GIT_FILTER_TOOL_DATA_OPT=`git config --bool --default true --get 'filter.data.option'`
 # always clean up
 cleanup || true ; wait ;
+# shellcheck disable=SC2086
 exit ${EXIT_CODE:-1} ;
