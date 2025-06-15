@@ -117,7 +117,7 @@ LOCK_FILE="${TMPDIR:-/tmp}/org.ymmv.find-tool-pkg-shell"
 # Set default exitcode to failure until sure we won't need to abort
 EXIT_CODE=1
 
-# end of bootstraping, use functions below this point
+# end of bootstrapping, use functions below this point
 
 # Function to check if a command exists.
 
@@ -140,14 +140,14 @@ function _cleanup() {
 function handle_signals() {
 	if [[ ( $(shlock -f ${LOCK_FILE} -p $$ ) -eq 0 ) ]] ; then
 		EXIT_CODE=0
-		trap 'cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 129 ;' SIGHUP || EXIT_CODE=129
-		trap 'cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 143 ;' SIGTERM || EXIT_CODE=143
-		trap 'cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 131 ;' SIGQUIT || EXIT_CODE=131
+		trap '_cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 129 ;' SIGHUP || EXIT_CODE=129
+		trap '_cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 143 ;' SIGTERM || EXIT_CODE=143
+		trap '_cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 131 ;' SIGQUIT || EXIT_CODE=131
 		# SC2173 - https://github.com/koalaman/shellcheck/wiki/SC2173
-		#trap 'cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 1 ;' SIGSTOP || EXIT_CODE=7
-		trap 'cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 130 ;' SIGINT || EXIT_CODE=130
-		trap 'cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 137 ;' SIGABRT || EXIT_CODE=137
-		trap 'cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit ${EXIT_CODE} ;' EXIT || EXIT_CODE=1
+		#trap '_cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 1 ;' SIGSTOP || EXIT_CODE=7
+		trap '_cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 130 ;' SIGINT || EXIT_CODE=130
+		trap '_cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 137 ;' SIGABRT || EXIT_CODE=137
+		trap '_cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit ${EXIT_CODE} ;' EXIT || EXIT_CODE=1
 	else
 		# shellcheck disable=SC2046
 		printf "\t%s\n" "Check Setup Scripts Tests Coverage already in progress by "$(head "${LOCK_FILE}") >&2 ;
@@ -170,6 +170,6 @@ else
 	EXIT_CODE=$?
 fi
 
-cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || : ; wait ;
+_cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || : ; wait ;
 
 exit ${EXIT_CODE:-70} ;

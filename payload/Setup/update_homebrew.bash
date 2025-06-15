@@ -87,14 +87,14 @@ HOMEBREW_USER=$(stat -f %u ~/homebrew/)
 HOMEBREW_GROUP=$(stat -f %g ~/homebrew/)
 export HOMEBREW_NO_INSECURE_REDIRECT=1 ;
 umask 002
-umask -n 4096
+ulimit -n 4096
 export ENABLE_CLANG_FORMAT=on
 # need to make this dynamic
 export CMAKE_OSX_DEPLOYMENT_TARGET=15.1
 export CC=clang
 export CXX=clang
 export CPP=clang-cpp
-export CMAKE_PROGRAM_PATH=${PATH}:${HOMEBREW_PREFIX}/opt/llvm@19/bin:${HOMEBREW_PREFIX}/opt/llvm@18/bin:/Applications/Xcode.app/Contents/Developer/usr/bin
+export CMAKE_PROGRAM_PATH=${HOMEBREW_PREFIX}/opt/llvm@20/bin:${HOMEBREW_PREFIX}/opt/llvm@19/bin:${PATH}:${HOMEBREW_PREFIX}/opt/llvm/bin:${HOMEBREW_PREFIX}/opt/lld@20/bin:${HOMEBREW_PREFIX}/opt/lld@19/bin:${PATH}:${HOMEBREW_PREFIX}/opt/lld/bin:/Applications/Xcode.app/Contents/Developer/usr/bin
 OPENSSL_DIR=$(echo $(openssl version -a | grep -F "SSL" | grep -F "DIR" | cut -d: -f 2-2 | tr -d '"')) ;
 export SSL_CERT_DIR=$(find ${SSL_CERT_DIR} -iname "certs" -type d -print 2>/dev/null ; wait ;) ;
 # may need to use c_hash util on error

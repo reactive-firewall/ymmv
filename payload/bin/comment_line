@@ -126,14 +126,18 @@ EXIT_CODE=1
 #	N/A
 # Results:
 #	returns -- once cleanup has been done on a best-effort case.
-function _cleanup() {
+function cleanup() {
+	# shellcheck disable=SC2317
 	unset THE_FILE || : ;
+	# shellcheck disable=SC2317
 	unset BEFORE_LINE_NUMBER || : ;
+	# shellcheck disable=SC2317
 	unset AFTER_LINE_NUMBER || : ;
 	# shellcheck disable=SC2317
 	rm -f "${LOCK_FILE}" 2>/dev/null || : ;
 	# shellcheck disable=SC2317
 	wait ;
+	# shellcheck disable=SC2317
 	unset LOCK_FILE 2>/dev/null || : ;
 	# shellcheck disable=SC2317
 	hash -d shlock 2>/dev/null > /dev/null || : ;
@@ -161,21 +165,23 @@ handle_signals
 
 if [[ ( -e "${THE_FILE}" ) ]] ; then
 	if [[ ( -r "${THE_FILE}" ) ]] ; then
-		FILE_LENGTH=$(wc -l ${THE_FILE} 2>/dev/null | grep -m 1 -o "[0-9]+" | head -n 1)
+		FILE_LENGTH=$(wc -l "${THE_FILE}" 2>/dev/null | grep -m 1 -o "[0-9]+" | head -n 1)
 		if [[ ( -w "${THE_FILE}" ) ]] ; then
 			if [[ ( ${BEFORE_LINE_NUMBER} -gt 0 ) ]] ; then
-				head -n ${BEFORE_LINE_NUMBER} ${THE_FILE} || EXIT_CODE=66 ;  # e.g. EIO/ESPIPE/ERANGE
+				# shellcheck disable=SC2086
+				head -n ${BEFORE_LINE_NUMBER} "${THE_FILE}" || EXIT_CODE=66 ;  # e.g. EIO/ESPIPE/ERANGE
 			fi
 			# shellcheck disable=SC2086
 			if [[ ( ${EXIT_CODE:-1} -eq 0 ) ]] ; then
-				head -n ${LINE_NUMBER} ${THE_FILE} | tail -n 1 | sed -E 's/^/'"${COMMENT_VALUE}"'/g' || EXIT_CODE=89 ;
+				# shellcheck disable=SC2086
+				head -n ${LINE_NUMBER} "${THE_FILE}" | tail -n 1 | sed -E 's/^/'"${COMMENT_VALUE}"'/g' || EXIT_CODE=89 ;
 				wait ;
 				# shellcheck disable=SC2086
 				if [[ ( ${EXIT_CODE:-1} -eq 0 ) ]] ; then
 					# shellcheck disable=SC2086
 					if [[ ( ${FILE_LENGTH} -gt ${AFTER_LINE_NUMBER} ) ]] ; then
 						# shellcheck disable=SC2086
-						tail -n +${AFTER_LINE_NUMBER} ${THE_FILE} || EXIT_CODE=65 ;  # e.g. EIO/ERANGE
+						tail -n +${AFTER_LINE_NUMBER} "${THE_FILE}" || EXIT_CODE=65 ;  # e.g. EIO/ERANGE
 					else
 						printf "%s" "" ;  # output empty string
 					fi

@@ -60,12 +60,12 @@
 #    even if the above stated remedy fails of its essential purpose.
 ################################################################################
 
-# CAVEAT: This Script is for convience and should not be used as a source of truth
+# CAVEAT: This Script is for connivance and should not be used as a source of truth
 # when checking crypto hashes.
 
 
 # to check though:
-diff -q <(tail -n 157 "$0" | head -n 145 | shasum -a 384 -t -) <(tail -n 1 "$0")
+diff -q <(tail -n 142 "$0" | head -n 140 | shasum -a 384 -t -) <(tail -n 1 "$0")
 
 # Usage Summary:
 #    find_exec_tool_is_from_Apple_pkg FILE
@@ -140,15 +140,15 @@ EXIT_CODE=1
 # Function to check if a command exists.
 
 # USAGE:
-#	~$ cleanup
+#	~$ _cleanup
 # Arguments:
 #	N/A
 # Results:
-#	returns -- once cleanup has been done on a best-effort case.
+#	returns -- once _cleanup has been done on a best-effort case.
 function _cleanup() {
-	unset CHECK_LINE_A || true ;
-	unset CHECK_LINE_B || true ;
-	unset CHECK_LINE_C || true ;
+	unset CHECK_LINE_A || : ;
+	unset CHECK_LINE_B || : ;
+	unset CHECK_LINE_C || : ;
 	rm -qf "${INSECURE_TEMP_PATH}" 2>/dev/null || true ;
 	unset INSECURE_TEMP_PATH || true ;
 	unset THE_FILE || true ;
@@ -162,14 +162,14 @@ function _cleanup() {
 function handle_signals() {
 	if [[ ( $(shlock -f ${LOCK_FILE} -p $$ ) -eq 0 ) ]] ; then
 		EXIT_CODE=0
-		trap 'cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 129 ;' SIGHUP || EXIT_CODE=129
-		trap 'cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 143 ;' SIGTERM || EXIT_CODE=143
-		trap 'cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 131 ;' SIGQUIT || EXIT_CODE=131
+		trap '_cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 129 ;' SIGHUP || EXIT_CODE=129
+		trap '_cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 143 ;' SIGTERM || EXIT_CODE=143
+		trap '_cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 131 ;' SIGQUIT || EXIT_CODE=131
 		# SC2173 - https://github.com/koalaman/shellcheck/wiki/SC2173
-		#trap 'cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 1 ;' SIGSTOP || EXIT_CODE=7
-		trap 'cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 130 ;' SIGINT || EXIT_CODE=130
-		trap 'cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 137 ;' SIGABRT || EXIT_CODE=137
-		trap 'cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit ${EXIT_CODE} ;' EXIT || EXIT_CODE=1
+		#trap '_cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 1 ;' SIGSTOP || EXIT_CODE=7
+		trap '_cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 130 ;' SIGINT || EXIT_CODE=130
+		trap '_cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 137 ;' SIGABRT || EXIT_CODE=137
+		trap '_cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit ${EXIT_CODE} ;' EXIT || EXIT_CODE=1
 	else
 		# shellcheck disable=SC2046
 		printf "\t%s\n" "Check Setup Scripts Tests Coverage already in progress by "$(head "${LOCK_FILE}") >&2 ;
@@ -180,7 +180,7 @@ function handle_signals() {
 handle_signals
 
 if [[ ( $( find_exec_tool_is_from_pkg "${THE_FILE}" ) -eq $(true) ) ]] ; then
-	TEMP_APP_TRUST=$(pkgutil --check-signature "${THE_FILE}" 2>/dev/null | tee ${INSECURE_TEMP_PATH} | grep -F "$CHECK_LINE_A" 2>/dev/null )
+	TEMP_APP_TRUST=$(pkgutil --check-signature "${THE_FILE}" 2>/dev/null | tee "${INSECURE_TEMP_PATH}" | grep -F "$CHECK_LINE_A" 2>/dev/null )
 	if [[ ( -n "$TEMP_APP_TRUST" ) ]] ; then
 		TEMP_APP_HASH=$(tail -n 5 "${INSECURE_TEMP_PATH}" 2>/dev/null | grep -F "$CHECK_LINE_B" 2>/dev/null )
 		if [[ ( -n "$TEMP_APP_HASH" ) ]] ; then
@@ -200,9 +200,9 @@ else
 	false ; EXIT_CODE=$? ;
 fi
 
-cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || : ; wait ;
+_cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || : ; wait ;
 
 exit ${EXIT_CODE:-70} ;
 
 # This file's code hash:
-7a3c6ce1cf16880310e7d1d618b201984052afb97c08eec2ff877c0735bc529e5d31b31f786aebddf548c4e4450f38b5  -
+b652888477752670e32669294a88c7b19d1c1f31c32bf2dde91d73ec48a809471681dbaf8338592bc3ff1b79c27fef29  -

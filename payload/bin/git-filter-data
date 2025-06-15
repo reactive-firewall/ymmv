@@ -64,7 +64,7 @@ declare -ir MINPARAMS=0;
 declare -i IS_SMUDGE_MODE=0;
 declare -i IS_CLEAN_MODE=0;
 declare -i IS_VERBOSE_MODE=0;
-declare -ir MYVERSION=20241101;
+declare -ir MYVERSION=20250610;
 declare GIT_FILTER_TOOL_DATA_SKIP=`git config --bool --default false --get 'filter.data.skip'`;
 # Can force skip this filter by setting the git-config option 'filter.data.skip' like so:
 # git config --bool --set 'filter.data.skip' true
@@ -74,9 +74,13 @@ LOCK_FILE="${TMPDIR:-/tmp}/org.git.tool-script.lock" ;
 EXIT_CODE=1
 
 function cleanup() {
+	# shellcheck disable=SC2317
 	unset IS_SMUDGE_MODE || : ;
+	# shellcheck disable=SC2317
 	unset IS_CLEAN_MODE || : ;
+	# shellcheck disable=SC2317
 	unset IS_VERBOSE_MODE || : ;
+	# shellcheck disable=SC2317
 	unset GIT_FILTER_TOOL_DATA_SKIP || : ;
 	# shellcheck disable=SC2317
 	rm -f "${_GIT_TOOL_BUFFER}" 2>/dev/null || : ;
@@ -119,7 +123,7 @@ case "$1" in
   -s|--in|--smudge) IS_SMUDGE_MODE=1 ;;
   -c|--out|--clean) IS_CLEAN_MODE=1 ;;
   -v|--verbose) IS_VERBOSE_MODE=1 ;;
-  -V|--version) printf "%s\n" "${MYVERSION}" ; exit 0 ;;
+  -V|--version) printf "%s\n" "${MYVERSION}" ; exit $(printf "%d\n" $(("${MYVERSION}" % 256))) ;;
   -*) printf "%s\n" "Error: \"${1}\" Argument Unrecognized!" 1>&2 ; exit 2 ;;
 esac
 shift  # Check next set of parameters.
@@ -129,27 +133,35 @@ fi
 # before doing anything buff the data
 { cat </dev/stdin >"${_GIT_TOOL_BUFFER}" 2>/dev/null || EXIT_CODE=65 ;} ; wait ;
 
-if [[ ( $IS_SMUDGE_MODE -eq 1 ) ]]; then
-	# first check if we need to smudge at all
-	if [[ ( $(file -b --mime "${_GIT_TOOL_BUFFER}" | grep -coF "text/plain" ) -lt 1 ) ]] ; then
-		IS_SMUDGE_MODE=0 ;
-		EXIT_CODE=64 ;
+# shellcheck disable=SC2086
+if [[ ${GIT_FILTER_TOOL_DATA_SKIP} ]] ; then
+	cat <"${_GIT_TOOL_BUFFER}" ;
+	EXIT_CODE=0 ; # actually skipped
+else
+	# shellcheck disable=SC2086
+	if [[ ( $IS_SMUDGE_MODE -eq 1 ) ]]; then
+		# first check if we need to smudge at all
+		if [[ ( $(file -b --mime "${_GIT_TOOL_BUFFER}" | grep -coF "text/plain" ) -lt 1 ) ]] ; then
+			IS_SMUDGE_MODE=0 ;
+			EXIT_CODE=64 ;
+		fi
+		# else the file is ok to try and smudge
 	fi
-	# else the file is ok to try and smudge
-fi
-
-if [[ ( $IS_CLEAN_MODE -eq 1 ) ]]; then
-	# first check if we need to clean at all
-	if [[ ( $(file -b --mime "${_GIT_TOOL_BUFFER}" | grep -coF "text/plain" ) -ge 1 ) ]] ; then
-		IS_CLEAN_MODE=0 ;
-		EXIT_CODE=64 ;
+	# shellcheck disable=SC2086
+	if [[ ( $IS_CLEAN_MODE -eq 1 ) ]]; then
+		# first check if we need to clean at all
+		if [[ ( $(file -b --mime "${_GIT_TOOL_BUFFER}" | grep -coF "text/plain" ) -ge 1 ) ]] ; then
+			IS_CLEAN_MODE=0 ;
+			EXIT_CODE=64 ;
+		fi
+		# else the file is not plain text and is ok to try and clean
 	fi
-	# else the file is not plain text and is ok to try and clean
 fi
-
+# shellcheck disable=SC2086
 if [[ ( $IS_CLEAN_MODE -eq 1 ) ]] ; then
 	cat <"${_GIT_TOOL_BUFFER}" | xxd -ps ;
 	EXIT_CODE=$? ;
+# shellcheck disable=SC2086
 elif [[ ( $IS_SMUDGE_MODE -eq 1 ) ]] ; then
 	cat <"${_GIT_TOOL_BUFFER}" | xxd -ps -r ;
 	EXIT_CODE=$? ;
@@ -159,5 +171,6 @@ fi
 
 #GIT_FILTER_TOOL_DATA_OPT=`git config --bool --default true --get 'filter.data.option'`
 # always clean up
-cleanup || true ; wait ;
+cleanup || : ; wait ;
+# shellcheck disable=SC2086
 exit ${EXIT_CODE:-1};

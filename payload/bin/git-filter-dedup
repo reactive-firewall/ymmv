@@ -134,7 +134,6 @@ if [[ ${GIT_FILTER_TOOL_DEDUP_SKIP} ]] ; then
 	cat <"${_GIT_TOOL_BUFFER}" ;
 	EXIT_CODE=0 ; # actually skipped
 else
-	if [[ ( ${GIT_FILTER_TOOL_DEDUP_SKIP} -eq 1 ) ]]; then
 	# shellcheck disable=SC2086
 	if [[ ( $IS_SMUDGE_MODE -eq 1 ) ]]; then
 		# first check if we can smudge at all
