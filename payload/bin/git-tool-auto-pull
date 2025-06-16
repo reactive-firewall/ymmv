@@ -101,7 +101,7 @@ function cleanup() {
 export -f cleanup ;
 
 function handle_signals() {
-	if [[ ( $(shlock -f "${LOCK_FILE}" -p $$ ) -eq 0 ) ]] ; then
+	if shlock -f "${LOCK_FILE}" -p $$ ; then
 		EXIT_CODE=0
 		trap 'cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 129 ;' SIGHUP || EXIT_CODE=129
 		trap 'cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 143 ;' SIGTERM || EXIT_CODE=143
@@ -113,7 +113,7 @@ function handle_signals() {
 		trap 'cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit ${EXIT_CODE} ;' EXIT || EXIT_CODE=1
 	else
 		# shellcheck disable=SC2046
-		printf "\t%s\n" "Git-Filter-Dedup Script already in progress by "$(head "${LOCK_FILE}") >&2 ;
+		printf "\t%s\n" "Git-Tool auto-pull Script already in progress by "$(head "${LOCK_FILE}") >&2 ;
 		exit 126 ;
 	fi
 }
