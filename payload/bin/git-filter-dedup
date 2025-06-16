@@ -140,7 +140,7 @@ else
 		if [[ ( $(file -b --mime "${_GIT_TOOL_BUFFER}" | grep -cioF "text/plain" ) -lt 1 ) ]] ; then
 			IS_SMUDGE_MODE=0 ;
 			EXIT_CODE=64 ;
-			printf "%s\n" "Error: Non-text data can not be filtered!" 1>&2 ; exit 2 ;;
+			printf "%s\n" "Error: Non-text data can not be filtered!" 1>&2 ; exit 2 ;
 		fi
 		# else the file is ok to try and smudge
 	fi

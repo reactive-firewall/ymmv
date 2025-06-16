@@ -160,7 +160,7 @@ function _cleanup() {
 }
 
 function handle_signals() {
-	if [[ ( $(shlock -f ${LOCK_FILE} -p $$ ) -eq 0 ) ]] ; then
+	if [[ ( $(shlock -f "${LOCK_FILE}" -p $$ ) -eq 0 ) ]] ; then
 		EXIT_CODE=0
 		trap '_cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 129 ;' SIGHUP || EXIT_CODE=129
 		trap '_cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || true ; wait ; exit 143 ;' SIGTERM || EXIT_CODE=143
@@ -205,4 +205,4 @@ _cleanup 2>/dev/null || rm -f ${LOCK_FILE} 2>/dev/null || : ; wait ;
 exit ${EXIT_CODE:-70} ;
 
 # This file's code hash:
-b652888477752670e32669294a88c7b19d1c1f31c32bf2dde91d73ec48a809471681dbaf8338592bc3ff1b79c27fef29  -
+e6bf91be4510c78556de9071b3109579f56de57d08ed0b9fc552015da630bcc8f873121b4efee86633e93fa47a811990  -

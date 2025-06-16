@@ -106,7 +106,8 @@ process_directory() {
 	printf '%s\n' "$(basename "$dir")"
 
 	# Use a temporary file to store entries
-	local temp_file=$(mktemp)
+	local temp_file
+	temp_file=$(mktemp)
 	find "$dir" -maxdepth 1 -mindepth 1 -print0 | sort -z > "$temp_file"
 
 	# Read entries from the temporary file
@@ -140,8 +141,12 @@ process_directory() {
 		elif [ -f "$entry" ]; then
 			if [ "${entry##*.}" = "py" ]; then
 				process_python_file "$entry" "$prefix" "$child_is_last"
-			elif [ "${entry##*.}" = "sh" ]; then
+			elif [ "${entry##*.}" = "sh" ] || [ "${entry##*.}" = "bash" ]; then
 				process_shell_script "$entry" "$prefix" "$child_is_last"
+			elif [ "${entry##*.}" = "tar" ] || [ "${entry##*.tar.}" = "gz" ] || [ "${entry##*.}" = "bz2" ]; then
+				process_archive "$entry" "$prefix" "$child_is_last"
+			elif [ "${entry##*.}" = "zip" ] || [ "${entry##*.}" = "whl" ]; then
+				process_archive "$entry" "$prefix" "$child_is_last"
 			else
 				printf '%s' "$prefix"
 				if [ "$child_is_last" = "true" ]; then
@@ -152,6 +157,157 @@ process_directory() {
 				printf '%s\n' "$(basename "$entry")"
 			fi
 		fi
+	done
+
+	# Clean up the temporary file
+	rm "$temp_file"
+}
+
+# Function: process_archive
+# Description: Processes a directory recursively to build the tree.
+process_archive() {
+	local archive="$1"
+	local prefix="$2"
+	local is_last="$3"
+
+	# Print the current directory
+	printf '%s' "$prefix"
+	if [ "$is_last" = "true" ]; then
+		printf '└── '
+		prefix="${prefix}    "
+	else
+		printf '├── '
+		prefix="${prefix}│   "
+	fi
+	printf '%s\n' "$(basename "$archive")"
+
+	# Use a temporary file to store entries
+	local temp_file
+	temp_file=$(mktemp)
+	if [ "${archive##*.}" = "whl" ] || [ "${archive##*.}" = "zip" ]; then
+		zipinfo -1 "$archive" | sort -t / -u > "$temp_file"
+	else
+		tar -tf "$archive" | sort -t / -u > "$temp_file"
+	fi
+	# Use a another temporary file to store top archive entries
+	local temp_file_2
+	temp_file_2=$(mktemp)
+	grep -oE "^[^/]+/?$" <"$temp_file" | sort -t / -u > "$temp_file_2"
+
+	# Read entries from the other temporary file
+	local entries=()
+	while IFS= read -r entry; do
+		entries+=("$entry")
+	done < "$temp_file_2"
+
+	rm "$temp_file_2"
+
+	# Get the total number of entries
+	local total="${#entries[@]}"
+
+	# If there are no entries, clean up and return
+	if [ "$total" -eq 0 ]; then
+		rm "$temp_file"
+		# printf '%s└── {Empty}\n' "$prefix"
+		return
+	fi
+
+	# Process each entry
+	local index=0
+	for entry in "${entries[@]}"; do
+		((index++))
+		if [ "$index" -eq "$total" ]; then
+			child_is_last="true"
+		else
+			child_is_last="false"
+		fi
+
+		local dir_name_stub
+		dir_name_stub=$(printf "%s\n" "${entry%%/}/[^/]+/?")
+		if [ $(grep -coE "$dir_name_stub" "$temp_file") -ge 1 ]; then
+			process_directory_list "$temp_file" "${entry%%/}" "$prefix" "$child_is_last"
+		else
+			printf '%s' "$prefix"
+			if [ "$child_is_last" = "true" ]; then
+				printf '└── '
+			else
+				printf '├── '
+			fi
+			printf '%s\n' "$(basename "$entry") ("$entry")"
+		fi
+	done
+
+	# Clean up the temporary file
+	rm "$temp_file"
+}
+
+# Function: process_directory_list
+# Description: Processes a directory list recursively to build the tree.
+process_directory_list() {
+	local super_list="$1"
+	local dir="$2"
+	local prefix="$3"
+	local is_last="$4"
+
+	# Print the current directory
+	printf '%s' "$prefix"
+	if [ "$is_last" = "true" ]; then
+		printf '└── '
+		prefix="${prefix}    "
+	else
+		printf '├── '
+		prefix="${prefix}│   "
+	fi
+	printf '%s\n' "$(basename "$dir")"
+
+	local dir_match_stub
+	dir_match_stub=$(printf "%s\n" "^${dir%%/}/[^/]+/?$")
+	# Use a temporary file to store entries
+	local temp_file
+	temp_file=$(mktemp)
+	grep -oE "$dir_match_stub" "$super_list" | sort -t / -u > "$temp_file"
+
+	# Read entries from the temporary file
+	local entries=()
+	while IFS= read -r entry; do
+		entries+=("$entry")
+	done < "$temp_file"
+
+
+	# Get the total number of entries
+	local total="${#entries[@]}"
+
+	# If there are no entries, clean up and return
+	if [ "$total" -eq 0 ]; then
+		rm "$temp_file"
+		# printf '%s└── {Empty}\n' "$prefix"
+		return
+	fi
+
+	# Process each entry
+	local index=0
+	for entry in "${entries[@]}"; do
+		((index++))
+		if [ "$index" -eq "$total" ]; then
+			child_is_last="true"
+		else
+			child_is_last="false"
+		fi
+
+		local dir_name_stub
+		dir_name_stub=$(printf "%s\n" "${entry%%/}/[^/]+/?$")
+		if [ $(grep -coE "$dir_name_stub" "$super_list") -ge 1 ]; then
+			process_directory_list "$super_list" "${entry%%/}" "$prefix" "$child_is_last"
+		else
+			printf '%s' "$prefix"
+			if [ "$child_is_last" = "true" ]; then
+				printf '└── '
+			else
+				printf '├── '
+			fi
+			printf '%s\n' "$(basename "$entry")"
+		fi
+
 	done
 
 	# Clean up the temporary file

@@ -71,7 +71,7 @@ while [[ ($# -gt 1) && (${1:1:1} = '-') ]] ; do
 GREP_ARGS="${GREP_ARGS} ${1}";
 shift ;
 done ;
-
+# shellcheck disable=SC2086
 /bin/grep ${GREP_ARGS} -oE "([[:alnum:]]{1}[-[:alnum:]]*[\.]{1}){2,}[[:alnum:]]{1}[-[:alnum:]\.]+" $@
 
 exit $? ;
