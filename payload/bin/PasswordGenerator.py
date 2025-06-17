@@ -68,6 +68,8 @@ import os
 
 class PasswordGenerator:
 	def __init__(self, length=32, weak_passwords_file=None):
+		if length < 1:
+			raise ValueError("'length' must be a positive integer")
 		self.length = length
 		self.weak_passwords = self.load_weak_passwords(weak_passwords_file)
 		self.adjacency_map = self.create_adjacency_map()
@@ -99,14 +101,15 @@ class PasswordGenerator:
 	def generate_password(self):
 		"""Generate a strong password with dynamic complexity."""
 		password_chars = []
-		available_chars = string.ascii_letters + string.digits + string.punctuation
+		base_chars = string.ascii_letters + string.digits + string.punctuation
+		available_chars = base_chars
 
 		for _ in range(self.length):
 			if password_chars:
 				# Exclude adjacent characters based on the last chosen character
 				last_char = password_chars[-1].lower()
 				adjacent_chars = self.adjacency_map.get(last_char, '')
-				available_chars = ''.join(c for c in available_chars if c.lower() not in adjacent_chars)
+				available_chars = ''.join(c for c in base_chars if c.lower() not in adjacent_chars)
 
 			# Choose a character from the available set
 			next_char = secrets.choice(available_chars)

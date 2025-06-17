@@ -67,8 +67,8 @@
 
 # Try to safely setup and fail fast if unable.
 ulimit -t 600
-# setting the path may break brain-dead CI that uses crazy paths
-# PATH="/bin:/sbin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin"
+# setting the path may break brain-dead CI that uses crazy paths -- so keep PATH at end
+PATH="/bin:/sbin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:${PATH}"
 umask 137
 
 # force utf-8 for checking in script
@@ -95,13 +95,13 @@ export -f check_command
 
 # Check required commands
 check_command grep ;
-check_command sed ;
-check_command wc ;
-check_command tr ;
 check_command head ;
+check_command sed ;
 check_command tail ;
+check_command tr ;
+check_command wc ;
 # CAVEAT: NON-CEP-5 locking is OK (best-effort approach)
-test -x ./.github/tool_shlock_helper.sh && hash -p ./.github/tool_shlock_helper.sh shlock || : ;
+{test -x ./.github/tool_shlock_helper.sh && hash -p ./.github/tool_shlock_helper.sh shlock ;} || :;
 check_command shlock ;
 
 # set remaining variables

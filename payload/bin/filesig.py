@@ -1,13 +1,15 @@
 #! /usr/bin/env python
 
-# Copyright (c) 2020-2024.
+# Copyright (c) 2020-2025.
 
 """Rough draft of python wrapper for generating file hashes. THIS NEEDS TO BE CLEANED UP A BIT BEFORE it is anywhere near prod ready."""
 
 import argparse
 
 
-def parseArgs(arguments=[]):
+def parseArgs(arguments=None):
+	if not arguments:
+		arguments=[]
 	parser = argparse.ArgumentParser(description='generate and show file signatures.')
 	action_group = parser.add_mutually_exclusive_group()
 	action_group.add_argument(
@@ -38,7 +40,7 @@ def extractRegexPattern(theInput_Str, theInputPattern):
 	return theList
 
 
-def compactList(list, intern_func=None):
+def compactList(items, intern_func=None):
 	if intern_func is None:
 
 		def intern_func(x):
@@ -46,9 +48,10 @@ def compactList(list, intern_func=None):
 
 	seen = {}
 	result = []
-	for item in list:
+	for item in items:
 		marker = intern_func(item)
-		if marker in seen: continue
+		if marker in seen:
+			continue
 		seen[marker] = 1
 		result.append(item)
 	return result
@@ -85,6 +88,6 @@ def main(argv=None):
 	exit(0)
 
 
-if __name__ in '__main__':
+if __name__ == '__main__':
 	import sys
 	main(sys.argv[1:])

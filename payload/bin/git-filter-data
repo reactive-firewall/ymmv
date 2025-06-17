@@ -65,7 +65,8 @@ declare -i IS_SMUDGE_MODE=0;
 declare -i IS_CLEAN_MODE=0;
 declare -i IS_VERBOSE_MODE=0;
 declare -ir MYVERSION=20250610;
-declare GIT_FILTER_TOOL_DATA_SKIP=`git config --bool --default false --get 'filter.data.skip'`;
+declare GIT_FILTER_TOOL_DATA_SKIP
+GIT_FILTER_TOOL_DATA_SKIP=`git config --bool --default false --get 'filter.data.skip'`;
 # Can force skip this filter by setting the git-config option 'filter.data.skip' like so:
 # git config --bool --set 'filter.data.skip' true
 
@@ -134,7 +135,7 @@ fi
 { cat </dev/stdin >"${_GIT_TOOL_BUFFER}" 2>/dev/null || EXIT_CODE=65 ;} ; wait ;
 
 # shellcheck disable=SC2086
-if [[ ${GIT_FILTER_TOOL_DATA_SKIP} ]] ; then
+if [[ "${GIT_FILTER_TOOL_DATA_SKIP}" == "true" ]] ; then
 	cat <"${_GIT_TOOL_BUFFER}" ;
 	EXIT_CODE=0 ; # actually skipped
 else
@@ -161,7 +162,6 @@ fi
 if [[ ( $IS_CLEAN_MODE -eq 1 ) ]] ; then
 	cat <"${_GIT_TOOL_BUFFER}" | xxd -ps ;
 	EXIT_CODE=$? ;
-# shellcheck disable=SC2086
 elif [[ ( $IS_SMUDGE_MODE -eq 1 ) ]] ; then
 	cat <"${_GIT_TOOL_BUFFER}" | xxd -ps -r ;
 	EXIT_CODE=$? ;

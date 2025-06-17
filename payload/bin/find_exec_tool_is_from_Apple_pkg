@@ -149,7 +149,7 @@ function _cleanup() {
 	unset CHECK_LINE_A || : ;
 	unset CHECK_LINE_B || : ;
 	unset CHECK_LINE_C || : ;
-	rm -qf "${INSECURE_TEMP_PATH}" 2>/dev/null || true ;
+	rm -f "${INSECURE_TEMP_PATH}" 2>/dev/null || true ;
 	unset INSECURE_TEMP_PATH || true ;
 	unset THE_FILE || true ;
 	rm -f ${LOCK_FILE} 2>/dev/null || : ; wait ;

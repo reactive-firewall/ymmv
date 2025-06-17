@@ -65,7 +65,9 @@ declare -i IS_SMUDGE_MODE=0;
 declare -i IS_CLEAN_MODE=0;
 declare -i IS_VERBOSE_MODE=0;
 declare -ir MYVERSION=20241101;
-declare GIT_FILTER_TOOL_DEDUP_SKIP=`git config --bool --default false --get 'filter.dedup.skip'`;
+declare GIT_FILTER_TOOL_DEDUP_SKIP
+# shellcheck disable=SC2086
+GIT_FILTER_TOOL_DEDUP_SKIP=$(git config --bool --default false --get 'filter.dedup.skip');
 # Can force skip this filter by setting the git-config option 'filter.dedup.skip' like so:
 # git config --bool --set 'filter.dedup.skip' true
 

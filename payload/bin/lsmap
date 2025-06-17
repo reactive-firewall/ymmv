@@ -78,7 +78,7 @@ print_usage() {
 # Function: check_dependencies
 # Description: Checks if required commands are available.
 check_dependencies() {
-	local dependencies=("find" "awk")
+	local dependencies=("find" "awk" "sort" "grep" "tar" "zipinfo" "mktemp" "rm")
 	for cmd in "${dependencies[@]}"; do
 		if ! command -v "$cmd" >/dev/null 2>&1; then
 			printf 'Error: Required command "%s" not found in PATH.\n' "$cmd" >&2
@@ -223,7 +223,9 @@ process_archive() {
 		fi
 
 		local dir_name_stub
+		# shellcheck disable=SC2086
 		dir_name_stub=$(printf "%s\n" "${entry%%/}/[^/]+/?")
+		# shellcheck disable=SC2086
 		if [ $(grep -coE "$dir_name_stub" "$temp_file") -ge 1 ]; then
 			process_directory_list "$temp_file" "${entry%%/}" "$prefix" "$child_is_last"
 		else
@@ -233,7 +235,7 @@ process_archive() {
 			else
 				printf '├── '
 			fi
-			printf '%s\n' "$(basename "$entry") ("$entry")"
+			printf '%s\n' "$(basename "$entry")"
 		fi
 	done
 
@@ -295,7 +297,9 @@ process_directory_list() {
 		fi
 
 		local dir_name_stub
+		# shellcheck disable=SC2086
 		dir_name_stub=$(printf "%s\n" "${entry%%/}/[^/]+/?$")
+		# shellcheck disable=SC2086
 		if [ $(grep -coE "$dir_name_stub" "$super_list") -ge 1 ]; then
 			process_directory_list "$super_list" "${entry%%/}" "$prefix" "$child_is_last"
 		else
@@ -482,24 +486,12 @@ process_shell_script() {
 	BEGIN {
 		count = 0
 	}
-	/^[[:space:]]*(export[[:space:]]+|declare[[:space:]]+|local[[:space:]]+)?([a-zA-Z_][a-zA-Z0-9_]*)=/ {
-		var_line = $1
-		if ($1 ~ /^([a-zA-Z_][a-zA-Z0-9_]*)=/) {
-			var_name = substr(var_line, 0, index(var_line, "=") - 1);  # Get the var_name
-		}
-		if ($1 ~ /^[[:space:]]*([a-zA-Z_][a-zA-Z0-9_]*)=/) {
-			var_name = substr(var_line, index(var_line, "[a-zA-Z_]") -1, index(var_line, "=") - 1);  # Get the var_name
-		}
-		if ($1 ~ /^[[:space:]]*export[[:space:]]+([a-zA-Z_][a-zA-Z0-9_]*)=/) {
-			var_name = substr(var_line, index(var_line, "export") + 5, index(var_line, "=") - 1);  # Get the var_name
-		}
-		if ($1 ~ /^[[:space:]]*declare[[:space:]]+([a-zA-Z_][a-zA-Z0-9_]*)=/) {
-			var_name = substr(var_line, index(var_line, "declare") + 6, index(var_line, "=") - 1);  # Get the var_name
-		}
-		if ($1 ~ /^[[:space:]]*local[[:space:]]+([a-zA-Z_][a-zA-Z0-9_]*)=/) {
-			var_name = substr(var_line, index(var_line, "local") + 4, index(var_line, "=") - 1);  # Get the var_name
-		}
-		# var_name = sub("=.*", "", var_name)
+	/^[[:space:]]*(export[[:space:]]+|declare[[:space:]]+([-]+[afFirtx]+[[:space:]]+){0,7}|local[[:space:]]+)?([a-zA-Z_][-a-zA-Z0-9_]*)=/ {
+		var_line = $0
+		sub(/^[[:space:]]*(export[[:space:]]+|declare[[:space:]]+([-]+[afFirtx]+[[:space:]]+){0,7}|local[[:space:]]+)/, "", var_line)
+		sub(/=.*/, "", var_line)
+		var_name = var_line
+		sub(/^[[:space:]]*/, "", var_name)
 		# Check for duplicates
 		is_duplicate = 0
 		for (i = 0; i < count; i++) {
