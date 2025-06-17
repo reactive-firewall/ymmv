@@ -8,7 +8,7 @@ import argparse
 
 
 def parseArgs(arguments=[]):
-	parser = argparse.ArgumentParser(description='gernerate and show file signatures.')
+	parser = argparse.ArgumentParser(description='generate and show file signatures.')
 	action_group = parser.add_mutually_exclusive_group()
 	action_group.add_argument(
 		'-C',
