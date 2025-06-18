@@ -9,7 +9,7 @@ import argparse
 
 def parseArgs(arguments=None):
 	if not arguments:
-		arguments=[]
+		arguments = []
 	parser = argparse.ArgumentParser(description='generate and show file signatures.')
 	action_group = parser.add_mutually_exclusive_group()
 	action_group.add_argument(

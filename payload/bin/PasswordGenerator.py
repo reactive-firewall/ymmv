@@ -66,7 +66,9 @@ import secrets
 import string
 import os
 
+
 class PasswordGenerator:
+
 	def __init__(self, length=32, weak_passwords_file=None):
 		if length < 1:
 			raise ValueError("'length' must be a positive integer")
