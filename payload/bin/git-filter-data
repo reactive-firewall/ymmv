@@ -66,7 +66,7 @@ declare -i IS_CLEAN_MODE=0;
 declare -i IS_VERBOSE_MODE=0;
 declare -ir MYVERSION=20250610;
 declare GIT_FILTER_TOOL_DATA_SKIP
-GIT_FILTER_TOOL_DATA_SKIP=`git config --bool --default false --get 'filter.data.skip'`;
+GIT_FILTER_TOOL_DATA_SKIP=$(git config --bool --default false --get 'filter.data.skip');
 # Can force skip this filter by setting the git-config option 'filter.data.skip' like so:
 # git config --bool --set 'filter.data.skip' true
 
@@ -124,7 +124,7 @@ case "$1" in
   -s|--in|--smudge) IS_SMUDGE_MODE=1 ;;
   -c|--out|--clean) IS_CLEAN_MODE=1 ;;
   -v|--verbose) IS_VERBOSE_MODE=1 ;;
-  -V|--version) printf "%s\n" "${MYVERSION}" ; exit $(printf "%d\n" $(("${MYVERSION}" % 256))) ;;
+  -V|--version) printf "%s\n" "${MYVERSION}" ; exit 1 ;;
   -*) printf "%s\n" "Error: \"${1}\" Argument Unrecognized!" 1>&2 ; exit 2 ;;
 esac
 shift  # Check next set of parameters.

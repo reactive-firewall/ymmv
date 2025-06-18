@@ -101,7 +101,7 @@ check_command tail ;
 check_command tr ;
 check_command wc ;
 # CAVEAT: NON-CEP-5 locking is OK (best-effort approach)
-{test -x ./.github/tool_shlock_helper.sh && hash -p ./.github/tool_shlock_helper.sh shlock ;} || :;
+{ test -x ./.github/tool_shlock_helper.sh && hash -p ./.github/tool_shlock_helper.sh shlock ;} || :
 check_command shlock ;
 
 # set remaining variables
