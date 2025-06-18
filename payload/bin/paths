@@ -119,10 +119,15 @@ elif [[ $# -eq 1 ]] ; then
 		exit 0 ; # already reported
 	elif [[ -d "${1}" ]] ; then # different (likely unreadable) directory
 		printf "%s\n" "${1}" | tr -s '/' ; exit 0 ;
-	elif [[ -e $(dirname "${1}")/"${READLINK_N_1}" ]] && [[ -n "${READLINK_N_1}" ]]; then
-		printf "%s\n" $(dirname "${1}")/"${READLINK_N_1}" | tr -s '/' ; exit 0 ;
 	elif [[ -n "${READLINK_N_1}" ]] ; then
-		printf "%s\n" "${READLINK_N_1}" | tr -s '/' ; exit 0 ;
+		# cache dirname calls to reduce total reads (on directory files)
+		declare DIRNAME_1;
+		DIRNAME_1=$(dirname "${1}");
+		if [[ -e "${DIRNAME_1}"/"${READLINK_N_1}" ]] ; then
+			printf "%s\n" "${DIRNAME_1}"/"${READLINK_N_1}" | tr -s '/' ; exit 0 ;
+		else
+			printf "%s\n" "${READLINK_N_1}" | tr -s '/' ; exit 0 ;
+		fi;
 	fi #end if folder
 fi
 exit 0;

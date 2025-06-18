@@ -70,7 +70,7 @@ GIT_FILTER_TOOL_DATA_SKIP=$(git config --bool --default false --get 'filter.data
 # Can force skip this filter by setting the git-config option 'filter.data.skip' like so:
 # git config --bool --set 'filter.data.skip' true
 
-_GIT_TOOL_BUFFER="${TMPDIR}"/"git_tool_buffer_${MYVERSION}_${RANDOM}_${RANDOM}_${RANDOM}.tmp" ;
+_GIT_TOOL_BUFFER="${TMPDIR:-/tmp}"/"git_tool_buffer_${MYVERSION}_${RANDOM}_${RANDOM}_${RANDOM}.tmp"
 LOCK_FILE="${TMPDIR:-/tmp}/org.git.tool-script.lock" ;
 EXIT_CODE=1
 

@@ -67,6 +67,38 @@
 
 set -euo pipefail
 
+# Global variable to track temporary files
+declare TEMP_FILES="";
+
+# Global variable to track exit code
+EXIT_CODE=0
+
+# USAGE:
+#	~$ cleanup
+# Arguments:
+#	N/A
+# Results:
+#	returns -- once cleanup has been done on a best-effort case.
+function cleanup() {
+	# shellcheck disable=SC2086
+	for TFILE in ${TEMP_FILES}; do
+		if [[ ( -n "${TFILE}" ) ]] && [[ ( -e "${TFILE}" ) ]]; then
+			rm -f "${TFILE}" 2>/dev/null || : ;
+		fi
+	done
+	# unset when done
+	unset TEMP_FILES 2>/dev/null || : ;
+}
+
+function handle_signals() {
+	trap 'cleanup 2>/dev/null || true ; wait ; exit 129 ;' SIGHUP || EXIT_CODE=129
+	trap 'cleanup 2>/dev/null || true ; wait ; exit 143 ;' SIGTERM || EXIT_CODE=143
+	trap 'cleanup 2>/dev/null || true ; wait ; exit 131 ;' SIGQUIT || EXIT_CODE=131
+	trap 'cleanup 2>/dev/null || true ; wait ; exit 130 ;' SIGINT || EXIT_CODE=130
+	trap 'cleanup 2>/dev/null || true ; wait ; exit 137 ;' SIGABRT || EXIT_CODE=137
+	trap 'cleanup 2>/dev/null || true ; wait ; exit ${EXIT_CODE} ;' EXIT || EXIT_CODE=1
+}
+
 # Function: print_usage
 # Description: Prints usage information for the script.
 print_usage() {
@@ -108,6 +140,7 @@ process_directory() {
 	# Use a temporary file to store entries
 	local temp_file
 	temp_file=$(mktemp)
+	TEMP_FILES="${TEMP_FILES} ${temp_file}" ;
 	find "$dir" -maxdepth 1 -mindepth 1 -print0 | sort -z > "$temp_file"
 
 	# Read entries from the temporary file
@@ -144,7 +177,7 @@ process_directory() {
 			elif [ "${entry##*.}" = "sh" ] || [ "${entry##*.}" = "bash" ]; then
 				process_shell_script "$entry" "$prefix" "$child_is_last" ;
 			elif case "$entry" in
-				*.tar|*.tar.gz|*.tgz|*.bz2|*.tar.bz2|*.tbz2|*.zip|*.whl) true ;;
+				*.tar|*.tar.gz|*.tgz|*.bz2|*.tbz2|*.zip|*.whl) true ;;
 				*) false ;;
 			esac; then
 				process_archive "$entry" "$prefix" "$child_is_last" ;
@@ -166,7 +199,8 @@ process_directory() {
 	done
 
 	# Clean up the temporary file
-	rm "$temp_file"
+	rm "$temp_file" 2>/dev/null > /dev/null || : ;
+	return
 }
 
 # Function: process_archive
@@ -190,6 +224,7 @@ process_archive() {
 	# Use a temporary file to store entries
 	local temp_file
 	temp_file=$(mktemp)
+	TEMP_FILES="${TEMP_FILES} ${temp_file}" ;
 	if [ "${archive##*.}" = "whl" ] || [ "${archive##*.}" = "zip" ]; then
 		zipinfo -1 "$archive" | sort -t / -u > "$temp_file"
 	else
@@ -198,6 +233,7 @@ process_archive() {
 	# Use a another temporary file to store top archive entries
 	local temp_file_2
 	temp_file_2=$(mktemp)
+	TEMP_FILES="${TEMP_FILES} ${temp_file_2}" ;
 	grep -oE "^[^/]+/?$" <"$temp_file" | sort -t / -u > "$temp_file_2"
 
 	# Read entries from the other temporary file
@@ -206,7 +242,7 @@ process_archive() {
 		entries+=("$entry")
 	done < "$temp_file_2"
 
-	rm "$temp_file_2"
+	rm "$temp_file_2" 2>/dev/null > /dev/null || : ;
 
 	# Get the total number of entries
 	local total="${#entries[@]}"
@@ -246,7 +282,8 @@ process_archive() {
 	done
 
 	# Clean up the temporary file
-	rm "$temp_file"
+	rm "$temp_file" 2>/dev/null > /dev/null || : ;
+	return
 }
 
 # Function: process_directory_list
@@ -273,6 +310,7 @@ process_directory_list() {
 	# Use a temporary file to store entries
 	local temp_file
 	temp_file=$(mktemp)
+	TEMP_FILES="${TEMP_FILES} ${temp_file}" ;
 	grep -oE "$dir_match_stub" "$super_list" | sort -t / -u > "$temp_file"
 
 	# Read entries from the temporary file
@@ -321,7 +359,8 @@ process_directory_list() {
 	done
 
 	# Clean up the temporary file
-	rm "$temp_file"
+	rm "$temp_file" 2>/dev/null > /dev/null || : ;
+	return
 }
 
 # Function: process_python_file
@@ -460,6 +499,7 @@ process_python_file() {
         }
     }
 ' "$file"
+	return
 }
 
 # Function: process_shell_script
@@ -527,6 +567,7 @@ process_shell_script() {
 		}
 	}
 	' "$file"
+	return
 }
 
 # Function: process_makefile
@@ -590,6 +631,7 @@ process_makefile() {
         }
     }
     ' "$file"
+	return
 }
 
 
@@ -604,6 +646,7 @@ main() {
 	fi
 
 	check_dependencies
+	handle_signals
 	process_directory "$target_dir" "" "true"
 }
 
@@ -615,3 +658,7 @@ fi
 
 # Execute the main function with all arguments
 main "$@"
+
+cleanup 2>/dev/null || : ;
+wait ;
+exit ${EXIT_CODE:-70} ;
