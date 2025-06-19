@@ -25,14 +25,14 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		EE5D00A02A732000003B7D11 /* workflows */ = {isa = PBXFileReference; lastKnownFileType = folder; path = workflows; sourceTree = "<group>"; };
 		EE5D00AC2A732000003B7E49 /* build */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = text; name = build; path = YMMV; sourceTree = BUILT_PRODUCTS_DIR; };
 		EE5D00AD2A732000003B7E50 /* .coderabbit.yaml */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 2; lastKnownFileType = sourcecode; lineEnding = 0; path = .coderabbit.yaml; sourceTree = "<group>"; tabWidth = 2; usesTabs = 0; };
 		EE5D00AD2A732000003B7E51 /* .markdownlint.json */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 4; lastKnownFileType = text; lineEnding = 0; path = .markdownlint.json; sourceTree = "<group>"; tabWidth = 4; usesTabs = 1; };
 		EE5D00AD2A732000003B7E52 /* .markdownlint.yaml */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 2; lastKnownFileType = text; lineEnding = 0; path = .markdownlint.yaml; sourceTree = "<group>"; tabWidth = 2; usesTabs = 0; };
 		EE5D00AD2A732000003B7E53 /* .yamllint.conf */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 2; lastKnownFileType = text; lineEnding = 0; path = .yamllint.conf; sourceTree = "<group>"; tabWidth = 2; usesTabs = 0; };
-		EE5D00AD2A732000003B7E55 /* .github/tool_shlock_helper.sh */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 2; lastKnownFileType = text.script.bash; lineEnding = 0; path = tool_shlock_helper.sh; sourceTree = "<group>"; tabWidth = 4; usesTabs = 1; };
-		EE5D00AD2A732000003B7E54 /* .github/labeler.yml */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 2; lastKnownFileType = text; lineEnding = 0; path = labeler.yml; sourceTree = "<group>"; tabWidth = 2; usesTabs = 0; };
-		EE5D00A02A732000003B7D11 /* .github/workflows */ = {isa = PBXFileReference; lastKnownFileType = folder; path = workflows; sourceTree = "<group>"; };
+		EE5D00AD2A732000003B7E54 /* labeler.yml */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 2; lastKnownFileType = text; lineEnding = 0; path = labeler.yml; sourceTree = "<group>"; tabWidth = 2; usesTabs = 0; };
+		EE5D00AD2A732000003B7E55 /* tool_shlock_helper.sh */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 2; lastKnownFileType = text.script.bash; lineEnding = 0; path = tool_shlock_helper.sh; sourceTree = "<group>"; tabWidth = 4; usesTabs = 1; };
 		EE5D00AE2A732000003B7E49 /* payload */ = {isa = PBXFileReference; lastKnownFileType = folder; path = payload; sourceTree = SOURCE_ROOT; };
 		EE5D00AF2A732000003B7E49 /* Makefile */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.makefile; path = Makefile; sourceTree = "<group>"; };
 		EE5D00B92A7328E4003B7E49 /* YMMV.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = YMMV.entitlements; sourceTree = "<group>"; };
@@ -172,16 +172,6 @@
 			name = dot_files;
 			sourceTree = "<group>";
 		};
-		EEDA4C132A746605004C4498 /* .github */ = {
-			isa = PBXGroup;
-			children = (
-				EE5D00A02A732000003B7D11 /* .github/workflows */,
-				EE5D00AD2A732000003B7E55 /* .github/tool_shlock_helper.sh */,
-				EE5D00AD2A732000003B7E54 /* .github/labeler.yml */,
-			);
-			name = ".github";
-			sourceTree = "<group>";
-		};
 		EEDA4C132A745305004C4499 /* CEP */ = {
 			isa = PBXGroup;
 			children = (
@@ -190,6 +180,16 @@
 				844056642CD566C00023EB4E /* 9 */,
 			);
 			path = CEP;
+			sourceTree = "<group>";
+		};
+		EEDA4C132A746605004C4498 /* .github */ = {
+			isa = PBXGroup;
+			children = (
+				EE5D00A02A732000003B7D11 /* workflows */,
+				EE5D00AD2A732000003B7E55 /* tool_shlock_helper.sh */,
+				EE5D00AD2A732000003B7E54 /* labeler.yml */,
+			);
+			path = .github;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
