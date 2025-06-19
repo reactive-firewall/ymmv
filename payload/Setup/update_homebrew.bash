@@ -63,8 +63,7 @@
 ################################################################################
 #PATH="/bin:/sbin:/usr/sbin:/usr/bin"
 umask 002
-
-#PKG_CONFIG_PATH=$(echo ""$(find ~/homebrew/lib -iname "pkgconfig" -a -type d 2>/dev/null)":"$(find ~/homebrew/Cellar/python@3.11 -iname "pkgconfig" -a -type d 2>/dev/null | tail -n1 )":"$(find ~/homebrew/Cellar/bash -iname "pkgconfig" -a -type d 2>/dev/null)":"$(find /usr -iname "pkgconfig" -a -type d 2>/dev/null | head -n 1 ; wait ;) ; wait ;) ;
+#PKG_CONFIG_PATH=$(echo ""$(find ~/homebrew/lib -iname "pkgconfig" -a -type d 2>/dev/null)":"$(find ~/homebrew/Cellar/python@3.13 -iname "pkgconfig" -a -type d 2>/dev/null | tail -n1 )":"$(find ~/homebrew/Cellar/bash -iname "pkgconfig" -a -type d 2>/dev/null)":"$(find /usr -iname "pkgconfig" -a -type d 2>/dev/null | head -n 1 ; wait ;) ; wait ;) ;
 
 # configure paths
 function pkgpathappend() {
@@ -86,22 +85,27 @@ chflags 'hidden' ~/homebrew 2>/dev/null || true ;
 source ~/.bashrc
 HOMEBREW_USER=$(stat -f %u ~/homebrew/)
 HOMEBREW_GROUP=$(stat -f %g ~/homebrew/)
+export HOMEBREW_NO_INSECURE_REDIRECT=1 ;
 umask 002
+ulimit -n 4096
 export ENABLE_CLANG_FORMAT=on
 # need to make this dynamic
-#export CMAKE_OSX_DEPLOYMENT_TARGET=14.2
+export CMAKE_OSX_DEPLOYMENT_TARGET=15.1
 export CC=clang
 export CXX=clang
-export CPP=clang
-export CMAKE_PROGRAM_PATH=${PATH}:/Applications/Xcode.app/Contents/Developer/usr/bin
-#export SSL_CERT_DIR=??
+export CPP=clang-cpp
+export CMAKE_PROGRAM_PATH=${HOMEBREW_PREFIX}/opt/llvm@20/bin:${HOMEBREW_PREFIX}/opt/llvm@19/bin:${PATH}:${HOMEBREW_PREFIX}/opt/llvm/bin:${HOMEBREW_PREFIX}/opt/lld@20/bin:${HOMEBREW_PREFIX}/opt/lld@19/bin:${PATH}:${HOMEBREW_PREFIX}/opt/lld/bin:/Applications/Xcode.app/Contents/Developer/usr/bin
+OPENSSL_DIR=$(echo $(openssl version -a | grep -F "SSL" | grep -F "DIR" | cut -d: -f 2-2 | tr -d '"')) ;
+export SSL_CERT_DIR=$(find ${SSL_CERT_DIR} -iname "certs" -type d -print 2>/dev/null ; wait ;) ;
+# may need to use c_hash util on error
 # need to make this dynamic
-#export CMAKE_APPLE_SILICON_PROCESSOR=x86_64
-#export CMAKE_BUILD_PARALLEL_LEVEL=8
+export CMAKE_APPLE_SILICON_PROCESSOR=$(uname -m)
+export CMAKE_BUILD_PARALLEL_LEVEL=8
+export HOMEBREW_MAKE_JOBS=8
 export CMAKE_OSX_ARCHITECTURES='arm64 x86_64'
-export MACOSX_DEPLOYMENT_TARGET=14.2
+export MACOSX_DEPLOYMENT_TARGET=$(system_profiler -detailLevel mini SPSoftwareDataType 2>/dev/null | grep -F "System Version" | tr -s ' ' ' ' | cut -d: -f 2-2 | grep -oE "(\d+\.?)+\b" | head -n1 ;)
 # 12 or newer
-export CMAKE_XCODE_BUILD_SYSTEM=12 # the new build system
+export CMAKE_XCODE_BUILD_SYSTEM=15 # the new build system
 #CMAKE_OSX_SYSROOT
 export DT_TOOLCHAIN_DIR=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain
 export HOMEBREW_CASK_OPTS="${HOMEBREW_CASK_OPTS} --appdir=~/homebrew/Applications/ --fontdir=~/homebrew/Library/Fonts"
@@ -111,7 +115,7 @@ caffeinate -dims brew update
 caffeinate -dims brew upgrade
 
 ##########################
-# set aliases
+# Cleanup
 ##########################
 rm -rf "$(brew --cache)"
 caffeinate -dims brew cleanup

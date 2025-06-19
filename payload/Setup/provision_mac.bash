@@ -1125,8 +1125,8 @@ sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.serve
 
 # prevent mitm attack
 sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.captive.control Active -bool false
-# sudo rm -qf /Library/Preferences/SystemConfiguration/CaptiveNetworkSupport/Settings.plist
-sudo rm -qf /Library/Preferences/SystemConfiguration/com.apple.captive.probe.plist
+# sudo rm -f /Library/Preferences/SystemConfiguration/CaptiveNetworkSupport/Settings.plist
+sudo rm -f /Library/Preferences/SystemConfiguration/com.apple.captive.probe.plist
 
 
 # clear boot options (can break auto install)

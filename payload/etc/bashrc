@@ -37,7 +37,8 @@ else
 	[ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
 fi
 
-pathappend /Applications/Docker.app/Contents/Resources/bin
+# enable this to force use of docker bin
+# pathappend /Applications/Docker.app/Contents/Resources/bin
 pathappend /usr/local/MacGPG2/bin
 
 # enable this to force color use
@@ -145,10 +146,6 @@ shopt -s checkwinsize
 #*)
 #    ;;
 #esac
-
-if [[ ( -r ${HOME}/.bash_aliases ) ]]; then
-	source ${HOME}/.bash_aliases || true ;
-fi
 
 # enable bash completion in interactive shells
 if ! shopt -oq posix; then

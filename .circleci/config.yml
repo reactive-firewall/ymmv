@@ -1,10 +1,25 @@
-version: 2
+---
+version: 2.1
+commands:
+  cleanup:
+    steps:
+      - run:
+          shell: /bin/bash
+          name: "Cleanup"
+          command: |
+            make clean
+          when: on_success
+      - run:
+          shell: /bin/bash
+          name: "Cleanup (after Failure)"
+          command: |
+            make clean
+          when: on_fail
+
 jobs:
   build:
     docker:
-      - image: circleci/python:3.9
-      - image: circleci/python:3.10
-      - image: circleci/python:3.11
+      - image: cimg/base:current-24.04
     resource_class: medium
     environment:
       CI: cicleci
@@ -26,9 +41,7 @@ jobs:
 
   test:
     docker:
-      - image: circleci/python:3.9
-      - image: circleci/python:3.10
-      - image: circleci/python:3.11
+      - image: cimg/base:current-24.04
     parallelism: 2
     resource_class: medium
     environment:
@@ -41,34 +54,18 @@ jobs:
     steps:
       - restore_cache:
           key: v1-repo-{{ .Environment.CIRCLE_SHA1 }}
-      - run:
-          shell: /bin/bash
-          name: "clean up for test"
-          command: |
-            make clean
-          when: always
+      - cleanup
       - run:
           shell: /bin/bash
           name: "Unit Tests"
           command: |
             make test
           when: on_success
-      - run:
-          shell: /bin/bash
-          name: "clean up from test"
-          command: |
-            make clean
-          when: always
-      - run:
-          shell: /bin/bash
-          name: "clean up from FAIL"
-          command: |
-            make clean
-          when: on_fail
+      - cleanup
 
   lint:
     docker:
-      - image: circleci/python:3.11
+      - image: cimg/python:3.13
     resource_class: medium
     environment:
       CI: cicleci
@@ -83,22 +80,14 @@ jobs:
       - run:
           name: "install flake8 attempt"
           command: |
-            python3 -m pip install --user flake8 || true
-      - run:
-          shell: /bin/bash
-          name: "clean up for test"
-          command: |
-            make clean
+            python3 -m pip install --upgrade --user flake8 || true
+      - cleanup
       - run:
           shell: /bin/bash
           name: "check code style and spelling"
           command: |
             make test-style || python3 -m flake8 --ignore=W191,W391,E117 --max-line-length=100 --verbose --count --config=.flake8.ini --max-complexity=10
-      - run:
-          shell: /bin/bash
-          name: "clean up when done"
-          command: |
-            make clean
+      - cleanup
 
 workflows:
   version: 2

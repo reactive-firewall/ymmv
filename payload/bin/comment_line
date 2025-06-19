@@ -59,41 +59,155 @@
 #    the amount of five dollars ($5.00). The foregoing limitations will apply
 #    even if the above stated remedy fails of its essential purpose.
 ################################################################################
-# usage ~ comment_line n COMMENT FILE
+
+# Usage Summary:
+#	~$ comment_line n COMMENT FILE
+#
 # uses COMMENT to comment out line n from file
 
+# Try to safely setup and fail fast if unable.
+ulimit -t 600
+# setting the path may break brain-dead CI that uses crazy paths -- so keep PATH at end
+PATH="/bin:/sbin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:${PATH}"
+umask 137
+
+# force utf-8 for checking in script
+export LC_CTYPE="${LC_CTYPE:-en_US.UTF-8}"
+
+# Function to check if a command exists.
+
+# USAGE:
+#	~$ check_command CMD
+# Arguments:
+# CMD (Required) -- Name of the command to check
+# Results:
+#	exits 64 -- missing required argument
+#	exits 126 -- check complete and has failed, can not find given command.
+#	returns successful -- check complete and command found to be executable.
+function check_command() {
+	test -z "$1" && { printf "%s\n" "Error: command name is required to check for existence." >&2 ; exit 64 ; } ;
+	local cmd="$1" ;
+	# shellcheck disable=SC2086
+	test -x "$(command -v ${cmd})" || { printf "%s\n" "Error: Required command '$cmd' is not found." >&2 ; exit 126 ; } ;
+}  # end check_command()
+# propagate/export function to sub-shells
+export -f check_command
+
+# Check required commands
+check_command grep ;
+check_command head ;
+check_command sed ;
+check_command tail ;
+check_command tr ;
+check_command wc ;
+# CAVEAT: NON-CEP-5 locking is OK (best-effort approach)
+{ test -x ./.github/tool_shlock_helper.sh && hash -p ./.github/tool_shlock_helper.sh shlock ;} || :
+check_command shlock ;
+
+# set remaining variables
 declare -ir LINE_NUMBER="${1}"
 declare -r COMMENT_VALUE=$2
 wait ;
 declare -i BEFORE_LINE_NUMBER=$((${LINE_NUMBER}-1))
 declare -i AFTER_LINE_NUMBER=$((${LINE_NUMBER}+1))
 declare -r THE_FILE="${3}"
+LOCK_FILE="${TMPDIR:-/tmp}/org.ymmv.comment-line-shell"
+
+# Set default exit-code to failure until sure we won't need to abort
+EXIT_CODE=1
+
+# end of bootstrapping, use functions below this point
+
+# Function to check if a command exists.
+
+# USAGE:
+#	~$ cleanup
+# Arguments:
+#	N/A
+# Results:
+#	returns -- once cleanup has been done on a best-effort case.
+function cleanup() {
+	# shellcheck disable=SC2317
+	unset THE_FILE || : ;
+	# shellcheck disable=SC2317
+	unset BEFORE_LINE_NUMBER || : ;
+	# shellcheck disable=SC2317
+	unset AFTER_LINE_NUMBER || : ;
+	# shellcheck disable=SC2317
+	rm -f "${LOCK_FILE}" 2>/dev/null || : ;
+	# shellcheck disable=SC2317
+	wait ;
+	# shellcheck disable=SC2317
+	unset LOCK_FILE 2>/dev/null || : ;
+	# shellcheck disable=SC2317
+	hash -d shlock 2>/dev/null > /dev/null || : ;
+}
+
+function handle_signals() {
+	if shlock -f "${LOCK_FILE}" -p $$ ; then
+		EXIT_CODE=0
+		trap 'cleanup 2>/dev/null || rm -f "${LOCK_FILE}" 2>/dev/null > /dev/null || true ; wait ; exit 129 ;' SIGHUP || EXIT_CODE=129
+		trap 'cleanup 2>/dev/null || rm -f "${LOCK_FILE}" 2>/dev/null > /dev/null || true ; wait ; exit 143 ;' SIGTERM || EXIT_CODE=143
+		trap 'cleanup 2>/dev/null || rm -f "${LOCK_FILE}" 2>/dev/null > /dev/null || true ; wait ; exit 131 ;' SIGQUIT || EXIT_CODE=131
+		# SC2173 - https://github.com/koalaman/shellcheck/wiki/SC2173
+		#trap 'cleanup 2>/dev/null || rm -f "${LOCK_FILE}" 2>/dev/null > /dev/null || true ; wait ; exit 1 ;' SIGSTOP || EXIT_CODE=7
+		trap 'cleanup 2>/dev/null || rm -f "${LOCK_FILE}" 2>/dev/null > /dev/null || true ; wait ; exit 130 ;' SIGINT || EXIT_CODE=130
+		trap 'cleanup 2>/dev/null || rm -f "${LOCK_FILE}" 2>/dev/null > /dev/null || true || true ; wait ; exit 137 ;' SIGABRT || EXIT_CODE=137
+		trap 'cleanup 2>/dev/null || rm -f "${LOCK_FILE}" 2>/dev/null > /dev/null || true ; wait ; exit ${EXIT_CODE} ;' EXIT || EXIT_CODE=1
+	else
+		# shellcheck disable=SC2046
+		printf "\t%s\n" "Comment out line script already in progress by "$(head -n1 "${LOCK_FILE}") >&2 ;
+		exit 126 ;  # EINPROGRESS
+	fi
+}
+
+handle_signals
 
 if [[ ( -e "${THE_FILE}" ) ]] ; then
 	if [[ ( -r "${THE_FILE}" ) ]] ; then
+		FILE_LENGTH=$(wc -l "${THE_FILE}" 2>/dev/null | grep -m 1 -o "[0-9]+" | head -n 1)
 		if [[ ( -w "${THE_FILE}" ) ]] ; then
 			if [[ ( ${BEFORE_LINE_NUMBER} -gt 0 ) ]] ; then
-				head -n ${BEFORE_LINE_NUMBER} ${THE_FILE} || exit 1 ;
+				# shellcheck disable=SC2086
+				head -n ${BEFORE_LINE_NUMBER} "${THE_FILE}" || EXIT_CODE=66 ;  # e.g. EIO/ESPIPE/ERANGE
 			fi
-			head -n ${LINE_NUMBER} ${THE_FILE} | tail -n 1 | sed -E 's/^/'"${COMMENT_VALUE}"'/g' || exit 1 ;
-			wait ;
-			if [[ ( $(wc -l ${THE_FILE} | grep -m 1 -o "[0-9]+" | head -n 1) -lt ${AFTER_LINE_NUMBER} ) ]] ; then
-				tail -n +${AFTER_LINE_NUMBER} ${THE_FILE} || exit 1 ;
+			# shellcheck disable=SC2086
+			if [[ ( ${EXIT_CODE:-1} -eq 0 ) ]] ; then
+				# shellcheck disable=SC2086
+				head -n ${LINE_NUMBER} "${THE_FILE}" | tail -n 1 | sed -E 's/^/'"${COMMENT_VALUE}"'/g' || EXIT_CODE=89 ;
+				wait ;
+				# shellcheck disable=SC2086
+				if [[ ( ${EXIT_CODE:-1} -eq 0 ) ]] ; then
+					# shellcheck disable=SC2086
+					if [[ ( ${FILE_LENGTH} -gt ${AFTER_LINE_NUMBER} ) ]] ; then
+						# shellcheck disable=SC2086
+						tail -n +${AFTER_LINE_NUMBER} "${THE_FILE}" || EXIT_CODE=65 ;  # e.g. EIO/ERANGE
+					else
+						printf "%s" "" ;  # output empty string
+					fi
+				else
+					printf "%s\n" "ERROR: Unable to comment line ${LINE_NUMBER}." 1>&2 ;  # e.g. EIO
+					wait ;
+				fi
 			else
-				echo "" ;
+				# EIO/ESPIPE/ERANGE
+				printf "%s\n" "ERROR: Unable to seek line ${LINE_NUMBER}." 1>&2 ;
 			fi
 			wait ;
 		else
-			echo "ERROR: ${THE_FILE} is not writeable." 1>&2 ; wait ;
-			exit 4;
+			printf "%s\n" "ERROR: ${THE_FILE} is not writeable." 1>&2 ;  # e.g. (EPERM && !EBADF)
+			EXIT_CODE=77
 		fi
 	else
-		echo "ERROR: ${THE_FILE} can not be read." 1>&2 ; wait ;
-		exit 3;
+		printf "%s\n" "ERROR: ${THE_FILE} can not be read." 1>&2 ;  # e.g. EPERM
+		EXIT_CODE=2
 	fi
 else
-	echo "ERROR: ${THE_FILE} can not be found." 1>&2 ; wait ;
-	exit 2;
+	printf "%s\n" "ERROR: ${THE_FILE} can not be found." 1>&2 ;  # e.g. (ENOENT || EBADF)
+	EXIT_CODE=64
 fi
 
-exit 0 ;
+cleanup 2>/dev/null || rm -f "${LOCK_FILE}" 2>/dev/null || : ; wait ;
+
+# shellcheck disable=SC2086
+exit ${EXIT_CODE:-70} ;

@@ -1,0 +1,664 @@
+#! /bin/bash
+# Disclaimer of Warranties.
+# A. YOU EXPRESSLY ACKNOWLEDGE AND AGREE THAT, TO THE EXTENT PERMITTED BY
+#    APPLICABLE LAW, USE OF THIS SHELL SCRIPT AND ANY SERVICES PERFORMED
+#    BY OR ACCESSED THROUGH THIS SHELL SCRIPT IS AT YOUR SOLE RISK AND
+#    THAT THE ENTIRE RISK AS TO SATISFACTORY QUALITY, PERFORMANCE, ACCURACY AND
+#    EFFORT IS WITH YOU.
+#
+# B. TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, THIS SHELL SCRIPT
+#    AND SERVICES ARE PROVIDED "AS IS" AND "AS AVAILABLE", WITH ALL FAULTS AND
+#    WITHOUT WARRANTY OF ANY KIND, AND THE AUTHOR OF THIS SHELL SCRIPT'S LICENSORS
+#    (COLLECTIVELY REFERRED TO AS "THE AUTHOR" FOR THE PURPOSES OF THIS DISCLAIMER)
+#    HEREBY DISCLAIM ALL WARRANTIES AND CONDITIONS WITH RESPECT TO THIS SHELL SCRIPT
+#    SOFTWARE AND SERVICES, EITHER EXPRESS, IMPLIED OR STATUTORY, INCLUDING, BUT
+#    NOT LIMITED TO, THE IMPLIED WARRANTIES AND/OR CONDITIONS OF
+#    MERCHANTABILITY, SATISFACTORY QUALITY, FITNESS FOR A PARTICULAR PURPOSE,
+#    ACCURACY, QUIET ENJOYMENT, AND NON-INFRINGEMENT OF THIRD PARTY RIGHTS.
+#
+# C. THE AUTHOR DOES NOT WARRANT AGAINST INTERFERENCE WITH YOUR ENJOYMENT OF THE
+#    THE AUTHOR's SOFTWARE AND SERVICES, THAT THE FUNCTIONS CONTAINED IN, OR
+#    SERVICES PERFORMED OR PROVIDED BY, THIS SHELL SCRIPT WILL MEET YOUR
+#    REQUIREMENTS, THAT THE OPERATION OF THIS SHELL SCRIPT OR SERVICES WILL
+#    BE UNINTERRUPTED OR ERROR-FREE, THAT ANY SERVICES WILL CONTINUE TO BE MADE
+#    AVAILABLE, THAT THIS SHELL SCRIPT OR SERVICES WILL BE COMPATIBLE OR
+#    WORK WITH ANY THIRD PARTY SOFTWARE, APPLICATIONS OR THIRD PARTY SERVICES,
+#    OR THAT DEFECTS IN THIS SHELL SCRIPT OR SERVICES WILL BE CORRECTED.
+#    INSTALLATION OF THIS THE AUTHOR SOFTWARE MAY AFFECT THE USABILITY OF THIRD
+#    PARTY SOFTWARE, APPLICATIONS OR THIRD PARTY SERVICES.
+#
+# D. YOU FURTHER ACKNOWLEDGE THAT THIS SHELL SCRIPT AND SERVICES ARE NOT
+#    INTENDED OR SUITABLE FOR USE IN SITUATIONS OR ENVIRONMENTS WHERE THE FAILURE
+#    OR TIME DELAYS OF, OR ERRORS OR INACCURACIES IN, THE CONTENT, DATA OR
+#    INFORMATION PROVIDED BY THIS SHELL SCRIPT OR SERVICES COULD LEAD TO
+#    DEATH, PERSONAL INJURY, OR SEVERE PHYSICAL OR ENVIRONMENTAL DAMAGE,
+#    INCLUDING WITHOUT LIMITATION THE OPERATION OF NUCLEAR FACILITIES, AIRCRAFT
+#    NAVIGATION OR COMMUNICATION SYSTEMS, AIR TRAFFIC CONTROL, LIFE SUPPORT OR
+#    WEAPONS SYSTEMS.
+#
+# E. NO ORAL OR WRITTEN INFORMATION OR ADVICE GIVEN BY THE AUTHOR
+#    SHALL CREATE A WARRANTY. SHOULD THIS SHELL SCRIPT OR SERVICES PROVE DEFECTIVE,
+#    YOU ASSUME THE ENTIRE COST OF ALL NECESSARY SERVICING, REPAIR OR CORRECTION.
+#
+#    Limitation of Liability.
+# F. TO THE EXTENT NOT PROHIBITED BY APPLICABLE LAW, IN NO EVENT SHALL THE AUTHOR
+#    BE LIABLE FOR PERSONAL INJURY, OR ANY INCIDENTAL, SPECIAL, INDIRECT OR
+#    CONSEQUENTIAL DAMAGES WHATSOEVER, INCLUDING, WITHOUT LIMITATION, DAMAGES
+#    FOR LOSS OF PROFITS, CORRUPTION OR LOSS OF DATA, FAILURE TO TRANSMIT OR
+#    RECEIVE ANY DATA OR INFORMATION, BUSINESS INTERRUPTION OR ANY OTHER
+#    COMMERCIAL DAMAGES OR LOSSES, ARISING OUT OF OR RELATED TO YOUR USE OR
+#    INABILITY TO USE THIS SHELL SCRIPT OR SERVICES OR ANY THIRD PARTY
+#    SOFTWARE OR APPLICATIONS IN CONJUNCTION WITH THIS SHELL SCRIPT OR
+#    SERVICES, HOWEVER CAUSED, REGARDLESS OF THE THEORY OF LIABILITY (CONTRACT,
+#    TORT OR OTHERWISE) AND EVEN IF THE AUTHOR HAS BEEN ADVISED OF THE
+#    POSSIBILITY OF SUCH DAMAGES. SOME JURISDICTIONS DO NOT ALLOW THE EXCLUSION
+#    OR LIMITATION OF LIABILITY FOR PERSONAL INJURY, OR OF INCIDENTAL OR
+#    CONSEQUENTIAL DAMAGES, SO THIS LIMITATION MAY NOT APPLY TO YOU. In no event
+#    shall THE AUTHOR's total liability to you for all damages (other than as may
+#    be required by applicable law in cases involving personal injury) exceed
+#    the amount of five dollars ($5.00). The foregoing limitations will apply
+#    even if the above stated remedy fails of its essential purpose.
+#
+################################################################################
+#
+# Description: This script generates an ASCII tree of the project's modules, classes, functions,
+#  and methods with line characters, supporting nested directories.
+# Usage: ./lsmap [directory]
+
+set -euo pipefail
+
+# Global variable to track temporary files
+declare TEMP_FILES="";
+
+# Global variable to track exit code
+EXIT_CODE=0
+
+# USAGE:
+#	~$ cleanup
+# Arguments:
+#	N/A
+# Results:
+#	returns -- once cleanup has been done on a best-effort case.
+function cleanup() {
+	# shellcheck disable=SC2086
+	for TFILE in ${TEMP_FILES}; do
+		if [[ ( -n "${TFILE}" ) ]] && [[ ( -e "${TFILE}" ) ]]; then
+			rm -f "${TFILE}" 2>/dev/null || : ;
+		fi
+	done
+	# unset when done
+	unset TEMP_FILES 2>/dev/null || : ;
+}
+
+function handle_signals() {
+	trap 'cleanup 2>/dev/null || true ; wait ; exit 129 ;' SIGHUP || EXIT_CODE=129
+	trap 'cleanup 2>/dev/null || true ; wait ; exit 143 ;' SIGTERM || EXIT_CODE=143
+	trap 'cleanup 2>/dev/null || true ; wait ; exit 131 ;' SIGQUIT || EXIT_CODE=131
+	trap 'cleanup 2>/dev/null || true ; wait ; exit 130 ;' SIGINT || EXIT_CODE=130
+	trap 'cleanup 2>/dev/null || true ; wait ; exit 137 ;' SIGABRT || EXIT_CODE=137
+	trap 'cleanup 2>/dev/null || true ; wait ; exit ${EXIT_CODE} ;' EXIT || EXIT_CODE=1
+}
+
+# Function: print_usage
+# Description: Prints usage information for the script.
+print_usage() {
+	printf 'Usage: %s [directory]\n' "$(basename "$0")"
+	printf 'Generates an ASCII tree with line characters of modules, classes, functions, and methods in the specified directory.\n'
+	printf 'If no directory is specified, defaults to the current directory.\n'
+}
+
+# Function: check_dependencies
+# Description: Checks if required commands are available.
+check_dependencies() {
+	local dependencies=("find" "awk" "sort" "grep" "tar" "zipinfo" "mktemp" "rm")
+	for cmd in "${dependencies[@]}"; do
+		if ! command -v "$cmd" >/dev/null 2>&1; then
+			printf 'Error: Required command "%s" not found in PATH.\n' "$cmd" >&2
+			exit 1
+		fi
+	done
+}
+
+# Function: process_directory
+# Description: Processes a directory recursively to build the tree.
+process_directory() {
+	local dir="$1"
+	local prefix="$2"
+	local is_last="$3"
+
+	# Print the current directory
+	printf '%s' "$prefix"
+	if [ "$is_last" = "true" ]; then
+		printf '└── '
+		prefix="${prefix}    "
+	else
+		printf '├── '
+		prefix="${prefix}│   "
+	fi
+	printf '%s\n' "$(basename "$dir")"
+
+	# Use a temporary file to store entries
+	local temp_file
+	temp_file=$(mktemp)
+	TEMP_FILES="${TEMP_FILES} ${temp_file}" ;
+	find "$dir" -maxdepth 1 -mindepth 1 -print0 | sort -z > "$temp_file"
+
+	# Read entries from the temporary file
+	local entries=()
+	while IFS= read -r -d '' entry; do
+		entries+=("$entry")
+	done < "$temp_file"
+
+	# Get the total number of entries
+	local total="${#entries[@]}"
+
+	# If there are no entries, clean up and return
+	if [ "$total" -eq 0 ]; then
+		rm "$temp_file"
+		# printf '%s└── {Empty}\n' "$prefix"
+		return
+	fi
+
+	# Process each entry
+	local index=0
+	for entry in "${entries[@]}"; do
+		((index++))
+		if [ "$index" -eq "$total" ]; then
+			child_is_last="true"
+		else
+			child_is_last="false"
+		fi
+
+		if [ -d "$entry" ]; then
+			process_directory "$entry" "$prefix" "$child_is_last" ;
+		elif [ -f "$entry" ]; then
+			if [ "${entry##*.}" = "py" ]; then
+				process_python_file "$entry" "$prefix" "$child_is_last" ;
+			elif [ "${entry##*.}" = "sh" ] || [ "${entry##*.}" = "bash" ]; then
+				process_shell_script "$entry" "$prefix" "$child_is_last" ;
+			elif case "$entry" in
+				*.tar|*.tar.gz|*.tgz|*.bz2|*.tbz2|*.zip|*.whl) true ;;
+				*) false ;;
+			esac; then
+				process_archive "$entry" "$prefix" "$child_is_last" ;
+			elif case "$entry" in
+				*.mk|*.make|*.am|*.makefile|*Makefile) true ;;
+				*) false ;;
+			esac; then
+				process_makefile "$entry" "$prefix" "$child_is_last" ;
+			else
+				printf '%s' "$prefix"
+				if [ "$child_is_last" = "true" ]; then
+					printf '└── '
+				else
+					printf '├── '
+				fi
+				printf '%s\n' "$(basename "$entry")"
+			fi
+		fi
+	done
+
+	# Clean up the temporary file
+	rm "$temp_file" 2>/dev/null > /dev/null || : ;
+	return
+}
+
+# Function: process_archive
+# Description: Processes a directory recursively to build the tree.
+process_archive() {
+	local archive="$1"
+	local prefix="$2"
+	local is_last="$3"
+
+	# Print the current directory
+	printf '%s' "$prefix"
+	if [ "$is_last" = "true" ]; then
+		printf '└── '
+		prefix="${prefix}    "
+	else
+		printf '├── '
+		prefix="${prefix}│   "
+	fi
+	printf '%s\n' "$(basename "$archive")"
+
+	# Use a temporary file to store entries
+	local temp_file
+	temp_file=$(mktemp)
+	TEMP_FILES="${TEMP_FILES} ${temp_file}" ;
+	if [ "${archive##*.}" = "whl" ] || [ "${archive##*.}" = "zip" ]; then
+		zipinfo -1 "$archive" | sort -t / -u > "$temp_file"
+	else
+		tar -tf "$archive" | sort -t / -u > "$temp_file"
+	fi
+	# Use a another temporary file to store top archive entries
+	local temp_file_2
+	temp_file_2=$(mktemp)
+	TEMP_FILES="${TEMP_FILES} ${temp_file_2}" ;
+	grep -oE "^[^/]+/?$" <"$temp_file" | sort -t / -u > "$temp_file_2"
+
+	# Read entries from the other temporary file
+	local entries=()
+	while IFS= read -r entry; do
+		entries+=("$entry")
+	done < "$temp_file_2"
+
+	rm "$temp_file_2" 2>/dev/null > /dev/null || : ;
+
+	# Get the total number of entries
+	local total="${#entries[@]}"
+
+	# If there are no entries, clean up and return
+	if [ "$total" -eq 0 ]; then
+		rm "$temp_file"
+		# printf '%s└── {Empty}\n' "$prefix"
+		return
+	fi
+
+	# Process each entry
+	local index=0
+	for entry in "${entries[@]}"; do
+		((index++))
+		if [ "$index" -eq "$total" ]; then
+			child_is_last="true"
+		else
+			child_is_last="false"
+		fi
+
+		local dir_name_stub
+		# shellcheck disable=SC2086
+		dir_name_stub=$(printf "%s\n" "${entry%%/}/[^/]+/?")
+		# shellcheck disable=SC2086
+		if [ $(grep -coE "$dir_name_stub" "$temp_file") -ge 1 ]; then
+			process_directory_list "$temp_file" "${entry%%/}" "$prefix" "$child_is_last"
+		else
+			printf '%s' "$prefix"
+			if [ "$child_is_last" = "true" ]; then
+				printf '└── '
+			else
+				printf '├── '
+			fi
+			printf '%s\n' "$(basename "$entry")"
+		fi
+	done
+
+	# Clean up the temporary file
+	rm "$temp_file" 2>/dev/null > /dev/null || : ;
+	return
+}
+
+# Function: process_directory_list
+# Description: Processes a directory list recursively to build the tree.
+process_directory_list() {
+	local super_list="$1"
+	local dir="$2"
+	local prefix="$3"
+	local is_last="$4"
+
+	# Print the current directory
+	printf '%s' "$prefix"
+	if [ "$is_last" = "true" ]; then
+		printf '└── '
+		prefix="${prefix}    "
+	else
+		printf '├── '
+		prefix="${prefix}│   "
+	fi
+	printf '%s\n' "$(basename "$dir")"
+
+	local dir_match_stub
+	dir_match_stub=$(printf "%s\n" "^${dir%%/}/[^/]+/?$")
+	# Use a temporary file to store entries
+	local temp_file
+	temp_file=$(mktemp)
+	TEMP_FILES="${TEMP_FILES} ${temp_file}" ;
+	grep -oE "$dir_match_stub" "$super_list" | sort -t / -u > "$temp_file"
+
+	# Read entries from the temporary file
+	local entries=()
+	while IFS= read -r entry; do
+		entries+=("$entry")
+	done < "$temp_file"
+
+
+	# Get the total number of entries
+	local total="${#entries[@]}"
+
+	# If there are no entries, clean up and return
+	if [ "$total" -eq 0 ]; then
+		rm "$temp_file"
+		# printf '%s└── {Empty}\n' "$prefix"
+		return
+	fi
+
+	# Process each entry
+	local index=0
+	for entry in "${entries[@]}"; do
+		((index++))
+		if [ "$index" -eq "$total" ]; then
+			child_is_last="true"
+		else
+			child_is_last="false"
+		fi
+
+		local dir_name_stub
+		# shellcheck disable=SC2086
+		dir_name_stub=$(printf "%s\n" "${entry%%/}/[^/]+/?$")
+		# shellcheck disable=SC2086
+		if [ $(grep -coE "$dir_name_stub" "$super_list") -ge 1 ]; then
+			process_directory_list "$super_list" "${entry%%/}" "$prefix" "$child_is_last"
+		else
+			printf '%s' "$prefix"
+			if [ "$child_is_last" = "true" ]; then
+				printf '└── '
+			else
+				printf '├── '
+			fi
+			printf '%s\n' "$(basename "$entry")"
+		fi
+
+	done
+
+	# Clean up the temporary file
+	rm "$temp_file" 2>/dev/null > /dev/null || : ;
+	return
+}
+
+# Function: process_python_file
+# Description: Processes a Python file to extract classes and functions.
+process_python_file() {
+	local file="$1"
+	local prefix="$2"
+	local is_last="$3"
+
+	printf '%s' "$prefix"
+	if [ "$is_last" = "true" ]; then
+		printf '└── '
+		new_prefix="${prefix}    "
+	else
+		printf '├── '
+		new_prefix="${prefix}│   "
+	fi
+	printf '%s\n' "$(basename "$file")"
+
+	awk -v prefix="$new_prefix" '
+    function get_indent(line) {
+        match(line, /^[ \t]*/)
+        return RLENGTH
+    }
+
+    function print_tree(p, name, is_last) {
+        printf "%s%s %s\n", p, (is_last ? "└──" : "├──"), name
+        return p (is_last ? "    " : "│   ")
+    }
+
+    BEGIN {
+        item_count = 0
+        delete items
+        delete indents
+        delete parents
+        delete types
+        delete has_children
+        delete last_at_level
+        prev_indent = -1
+        curr_parent = -1
+    }
+
+    /^[[:space:]]*(class|def)[[:space:]]+[A-Za-z_][A-Za-z0-9_]*.*:/ {
+        line = $0
+        curr_indent = get_indent(line)
+        items[item_count] = line
+        indents[item_count] = curr_indent
+        types[item_count] = ($1 ~ /^class/) ? "class" : "def"
+
+        # Find parent based on indentation
+        parent = -1
+        for (i = item_count - 1; i >= 0; i--) {
+            if (indents[i] < curr_indent) {
+                parent = i
+                has_children[i] = 1
+                break
+            }
+        }
+
+        parents[item_count] = parent
+        item_count++
+    }
+
+    END {
+        # First, identify last items at each level under each parent
+        for (i = 0; i < item_count; i++) {
+            curr_indent = indents[i]
+            parent = parents[i]
+            
+            # Look ahead to find if this is the last at its level under its parent
+            is_last = 1
+            for (j = i + 1; j < item_count; j++) {
+                if (parents[j] == parent && indents[j] == curr_indent) {
+                    is_last = 0
+                    break
+                }
+            }
+            
+            if (is_last) {
+                last_at_level[i] = 1
+            }
+        }
+
+        # Now print items with correct prefixes
+        for (i = 0; i < item_count; i++) {
+            line = items[i]
+            curr_indent = indents[i]
+            parent = parents[i]
+            
+            # Build prefix by walking up the parent chain
+            curr_prefix = prefix
+            if (parent >= 0) {
+                # Get the chain of parents up to root
+                p_chain_len = 0
+                p = i
+                while (p >= 0) {
+                    p_chain[p_chain_len++] = p
+                    p = parents[p]
+                }
+                
+                # Build prefix from root to current, keeping track of siblings
+                for (j = p_chain_len - 1; j > 0; j--) {
+                    p = p_chain[j]
+                    next_p = p_chain[j-1]
+                    
+                    # Check if current level has more siblings after this chain
+                    has_sibling = 0
+                    for (k = next_p + 1; k < item_count; k++) {
+                        if (parents[k] == parents[p] && indents[k] == indents[p]) {
+                            has_sibling = 1
+                            break
+                        }
+                    }
+                    
+                    curr_prefix = curr_prefix (has_sibling ? "│   " : "    ")
+                }
+            }
+
+            # Determine if this item is last at its level
+            is_last = last_at_level[i]
+
+            if (types[i] == "class") {
+                name = line
+                sub(/^[[:space:]]*class[[:space:]]+/, "", name)
+                sub(/\(.*/, "", name)
+                sub(/:.*/, "", name)
+                print_tree(curr_prefix, "Class: " name, is_last)
+            } else {
+                name = line
+                sub(/^[[:space:]]*def[[:space:]]+/, "", name)
+                sub(/\(.*/, "", name)
+                sub(/:.*/, "", name)
+                is_method = (parent >= 0 && types[parent] == "class")
+                print_tree(curr_prefix, (is_method ? "Method: " : "Function: ") name, is_last)
+            }
+        }
+    }
+' "$file"
+	return
+}
+
+# Function: process_shell_script
+# Description: Processes a shell script to extract variables and functions.
+process_shell_script() {
+	local file="$1"
+	local prefix="$2"
+	local is_last="$3"
+
+	printf '%s' "$prefix"
+	if [ "$is_last" = "true" ]; then
+		printf '└── '
+		new_prefix="${prefix}    "
+	else
+		printf '├── '
+		new_prefix="${prefix}│   "
+	fi
+	printf '%s\n' "$(basename "$file")"
+
+	awk -v prefix="$new_prefix" '
+	function print_tree(p, name, is_last) {
+		printf "%s", p
+		if (is_last) {
+			printf "└── "
+		} else {
+			printf "├── "
+		}
+		print name
+	}
+	BEGIN {
+		count = 0
+	}
+	/^[[:space:]]*(export[[:space:]]+|declare[[:space:]]+([-]+[afFirtx]+[[:space:]]+){0,7}|local[[:space:]]+)?([a-zA-Z_][-a-zA-Z0-9_]*)=/ {
+		var_line = $0
+		sub(/^[[:space:]]*(export[[:space:]]+|declare[[:space:]]+([-]+[afFirtx]+[[:space:]]+){0,7}|local[[:space:]]+)/, "", var_line)
+		sub(/=.*/, "", var_line)
+		var_name = var_line
+		sub(/^[[:space:]]*/, "", var_name)
+		# Check for duplicates
+		is_duplicate = 0
+		for (i = 0; i < count; i++) {
+			if (entries[i] == "Variable: " var_name) {
+				is_duplicate = 1
+				break
+			}
+		}
+
+		# Add to entries if not a duplicate
+		if (!is_duplicate) {
+			entries[count++] = "Variable: " var_name
+		}
+	}
+	/^[[:space:]]*function[[:space:]]+([a-zA-Z_][a-zA-Z0-9_]*)/ {
+		func_name = $2
+		entries[count++] = "Function: " func_name
+	}
+	/^[[:space:]]*([a-zA-Z_][a-zA-Z0-9_]*)\(\)[[:space:]]*\{/ {
+		func_name = $1
+		entries[count++] = "Function: " func_name
+	}
+	END {
+		for (i = 0; i < count; i++) {
+			is_last = (i == count - 1)
+			print_tree(prefix, entries[i], is_last)
+		}
+	}
+	' "$file"
+	return
+}
+
+# Function: process_makefile
+# Description: Processes a Makefile to extract variables and make targets.
+process_makefile() {
+	local file="$1"
+	local prefix="$2"
+	local is_last="$3"
+
+	printf '%s' "$prefix"
+	if [ "$is_last" = "true" ]; then
+		printf '└── '
+		new_prefix="${prefix}    "
+	else
+		printf '├── '
+		new_prefix="${prefix}│   "
+	fi
+	printf '%s\n' "$(basename "$file")"
+
+	awk -v prefix="$new_prefix" '
+    function print_tree(p, name, is_last) {
+        printf "%s", p
+        if (is_last) {
+            printf "└── "
+        } else {
+            printf "├── "
+        }
+        print name
+    }
+    BEGIN {
+        count = 0
+    }
+    /^[[:space:]]*[a-zA-Z_][a-zA-Z0-9_]*[[:space:]]*[:]?=[[:space:]]*/ {
+        var_line = $0
+        sub(/[[:space:]]*[:]?=.*$/, "", var_line)
+        var_name = var_line
+        sub(/^[[:space:]]*/, "", var_name)
+        # Check for duplicates
+        is_duplicate = 0
+        for (i = 0; i < count; i++) {
+            if (entries[i] == "Variable: " var_name) {
+                is_duplicate = 1
+                break
+            }
+        }
+
+        # Add to entries if not a duplicate
+        if (!is_duplicate) {
+            entries[count++] = "Variable: " var_name
+        }
+    }
+    /^[a-zA-Z_][a-zA-Z0-9_]*:$/ {
+        target_name = $1
+        sub(/:$/, "", target_name)
+        entries[count++] = "Target: " target_name
+    }
+    END {
+        for (i = 0; i < count; i++) {
+            is_last = (i == count - 1)
+            print_tree(prefix, entries[i], is_last)
+        }
+    }
+    ' "$file"
+	return
+}
+
+
+# Main function
+main() {
+	local target_dir="${1:-.}"
+
+	# Validate directory
+	if [[ ! -d "$target_dir" ]]; then
+		printf 'Error: Directory "%s" does not exist.\n' "$target_dir" >&2
+		exit 64
+	fi
+
+	check_dependencies
+	handle_signals
+	process_directory "$target_dir" "" "true"
+}
+
+# Check for help option
+if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
+	print_usage
+	exit 0
+fi
+
+# Execute the main function with all arguments
+main "$@"
+
+cleanup 2>/dev/null || : ;
+wait ;
+exit ${EXIT_CODE:-70} ;

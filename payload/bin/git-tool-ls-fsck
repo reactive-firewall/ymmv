@@ -60,18 +60,100 @@
 #    even if the above stated remedy fails of its essential purpose.
 ################################################################################
 
-# version 20140517
+# Function to list dangling tags
+function list_dangling_commits_by_desc() {
+	git fsck --full --strict --lost-found --name-objects 2>/dev/null | \
+	awk '{print $3}' | \
+	xargs -L1 -I{} git describe --tags --always --candidates=100 {} 2>/dev/null | \
+	xargs -L1 -I{} printf "%s\n" {}
+}
 
-umask 137
+# Function to list dangling trees
+function list_dangling_trees() {
+	git fsck --full --strict --lost-found --name-objects 2>/dev/null | \
+	grep -ovF "blob" | \
+	awk '{print $3}' | \
+	xargs -L1 -I{} printf "%s\n" {}
+}
 
-GREP_ARGS=""
+# Function to list dangling trees
+function list_dangling_tree_blobs() {
+	list_dangling_trees | \
+	xargs -L1 -I{} git ls-tree -r {} 2>/dev/null | \
+	grep -F "blob" | \
+	sort -ds -t\s -k4 | \
+	sort -fibrus -t/ | \
+	sort -fib -t\s -k4 | \
+	tr '\t' ' ' | \
+	awk '{print $3}' | \
+	xargs -L1 -I{} printf "%s\n" {}
+}
 
-# Accumulate grep arguments
-while [[ ($# -gt 1) && (${1:1:1} = '-') ]] ; do
-GREP_ARGS="${GREP_ARGS} ${1}";
-shift ;
-done ;
-# shellcheck disable=SC2086
-/bin/grep ${GREP_ARGS} -oE "([[:alnum:]]{1}[-[:alnum:]]*[\.]{1}){2,}[[:alnum:]]{1}[-[:alnum:]\.]+" $@
+# Function to list dangling blob paths
+function list_dangling_trees_dangling_blobs() {
+	for blob_sha in $(list_dangling_tree_blobs) ; do
+		# Check if the blob is reachable
+		if ! git cat-file -e $blob_sha 2>/dev/null; then
+			printf "%s\n" "$blob_sha"
+		elif [ -f ".git/lost-found/other/$blob_sha" ]; then
+			printf "%s\n" "$blob_sha"
+		fi
+	done ;
+}
 
-exit $? ;
+# Function to output the path to a blob object
+function path_from_blob() {
+	local blob_hash="$1"
+	if git cat-file -e "$blob_hash" ; then
+		local path_to_blob=".git/objects/${blob_hash:0:2}/${blob_hash:2}"
+		printf "%s\n" "$path_to_blob"
+	fi ;
+}
+
+# Function to list dangling blobs
+function list_dangling_blobs() {
+	git fsck --full --strict --lost-found --name-objects 2>/dev/null | \
+	grep -F "blob" | \
+	awk '{print $3}' | \
+	xargs -L1 -I{} printf "%s\n" {}
+}
+
+# Function to list dangling blob paths
+function list_dangling_blob_paths() {
+	for blob_sha in $(list_dangling_blobs ) ; do
+		path_from_blob "$blob_sha"
+	done ;
+}
+
+# Function to list dangling tree blob paths
+function list_dangling_tree_blob_paths() {
+	for blob_sha in $(list_dangling_trees ) ; do
+		path_from_blob "$blob_sha"
+		if [ -f ".git/lost-found/other/$blob_sha" ]; then
+			printf "%s\n" ".git/lost-found/other/$blob_sha"
+		fi
+	done ;
+}
+
+function list_dangling_trees_dangling_blob_paths() {
+	for blob_sha in $(list_dangling_trees_dangling_blobs ) ; do
+		path_from_blob "$blob_sha"
+		if [ -f ".git/lost-found/other/$blob_sha" ]; then
+			printf "%s\n" ".git/lost-found/other/$blob_sha"
+		fi
+	done ;
+}
+
+# Main function to execute the desired operations
+function main() {
+	list_dangling_commits_by_desc
+	list_dangling_trees
+	# list_dangling_tree_blob_paths | xargs -L1 -I{} "rm -v {}"
+	list_dangling_trees_dangling_blobs
+	# list_dangling_trees_dangling_blob_paths | xargs -L1 -I{} "rm -v {}"
+	list_dangling_blob_paths
+	# list_dangling_blob_paths | xargs -L1 -I{} "rm -v {}"
+}
+
+# Execute the main function
+main
